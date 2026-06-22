@@ -1,0 +1,4170 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spektrum – BCentrum</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #080808;
+    --surface: #0f0f0f;
+    --border: #1e1e1e;
+    --accent: #8b15ba;
+    --text: #e0e0e0;
+    --muted: #555555;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+    /* Channel colors */
+    --ch-r: #ff3333;
+    --ch-g: #33ff33;
+    --ch-b: #4488ff;
+    --ch-w: #ffffff;
+  }
+
+* { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: none; }
+::-webkit-scrollbar { display: none; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; }
+
+  /* Header */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 52px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .title-block {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 7px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .logo-icon span {
+    border-radius: 2px;
+    display: block;
+  }
+  .logo-r { background: #ff3333; }
+  .logo-g { background: #33ff33; }
+  .logo-b { background: #3333ff; }
+  .logo-w { background: #ffffff; }
+
+  .title-block h1 {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .title-block .subtitle {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  .datetime-block {
+    text-align: right;
+    font-family: var(--mono);
+  }
+
+  .datetime-block .date-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1.8;
+  }
+
+  .datetime-block .date-val {
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  .datetime-block .time-val {
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: 3px;
+  }
+
+  /* Main grid layout */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto auto;
+    gap: 16px;
+  }
+
+  /* Chart panel */
+  .chart-panel {
+    grid-column: 1;
+    grid-row: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+  }
+
+  .panel-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  canvas#chart {
+    width: 100%;
+    display: block;
+  }
+
+  /* Right column */
+  .right-col {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* RGB panel */
+  .rgb-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .rgb-swatch {
+    width: 100%;
+    height: 80px;
+    border-radius: 10px;
+    margin: 12px 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .rgb-swatch::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+  }
+
+  .rgb-values {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .rgb-channel {
+    text-align: center;
+  }
+
+  .rgb-channel .ch-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .rgb-channel .ch-val {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    font-weight: 400;
+  }
+
+  .ch-r .ch-val { color: var(--ch-r); text-shadow: 0 0 10px rgba(255,51,51,0.4); }
+  .ch-g .ch-val { color: var(--ch-g); text-shadow: 0 0 10px rgba(51,255,51,0.4); }
+  .ch-b .ch-val { color: var(--ch-b); text-shadow: 0 0 10px rgba(68,136,255,0.4); }
+
+  .hex-val {
+    font-family: var(--mono);
+    font-size: 1rem;
+    text-align: center;
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(139,21,186,0.06);
+    border: 1px solid rgba(139,21,186,0.25);
+    border-radius: 10px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* CIE xyY row */
+  .cie-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: rgba(30,200,160,0.05);
+    border: 1px solid rgba(30,200,160,0.15);
+    border-radius: 10px;
+    flex-wrap: wrap;
+  }
+  .cie-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #4e8870;
+  }
+  .cie-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #5fc9aa;
+    letter-spacing: 1px;
+    min-width: 52px;
+    text-align: left;
+  }
+  .cie-sep { color: transparent; width: 8px; display: inline-block; }
+
+  /* Metrics panel */
+  .metrics-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    flex: 1;
+  }
+
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+
+  .metric-row:last-child { border-bottom: none; }
+
+  .metric-key {
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .metric-val {
+    font-family: var(--mono);
+    color: var(--text);
+    font-size: 0.82rem;
+  }
+
+  .metric-val.highlight { color: #c06ae0; }
+  .metric-val.accent { color: var(--accent); }
+
+  /* Bottom panel – raw data */
+  .data-panel {
+    grid-column: 1;
+    grid-row: 2;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .file-input-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .file-input-area input[type="file"] { display: none; }
+
+  .btn {
+    padding: 8px 18px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 80%; height: 2px;
+    background: var(--accent);
+    transition: transform 0.2s;
+  }
+
+  .btn:hover {
+    background: rgba(139,21,186,0.06);
+    border-color: #2a2a2a;
+  }
+  .btn:hover::after { transform: translateX(-50%) scaleX(1); }
+
+  .file-name {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  textarea#rawdata {
+    width: 100%;
+    height: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: #6a8aaa;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    padding: 10px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.5;
+  }
+
+  textarea#rawdata:focus { border-color: rgba(139,21,186,0.4); }
+
+  /* Status bar */
+  .status-bar {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .status-ok { color: #44cc88; }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed;
+    background: rgba(8,8,8,0.97);
+    border: 1px solid rgba(139,21,186,0.5);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+    pointer-events: none;
+    display: none;
+    z-index: 999;
+    letter-spacing: 1px;
+  }
+
+  /* ── TABS ── */
+  .tab-nav {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+  .tab-pill {
+    padding: 8px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    bottom: -1px;
+    user-select: none;
+  }
+  .tab-pill:hover { color: var(--text); background: rgba(139,21,186,0.06); }
+  .tab-pill.active {
+    color: var(--accent);
+    background: var(--surface);
+    border-color: var(--border);
+    border-bottom-color: var(--surface);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── MULTI-FILE ── */
+  .multi-drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+    background: rgba(139,21,186,0.02);
+    position: relative;
+    overflow: hidden;
+  }
+  .multi-drop-zone::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 80%; height: 2px;
+    background: var(--accent);
+    transition: transform 0.2s;
+  }
+  .multi-drop-zone:hover::after, .multi-drop-zone.drag-over::after { transform: translateX(-50%) scaleX(1); }
+  .multi-drop-zone:hover, .multi-drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(139,21,186,0.06);
+  }
+  .multi-drop-zone .drop-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.6;
+  }
+  .multi-drop-zone .drop-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .multi-drop-zone .drop-hint {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+    opacity: 0.6;
+    letter-spacing: 1px;
+  }
+
+  /* file chips list */
+  .file-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 14px;
+    min-height: 0;
+  }
+  .file-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    transition: all 0.12s;
+    cursor: default;
+  }
+  .file-chip:hover { border-color: rgba(139,21,186,0.4); }
+  .chip-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .chip-name {
+    color: var(--text);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chip-remove {
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    line-height: 1;
+    padding: 1px 2px;
+    border-radius: 2px;
+    transition: all 0.1s;
+  }
+  .chip-remove:hover { color: #e85b5b; background: rgba(232,91,91,0.1); }
+
+  /* multi chart overlay panel */
+  .multi-chart-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .multi-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .multi-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    color: var(--text);
+  }
+  .legend-line {
+    width: 22px; height: 2px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+  .legend-name {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+
+  /* multi table */
+  .multi-table-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .multi-table-panel .panel-label { padding: 10px 16px; border-bottom: 1px solid var(--border); margin-bottom: 0; }
+  .mtable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+  .mtable th {
+    padding: 8px 12px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.01);
+  }
+  .mtable td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(30,30,30,0.6);
+    vertical-align: middle;
+  }
+  .mtable tr:last-child td { border-bottom: none; }
+  .mtable tr:hover td { background: rgba(139,21,186,0.04); }
+  .mtable .swatch-cell { display: flex; align-items: center; gap: 8px; }
+  .mtable .swatch-box {
+    width: 14px; height: 14px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .mtable .mono { font-family: var(--mono); font-size: 0.72rem; color: #c06ae0; }
+  .mtable .dim { color: var(--muted); font-size: 0.7rem; }
+
+  .multi-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+  .multi-empty .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 12px; opacity: 0.3; }
+
+  .norm-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    letter-spacing: 2px;
+  }
+  .norm-toggle input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+  .norm-toggle:hover { color: var(--text); }
+
+  /* ── COPY PANEL ── */
+  .copy-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .copy-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .copy-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .copy-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 10px;
+    cursor: pointer;
+    outline: none;
+    letter-spacing: 1px;
+  }
+  .copy-select:focus { border-color: rgba(139,21,186,0.4); }
+  .copy-select option { background: var(--surface); }
+  .btn-copy {
+    padding: 8px 18px;
+    border: 1px solid #5fc9aa;
+    background: transparent;
+    color: #5fc9aa;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-copy:hover { background: rgba(95,201,170,0.08); }
+  .btn-copy.copied { border-color: #44cc88; color: #44cc88; }
+  .copy-textarea {
+    width: 100%;
+    height: 220px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: #5fc9aa;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    padding: 10px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.6;
+    tab-size: 4;
+  }
+  .copy-textarea:focus { border-color: rgba(95,201,170,0.35); }
+  .copy-info {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .sort-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #5fc9aa;
+    background: rgba(95,201,170,0.06);
+    border: 1px solid rgba(95,201,170,0.2);
+    border-radius: 10px;
+    padding: 3px 8px;
+  }
+
+  /* ── SORT CONTROLS ── */
+  .sort-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: rgba(139,21,186,0.03);
+    border: 1px solid rgba(139,21,186,0.1);
+    border-radius: 10px;
+  }
+  .sort-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+  .sort-btn {
+    padding: 4px 11px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+  }
+  .sort-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 80%; height: 2px;
+    background: var(--accent);
+    transition: transform 0.15s;
+  }
+  .sort-btn:hover { border-color: var(--accent); color: var(--text); background: rgba(139,21,186,0.06); }
+  .sort-btn:hover::after { transform: translateX(-50%) scaleX(1); }
+  .sort-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(139,21,186,0.06);
+  }
+  .sort-btn.active::after { transform: translateX(-50%) scaleX(1); }
+  .sort-btn.manual-active {
+    border-color: #5fc9aa;
+    color: #5fc9aa;
+    background: rgba(95,201,170,0.06);
+  }
+  .sort-sep {
+    width: 1px; height: 18px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  /* chip drag-and-drop */
+  .file-chip {
+    transition: all 0.12s, opacity 0.15s, transform 0.15s;
+  }
+  .file-chip.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+    border-color: var(--accent) !important;
+  }
+  .file-chip.drag-over-chip {
+    border-color: #5fc9aa !important;
+    box-shadow: 0 0 10px rgba(95,201,170,0.2);
+  }
+  .chip-drag-handle {
+    color: var(--muted);
+    font-size: 0.75rem;
+    cursor: grab;
+    padding: 0 2px;
+    opacity: 0.5;
+    transition: opacity 0.12s;
+    user-select: none;
+  }
+  .chip-drag-handle:hover { opacity: 1; color: #5fc9aa; }
+  .manual-hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #5fc9aa;
+    letter-spacing: 1px;
+    opacity: 0.7;
+    margin-left: 4px;
+  }
+
+  /* ── RECENT FILES PANEL ── */
+  .recent-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+  }
+  .recent-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .recent-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .recent-clear {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid rgba(85,85,85,0.35);
+    border-radius: 10px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .recent-clear:hover { color: #e85b5b; border-color: rgba(232,91,91,0.4); background: rgba(232,91,91,0.04); }
+  .recent-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .recent-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(139,21,186,0.18);
+    background: rgba(139,21,186,0.04);
+    font-size: 11px;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: all 0.14s;
+    max-width: 240px;
+  }
+  .recent-chip:hover {
+    border-color: var(--accent);
+    background: rgba(139,21,186,0.1);
+  }
+  .recent-chip .rc-icon { font-size: 0.75rem; opacity: 0.7; flex-shrink:0; }
+  .recent-chip .rc-name {
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .recent-chip .rc-date {
+    color: var(--muted);
+    font-size: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .recent-chip .rc-remove {
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0 2px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    transition: color 0.1s;
+  }
+  .recent-chip .rc-remove:hover { color: #e85b5b; }
+  .recent-empty {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.5;
+    letter-spacing: 1px;
+  }
+  .recent-restore-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #5fc9aa;
+    background: rgba(95,201,170,0.06);
+    border: 1px solid rgba(95,201,170,0.2);
+    border-radius: 10px;
+    padding: 2px 7px;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(-3px); } to { opacity:1; transform: translateY(0); } }
+
+html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<div class="container">
+  <header>
+    <div class="title-block">
+      <div class="logo-icon">
+        <span class="logo-r"></span>
+        <span class="logo-g"></span>
+        <span class="logo-b"></span>
+        <span class="logo-w"></span>
+      </div>
+      <div>
+        <h1>Spectral Analyzer</h1>
+        <div class="subtitle">GL SpectroSoft 4.0 · Spectis 4.0 · I00184515 · mW/m²/nm</div>
+      </div>
+    </div>
+    <div class="datetime-block">
+      <div class="date-label">Data pomiaru</div>
+      <div class="date-val" id="meas-date">—</div>
+      <div class="time-val" id="meas-time">—</div>
+    </div>
+  </header>
+
+  <!-- Tab navigation -->
+  <nav class="tab-nav">
+    <button class="tab-pill active" onclick="switchTab('single')">▸ Pojedynczy plik</button>
+    <button class="tab-pill" onclick="switchTab('multi')">▸ Wiele plików</button>
+    <button class="tab-pill" onclick="switchTab('mmg')">▸ Pliki MMG</button>
+    <button class="tab-pill" onclick="switchTab('mmggroup')">▸ MMG grupowy</button>
+  </nav>
+
+  <!-- TAB: Single file -->
+  <div class="tab-panel active" id="tab-single">
+  <div class="main-grid">
+
+    <!-- Chart -->
+    <div class="chart-panel">
+      <div class="panel-label">▸ Rozkład widmowy · 380 – 760 nm</div>
+      <canvas id="chart" height="460"></canvas>
+    </div>
+
+    <!-- Right column -->
+    <div class="right-col">
+
+      <!-- RGB -->
+      <div class="rgb-panel">
+        <div class="panel-label">▸ Obliczone RGB (CIE 1931)</div>
+        <div class="rgb-swatch" id="swatch"></div>
+        <div class="rgb-values">
+          <div class="rgb-channel ch-r">
+            <div class="ch-label">RED</div>
+            <div class="ch-val" id="rv">—</div>
+          </div>
+          <div class="rgb-channel ch-g">
+            <div class="ch-label">GREEN</div>
+            <div class="ch-val" id="gv">—</div>
+          </div>
+          <div class="rgb-channel ch-b">
+            <div class="ch-label">BLUE</div>
+            <div class="ch-val" id="bv">—</div>
+          </div>
+        </div>
+        <div class="hex-val" id="hexval">#------</div>
+        <div class="cie-row">
+          <span class="cie-label">CIE x</span><span class="cie-val" id="cie-x">—</span>
+          <span class="cie-sep">&nbsp;</span>
+          <span class="cie-label">y</span><span class="cie-val" id="cie-y">—</span>
+          <span class="cie-sep">&nbsp;</span>
+          <span class="cie-label">Y</span><span class="cie-val" id="cie-Y">—</span>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics-panel">
+        <div class="panel-label">▸ Dane pomiarowe</div>
+        <div class="metric-row">
+          <span class="metric-key">Urządzenie</span>
+          <span class="metric-val">Spectis 4.0</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">S/N</span>
+          <span class="metric-val">I00184515</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">Jednostka</span>
+          <span class="metric-val">mW/m²/nm</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">Integracja [µs]</span>
+          <span class="metric-val highlight" id="m-integ">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">λ maks.</span>
+          <span class="metric-val highlight" id="m-peakwl">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">Maks. wartość</span>
+          <span class="metric-val highlight" id="m-peakval">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">Temp. czujnika</span>
+          <span class="metric-val" id="m-temp">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">Poziom sygnału</span>
+          <span class="metric-val accent" id="m-sig">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">Kalibracja</span>
+          <span class="metric-val" id="m-cal">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">Smoothing</span>
+          <span class="metric-val">1</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-key">Wzmocnienie</span>
+          <span class="metric-val">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Raw data -->
+    <div class="data-panel">
+      <div class="panel-label">▸ Dane surowe · plik tekstowy</div>
+      <div class="file-input-area">
+        <label class="btn" for="fileInput">📂 Wczytaj plik</label>
+        <input type="file" id="fileInput" accept=".txt,.csv,.spe,.spd">
+        <span class="file-name" id="fname">lub wklej dane poniżej</span>
+      </div>
+      <!-- Recent single files -->
+      <div class="recent-panel" id="recentSinglePanel">
+        <div class="recent-header">
+          <span class="recent-title">▸ Ostatnio otwarte</span>
+          <button class="recent-clear" onclick="clearRecentSingle()">✕ Wyczyść historię</button>
+        </div>
+        <div class="recent-list" id="recentSingleList"></div>
+      </div>
+      <textarea id="rawdata" placeholder="Wklej lub wczytaj plik *.txt z danymi widmowymi GL SpectroSoft..."></textarea>
+      <div class="status-bar" id="status">Gotowy · wczytaj plik lub wklej dane, a wykres zaktualizuje się automatycznie</div>
+    </div>
+
+  </div>
+  </div><!-- /tab-single -->
+
+  <!-- TAB: Multi-file overlay -->
+  <div class="tab-panel" id="tab-multi">
+
+    <!-- Recent multi files -->
+    <div class="recent-panel" id="recentMultiPanel">
+      <div class="recent-header">
+        <span class="recent-title">▸ Ostatnio otwarte pliki (multi)</span>
+        <button class="recent-clear" onclick="clearRecentMulti()">✕ Wyczyść historię</button>
+      </div>
+      <div class="recent-list" id="recentMultiList"></div>
+    </div>
+
+    <!-- Drop zone + file chips -->
+    <div class="multi-drop-zone" id="multiDropZone" onclick="document.getElementById('multiFileInput').click()">
+      <span class="drop-icon">📂</span>
+      <div class="drop-label">Przeciągnij pliki lub kliknij aby wczytać</div>
+      <div class="drop-hint">Max 16 plików · .txt .csv .spe .spd</div>
+    </div>
+    <input type="file" id="multiFileInput" accept=".txt,.csv,.spe,.spd" multiple style="display:none">
+
+    <!-- Sort controls -->
+    <div class="sort-controls" id="sortControls" style="display:none">
+      <span class="sort-label">Sortuj:</span>
+      <button class="sort-btn active" id="sortBtnDateDesc" onclick="applySortMode('date-desc')">⬇ Data (najnowsze)</button>
+      <button class="sort-btn" id="sortBtnDateAsc" onclick="applySortMode('date-asc')">⬆ Data (najstarsze)</button>
+      <div class="sort-sep"></div>
+      <button class="sort-btn" id="sortBtnNameAsc" onclick="applySortMode('name-asc')">A→Z Nazwa</button>
+      <button class="sort-btn" id="sortBtnNameDesc" onclick="applySortMode('name-desc')">Z→A Nazwa</button>
+      <div class="sort-sep"></div>
+      <button class="sort-btn" id="sortBtnManual" onclick="applySortMode('manual')">☰ Ręcznie</button>
+      <span class="manual-hint" id="manualHint" style="display:none">↕ przeciągnij chipy</span>
+      <div class="sort-sep"></div>
+      <span class="sort-label" id="fileCountLabel" style="color:#5fc9aa"></span>
+      <button class="sort-btn" id="clearAllBtn" onclick="multiClearAll()" style="border-color:rgba(232,91,91,0.45);color:#e85b5b;" onmouseover="this.style.background='rgba(232,91,91,0.08)';this.style.borderColor='#e85b5b'" onmouseout="this.style.background='';this.style.borderColor='rgba(232,91,91,0.45)'">✕ Wyczyść</button>
+    </div>
+
+    <div class="file-chips" id="fileChips"></div>
+
+    <!-- Overlay chart -->
+    <div class="multi-chart-panel">
+      <div class="multi-chart-header">
+        <div class="panel-label" style="margin-bottom:0">▸ Nałożone rozkłady widmowe · 380 – 760 nm</div>
+        <label class="norm-toggle">
+          <input type="checkbox" id="normalizeChk"> Normalizuj do 1
+        </label>
+      </div>
+      <div id="multiEmpty" class="multi-empty">
+        <span class="empty-icon">📈</span>
+        Wczytaj co najmniej 1 plik aby wyświetlić wykres
+      </div>
+      <canvas id="multiChart" style="display:none;width:100%;"></canvas>
+      <div class="multi-legend" id="multiLegend"></div>
+    </div>
+
+    <!-- Copy panel -->
+    <div class="copy-panel" id="copyPanel" style="display:none">
+      <div class="copy-panel-header">
+        <div class="panel-label" style="margin-bottom:0">▸ Kopiuj dane CIE xyY · format tabelaryczny</div>
+        <div class="copy-controls">
+          <span class="sort-badge" id="sortBadge">⬇ data (najnowsze)</span>
+          <select class="copy-select" id="channelGrouping">
+            <option value="auto">Kanały auto (z nazwy pliku)</option>
+            <option value="single">Jeden blok (wszystkie pliki)</option>
+            <option value="R">Tylko Kanał R</option>
+            <option value="G">Tylko Kanał G</option>
+            <option value="B">Tylko Kanał B</option>
+            <option value="W">Tylko Kanał W</option>
+          </select>
+          <select class="copy-select" id="luminanceMode">
+            <option value="Y_rel">L = Y względne (0–1)</option>
+            <option value="Y_raw">L = Y surowe (całka SPD)</option>
+            <option value="integ">L = czas integracji [µs]</option>
+          </select>
+          <button class="btn-copy" id="btnCopy" onclick="copyTableData()">📋 Kopiuj</button>
+        </div>
+      </div>
+      <textarea class="copy-textarea" id="copyOutput" readonly placeholder="Wczytaj pliki aby wygenerować dane..."></textarea>
+      <div class="copy-info" id="copyInfo"></div>
+    </div>
+
+    <!-- Summary table -->
+    <div class="multi-table-panel" id="multiTablePanel" style="display:none">
+      <div class="panel-label">▸ Zestawienie pomiarów</div>
+      <table class="mtable">
+        <thead>
+          <tr>
+            <th>Plik</th>
+            <th>Data/godzina</th>
+            <th>λ maks.</th>
+            <th>Maks. wartość</th>
+            <th>RGB</th>
+            <th>HEX</th>
+            <th>Integracja</th>
+            <th>Temp. czujnika</th>
+          </tr>
+        </thead>
+        <tbody id="multiTableBody"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /tab-multi -->
+
+  <!-- TAB: MMG files -->
+  <div class="tab-panel" id="tab-mmg">
+
+    <!-- Recent MMG files -->
+    <div class="recent-panel" id="recentMmgPanel">
+      <div class="recent-header">
+        <span class="recent-title">▸ Ostatnio otwarte pliki (MMG)</span>
+        <button class="recent-clear" onclick="clearRecentMmg()">✕ Wyczyść historię</button>
+      </div>
+      <div class="recent-list" id="recentMmgList"></div>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="multi-drop-zone" id="mmgDropZone" onclick="document.getElementById('mmgFileInput').click()">
+      <span class="drop-icon">📊</span>
+      <div class="drop-label">Przeciągnij pliki .mmg lub kliknij aby wczytać</div>
+      <div class="drop-hint">Max 16 plików · .mmg (GL SpectroSoft)</div>
+    </div>
+    <input type="file" id="mmgFileInput" accept=".mmg" multiple style="display:none">
+
+    <!-- Sort controls -->
+    <div class="sort-controls" id="mmgSortControls" style="display:none">
+      <span class="sort-label">Sortuj:</span>
+      <button class="sort-btn active" id="mmgSortBtnDateDesc" onclick="mmgApplySortMode('date-desc')">⬇ Data (najnowsze)</button>
+      <button class="sort-btn" id="mmgSortBtnDateAsc"  onclick="mmgApplySortMode('date-asc')">⬆ Data (najstarsze)</button>
+      <div class="sort-sep"></div>
+      <button class="sort-btn" id="mmgSortBtnNameAsc"  onclick="mmgApplySortMode('name-asc')">A→Z Nazwa</button>
+      <button class="sort-btn" id="mmgSortBtnNameDesc" onclick="mmgApplySortMode('name-desc')">Z→A Nazwa</button>
+      <div class="sort-sep"></div>
+      <button class="sort-btn" id="mmgSortBtnManual"   onclick="mmgApplySortMode('manual')">☰ Ręcznie</button>
+      <span class="manual-hint" id="mmgManualHint" style="display:none">↕ przeciągnij chipy</span>
+      <div class="sort-sep"></div>
+      <span class="sort-label" id="mmgFileCountLabel" style="color:#5fc9aa"></span>
+      <button class="sort-btn" onclick="mmgClearAll()" style="border-color:rgba(232,91,91,0.45);color:#e85b5b;" onmouseover="this.style.background='rgba(232,91,91,0.08)';this.style.borderColor='#e85b5b'" onmouseout="this.style.background='';this.style.borderColor='rgba(232,91,91,0.45)'">✕ Wyczyść</button>
+    </div>
+
+    <div class="file-chips" id="mmgFileChips"></div>
+
+    <!-- Copy panel MMG -->
+    <div class="copy-panel" id="mmgCopyPanel" style="display:none">
+      <div class="copy-panel-header">
+        <div class="panel-label" style="margin-bottom:0">▸ Kopiuj dane CIE xyY · format tabelaryczny</div>
+        <div class="copy-controls">
+          <span class="sort-badge" id="mmgSortBadge">⬇ data (najnowsze)</span>
+          <select class="copy-select" id="mmgChannelGrouping">
+            <option value="auto">Kanały auto (z nazwy pliku)</option>
+            <option value="single">Jeden blok (wszystkie pliki)</option>
+            <option value="R">Tylko Kanał R</option>
+            <option value="G">Tylko Kanał G</option>
+            <option value="B">Tylko Kanał B</option>
+            <option value="W">Tylko Kanał W</option>
+          </select>
+          <button class="btn-copy" id="mmgBtnCopy" onclick="mmgCopyTableData()">📋 Kopiuj</button>
+        </div>
+      </div>
+      <textarea class="copy-textarea" id="mmgCopyOutput" readonly placeholder="Wczytaj pliki .mmg aby wygenerować dane..."></textarea>
+      <div class="copy-info" id="mmgCopyInfo"></div>
+    </div>
+
+    <!-- Summary table MMG -->
+    <div class="multi-table-panel" id="mmgTablePanel" style="display:none">
+      <div class="panel-label">▸ Zestawienie pomiarów MMG</div>
+      <table class="mtable">
+        <thead>
+          <tr>
+            <th>Plik</th>
+            <th>Data/godzina</th>
+            <th>x (2°)</th>
+            <th>y (2°)</th>
+            <th>Y (2°) [cd/m²]</th>
+            <th>CCT [K]</th>
+            <th>Ra</th>
+            <th>λ dom.</th>
+            <th>λ szczyt.</th>
+            <th>Duv</th>
+            <th>Integracja [µs]</th>
+            <th>Temp. czujnika</th>
+          </tr>
+        </thead>
+        <tbody id="mmgTableBody"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /tab-mmg -->
+
+  <!-- TAB: MMG grupowy (jeden plik z wieloma pomiarami) -->
+  <div class="tab-panel" id="tab-mmggroup">
+
+    <!-- Drop zone -->
+    <div class="multi-drop-zone" id="mmgGroupDropZone" onclick="document.getElementById('mmgGroupFileInput').click()">
+      <span class="drop-icon">📦</span>
+      <div class="drop-label">Przeciągnij plik .mmg lub kliknij aby wczytać</div>
+      <div class="drop-hint">Jeden plik z 8 lub 16 pomiarami · .mmg (GL SpectroSoft)</div>
+    </div>
+    <input type="file" id="mmgGroupFileInput" accept=".mmg" style="display:none">
+
+    <!-- Info bar -->
+    <div id="mmgGroupInfoBar" style="display:none;padding:6px 14px;font-family:var(--mono);font-size:0.7rem;color:var(--muted);display:none;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span id="mmgGroupFileName" style="color:var(--text)"></span>
+      <span id="mmgGroupCount" style="color:#5fc9aa"></span>
+      <button class="sort-btn" onclick="mmgGroupClear()" style="border-color:rgba(232,91,91,0.45);color:#e85b5b;" onmouseover="this.style.background='rgba(232,91,91,0.08)'" onmouseout="this.style.background=''">✕ Wyczyść</button>
+    </div>
+
+    <!-- Sort controls -->
+    <div class="sort-controls" id="mmgGroupSortControls" style="display:none">
+      <span class="sort-label">Sortuj:</span>
+      <button class="sort-btn active" id="mmgGrpBtnDateDesc" onclick="mmgGroupApplySort('date-desc')">⬇ Data (najnowsze)</button>
+      <button class="sort-btn" id="mmgGrpBtnDateAsc"  onclick="mmgGroupApplySort('date-asc')">⬆ Data (najstarsze)</button>
+      <div class="sort-sep"></div>
+      <button class="sort-btn" id="mmgGrpBtnIdxAsc"  onclick="mmgGroupApplySort('idx-asc')">1→N kolejność</button>
+      <button class="sort-btn" id="mmgGrpBtnIdxDesc" onclick="mmgGroupApplySort('idx-desc')">N→1 kolejność</button>
+    </div>
+
+    <!-- Copy panel -->
+    <div class="copy-panel" id="mmgGroupCopyPanel" style="display:none">
+      <div class="copy-panel-header">
+        <div class="panel-label" style="margin-bottom:0">▸ Kopiuj dane CIE xyY · format tabelaryczny</div>
+        <div class="copy-controls">
+          <button class="btn-copy" id="mmgGroupBtnCopy" onclick="mmgGroupCopyData()">📋 Kopiuj</button>
+        </div>
+      </div>
+      <textarea class="copy-textarea" id="mmgGroupCopyOutput" readonly placeholder="Wczytaj plik .mmg aby wygenerować dane..."></textarea>
+      <div class="copy-info" id="mmgGroupCopyInfo"></div>
+    </div>
+
+    <!-- Summary table -->
+    <div class="multi-table-panel" id="mmgGroupTablePanel" style="display:none">
+      <div class="panel-label">▸ Zestawienie pomiarów z pliku grupowego</div>
+      <table class="mtable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nazwa pomiaru</th>
+            <th>Data/godzina</th>
+            <th>x (2°)</th>
+            <th>y (2°)</th>
+            <th>Y (2°) [cd/m²]</th>
+            <th>CCT [K]</th>
+            <th>Ra</th>
+            <th>Duv</th>
+            <th>Integracja [µs]</th>
+            <th>Temp. czujnika [°C]</th>
+          </tr>
+        </thead>
+        <tbody id="mmgGroupTableBody"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /tab-mmggroup -->
+
+</div>
+
+<script>
+// ─── Embedded default data (BCentrum.txt) ────────────────────────────────────
+const DEFAULT_DATA = `;GL_SpectroSoft\t4.0.16-M
+;Name\t2026-04-28T12:23:25
+;unit1\tmW/m^2/nm
+;unit2\tlx
+;interpolation\tTR
+;status\tapi_version\t0.0.24
+;status\tauto_integration\t1
+;status\tcalibration_date\t2023-07-26T09:00:00
+;status\tintegration_time\t10000
+;status\tmeasurement_date\t2026-04-28T12:23:25
+;status\tmeasurement_maximum\t32731.9
+;status\tmeasurement_maximum_wavelength\t444.672
+;status\tsensor_temperature\t20.9122
+;status\tsignal_level\t60.9687
+;status\tdevice_model_details\tSpectis 4.0: I00184515
+;Wavelength [nm]\tValue [mW/m²/nm]
+379,997\t0,0200024
+380,465\t0,0200024
+380,933\t0,0200024
+381,4\t0,0291674
+381,868\t0,0109583
+382,336\t-0,00966372
+382,804\t-0,0109764
+383,273\t-0,0109764
+383,741\t-0,00317036
+384,209\t0,0148755
+384,677\t0,00812387
+385,146\t0,00812387
+385,614\t0,00594613
+386,083\t0,00594613
+386,551\t0,00594613
+387,02\t-0,00350146
+387,489\t-0,0204879
+387,957\t-0,0204879
+388,426\t-0,00751193
+388,895\t-0,00751193
+389,364\t0,0142941
+389,833\t-0,0055329
+390,302\t0,0142941
+390,772\t-0,0055329
+391,241\t0,0150758
+391,71\t0,0150758
+392,179\t0,0150758
+392,649\t-0,0149548
+393,118\t-0,0149548
+393,588\t0,00652061
+394,058\t0,00652061
+394,527\t-0,0077645
+394,997\t-0,0077645
+395,467\t-0,00925723
+395,937\t0,00218866
+396,407\t-0,00925723
+396,877\t0,00218866
+397,347\t-0,0148045
+397,817\t-0,015141
+398,287\t-0,015141
+398,758\t-0,015141
+399,228\t-0,0140844
+399,698\t-0,0140844
+400,169\t-0,00885626
+400,639\t0,0176693
+401,11\t0,00551917
+401,581\t0,0127422
+402,051\t0,00551917
+402,522\t0,0127422
+402,993\t0,0120292
+403,464\t0,0120292
+403,935\t-0,000428348
+404,406\t-0,000428348
+404,877\t0,00980718
+405,348\t0,0124584
+405,819\t0,0124584
+406,291\t0,00387345
+406,762\t-0,00589359
+407,234\t-0,00731327
+407,705\t-0,00589359
+408,177\t-0,00163065
+408,648\t-0,00127669
+409,12\t0,0301887
+409,592\t0,0301887
+410,064\t0,0145275
+410,535\t0,0145275
+411,007\t0,0222854
+411,479\t0,0237828
+411,951\t0,032521
+412,424\t0,032521
+412,896\t0,0270255
+413,368\t0,0230095
+413,84\t0,0230095
+414,313\t0,0230095
+414,785\t0,0381645
+415,258\t0,0382178
+415,73\t0,0385156
+416,203\t0,0382178
+416,675\t0,052469
+417,148\t0,0439632
+417,621\t0,0655472
+418,094\t0,0460008
+418,567\t0,0615571
+419,04\t0,0615571
+419,513\t0,0824773
+419,986\t0,094907
+420,459\t0,125618
+420,932\t0,142701
+421,406\t0,142701
+421,879\t0,142701
+422,353\t0,180867
+422,826\t0,203459
+423,3\t0,227149
+423,773\t0,227149
+424,247\t0,227999
+424,721\t0,277003
+425,194\t0,323021
+425,668\t0,33745
+426,142\t0,378641
+426,616\t0,410751
+427,09\t0,447073
+427,564\t0,496957
+428,038\t0,518606
+428,513\t0,56326
+428,987\t0,62955
+429,461\t0,688898
+429,936\t0,748707
+430,41\t0,774449
+430,885\t0,853333
+431,359\t0,952339
+431,834\t1,03894
+432,309\t1,12802
+432,783\t1,21618
+433,258\t1,29877
+433,733\t1,40847
+434,208\t1,52671
+434,683\t1,66959
+435,158\t1,77878
+435,633\t1,90501
+436,108\t2,07287
+436,584\t2,21608
+437,059\t2,38165
+437,534\t2,55894
+438,01\t2,70926
+438,485\t2,89704
+438,961\t3,06106
+439,436\t3,24318
+439,912\t3,38121
+440,388\t3,60529
+440,864\t3,72648
+441,339\t3,85638
+441,815\t3,99481
+442,291\t4,09171
+442,767\t4,14216
+443,243\t4,24225
+443,719\t4,24225
+444,196\t4,24981
+444,672\t4,23867
+445,148\t4,20861
+445,624\t4,15138
+446,101\t4,09065
+446,577\t3,93393
+447,054\t3,78773
+447,531\t3,71669
+448,007\t3,53455
+448,484\t3,4312
+448,961\t3,2478
+449,437\t3,08555
+449,914\t2,96046
+450,391\t2,79764
+450,868\t2,69983
+451,345\t2,57793
+451,822\t2,5027
+452,3\t2,40085
+452,777\t2,28906
+453,254\t2,20487
+453,731\t2,09564
+454,209\t2,05077
+454,686\t2,00062
+455,164\t1,93772
+455,641\t1,86981
+456,119\t1,83443
+456,597\t1,72609
+457,074\t1,69595
+457,552\t1,64884
+458,03\t1,60226
+458,508\t1,49992
+458,986\t1,4626
+459,464\t1,38435
+459,942\t1,36895
+460,42\t1,30602
+460,898\t1,21547
+461,377\t1,18432
+461,855\t1,13389
+462,333\t1,0796
+462,812\t1,01322
+463,29\t0,958308
+463,769\t0,920781
+464,247\t0,87213
+464,726\t0,812831
+465,205\t0,762417
+465,683\t0,727912
+466,162\t0,711432
+466,641\t0,687294
+467,12\t0,642602
+467,599\t0,614883
+468,078\t0,5753
+468,557\t0,566365
+469,036\t0,539886
+469,515\t0,51457
+469,995\t0,498343
+470,474\t0,487212
+470,953\t0,45251
+471,433\t0,450287
+471,912\t0,450287
+472,392\t0,418711
+472,871\t0,405713
+473,351\t0,378134
+473,831\t0,376482
+474,31\t0,376482
+474,79\t0,350028
+475,27\t0,324323
+475,75\t0,324323
+476,23\t0,33018
+476,71\t0,33018
+477,19\t0,299487
+477,67\t0,287544
+478,15\t0,277215
+478,631\t0,262222
+479,111\t0,25916
+479,591\t0,258436
+480,072\t0,258436
+480,552\t0,257516
+481,033\t0,235798
+481,513\t0,226809
+481,994\t0,227384
+482,474\t0,227384
+482,955\t0,227384
+483,436\t0,223618
+483,917\t0,216402
+484,398\t0,214399
+484,878\t0,203104
+485,359\t0,203104
+485,84\t0,22214
+486,322\t0,22214
+486,803\t0,219657
+487,284\t0,212625
+487,765\t0,210225
+488,246\t0,210225
+488,728\t0,204657
+489,209\t0,214992
+489,691\t0,224941
+490,172\t0,224941
+490,654\t0,224941
+491,135\t0,219433
+491,617\t0,22904
+492,099\t0,222042
+492,58\t0,22904
+493,062\t0,228031
+493,544\t0,248064
+494,026\t0,253761
+494,508\t0,253761
+494,99\t0,253371
+495,472\t0,244842
+495,954\t0,243991
+496,436\t0,243991
+496,919\t0,271359
+497,401\t0,271359
+497,883\t0,272463
+498,366\t0,262295
+498,848\t0,268418
+499,331\t0,268418
+499,813\t0,269346
+500,296\t0,277763
+500,778\t0,269346
+501,261\t0,276397
+501,744\t0,276397
+502,226\t0,276498
+502,709\t0,278331
+503,192\t0,278331
+503,675\t0,286453
+504,158\t0,27634
+504,641\t0,286641
+505,124\t0,277545
+505,607\t0,281693
+506,091\t0,280155
+506,574\t0,280155
+507,057\t0,280155
+507,54\t0,278826
+508,024\t0,281249
+508,507\t0,272183
+508,991\t0,272183
+509,474\t0,272183
+509,958\t0,26521
+510,442\t0,26671
+510,925\t0,26278
+511,409\t0,26671
+511,893\t0,260617
+512,377\t0,260617
+512,86\t0,260617
+513,344\t0,247157
+513,828\t0,234723
+514,312\t0,234723
+514,796\t0,239402
+515,281\t0,239402
+515,765\t0,232928
+516,249\t0,225077
+516,733\t0,231522
+517,218\t0,221719
+517,702\t0,209015
+518,186\t0,207285
+518,671\t0,209015
+519,155\t0,204417
+519,64\t0,203854
+520,125\t0,203301
+520,609\t0,192428
+521,094\t0,192428
+521,579\t0,200501
+522,063\t0,200501
+522,548\t0,180282
+523,033\t0,180282
+523,518\t0,178431
+524,003\t0,173082
+524,488\t0,167625
+524,973\t0,161333
+525,458\t0,154484
+525,944\t0,154484
+526,429\t0,161072
+526,914\t0,161072
+527,399\t0,159416
+527,885\t0,158075
+528,37\t0,153211
+528,856\t0,14097
+529,341\t0,133222
+529,827\t0,135212
+530,312\t0,135212
+530,798\t0,141163
+531,284\t0,141163
+531,769\t0,125456
+532,255\t0,125456
+532,741\t0,126799
+533,227\t0,126799
+533,713\t0,126799
+534,199\t0,115625
+534,685\t0,110494
+535,171\t0,110494
+535,657\t0,110762
+536,143\t0,110762
+536,629\t0,102995
+537,116\t0,0993314
+537,602\t0,102995
+538,088\t0,107225
+538,575\t0,107225
+539,061\t0,106336
+539,548\t0,0966615
+540,034\t0,0915268
+540,521\t0,0779598
+541,007\t0,0722078
+541,494\t0,0683394
+541,981\t0,0722078
+542,467\t0,0757123
+542,954\t0,0757123
+543,441\t0,0645098
+543,928\t0,0640833
+544,415\t0,0640833
+544,902\t0,0553723
+545,389\t0,0553723
+545,876\t0,0524444
+546,363\t0,057809
+546,85\t0,057809
+547,337\t0,057809
+547,825\t0,0538047
+548,312\t0,0406353
+548,799\t0,0372061
+549,286\t0,0379971
+549,774\t0,0379971
+550,261\t0,0450931
+550,749\t0,0475406
+551,236\t0,0514237
+551,724\t0,0592032
+552,212\t0,0592032
+552,699\t0,0380036
+553,187\t0,0330103
+553,675\t0,0330103
+554,163\t0,0348291
+554,65\t0,0348291
+555,138\t0,0336859
+555,626\t0,0230293
+556,114\t0,0230293
+556,602\t0,0317878
+557,09\t0,0317878
+557,578\t0,0294545
+558,066\t0,0294545
+558,555\t0,0374511
+559,043\t0,0374511
+559,531\t0,0338629
+560,019\t0,0337746
+560,508\t0,0212384
+560,996\t0,0336354
+561,485\t0,0281049
+561,973\t0,0281049
+562,462\t0,0266925
+562,95\t0,0110868
+563,439\t0,0204131
+563,927\t0,0204131
+564,416\t0,024806
+564,905\t0,032682
+565,394\t0,0263202
+565,882\t0,032682
+566,371\t0,0263202
+566,86\t0,0219698
+567,349\t0,0103624
+567,838\t0,0148122
+568,327\t0,00740268
+568,816\t0,00740268
+569,305\t0,00740268
+569,794\t0,0204215
+570,284\t0,0393205
+570,773\t0,0393205
+571,262\t0,0270058
+571,751\t0,0255468
+572,241\t0,0171996
+572,73\t0,0128367
+573,219\t0,00975367
+573,709\t0,0128367
+574,198\t0,00632871
+574,688\t0,0210594
+575,178\t0,0210594
+575,667\t0,0264752
+576,157\t0,0364516
+576,646\t0,0314094
+577,136\t0,0314094
+577,626\t0,00943983
+578,116\t0,00943983
+578,606\t0,0300373
+579,096\t0,0364733
+579,586\t0,0364733
+580,075\t0,0281078
+580,566\t0,0218724
+581,056\t0,0170686
+581,546\t0,0170686
+582,036\t0,020647
+582,526\t0,0214475
+583,016\t0,020647
+583,506\t0,0214475
+583,997\t0,0172741
+584,487\t0,0142857
+584,977\t0,0142857
+585,468\t0,0224355
+585,958\t0,0224355
+586,449\t0,0209776
+586,939\t0,0190179
+587,43\t0,00685442
+587,92\t0,00685442
+588,411\t0,0296199
+588,902\t0,0296199
+589,392\t0,0286709
+589,883\t0,027192
+590,374\t0,027192
+590,865\t0,0262916
+591,356\t0,0269073
+591,846\t0,02548
+592,337\t0,0269073
+592,828\t0,0292951
+593,319\t0,0342566
+593,81\t0,0342566
+594,301\t0,0352609
+594,793\t0,0352609
+595,284\t0,0289696
+595,775\t0,02441
+596,266\t0,0233629
+596,757\t0,0139022
+597,249\t0,0233629
+597,74\t0,0291967
+598,231\t0,0291967
+598,723\t0,0280763
+599,214\t0,0280763
+599,706\t0,0312449
+600,197\t0,03479
+600,689\t0,03479
+601,18\t0,03479
+601,672\t0,0322602
+602,164\t0,0322602
+602,655\t0,0381866
+603,147\t0,0381866
+603,639\t0,0250251
+604,131\t0,0250251
+604,622\t0,0433025
+605,114\t0,0433025
+605,606\t0,0370697
+606,098\t0,0370697
+606,59\t0,037868
+607,082\t0,037868
+607,574\t0,037458
+608,066\t0,037458
+608,558\t0,037458
+609,05\t0,0350494
+609,543\t0,0350494
+610,035\t0,0350494
+610,527\t0,0335662
+611,019\t0,0335662
+611,512\t0,0365959
+612,004\t0,0405932
+612,496\t0,0365959
+612,989\t0,0294276
+613,481\t0,0294276
+613,974\t0,0341187
+614,466\t0,0360295
+614,959\t0,0414366
+615,451\t0,0467737
+615,944\t0,0484064
+616,437\t0,0484064
+616,929\t0,0434599
+617,422\t0,0373337
+617,915\t0,0373221
+618,408\t0,0324786
+618,9\t0,0347478
+619,393\t0,0347478
+619,886\t0,0347478
+620,379\t0,0279245
+620,872\t0,0279245
+621,365\t0,0336254
+621,858\t0,0336254
+622,351\t0,0336254
+622,844\t0,0402797
+623,337\t0,0479855
+623,83\t0,0479855
+624,324\t0,0332483
+624,817\t0,0286163
+625,31\t0,0286163
+625,803\t0,039667
+626,297\t0,039667
+626,79\t0,0247296
+627,283\t0,0247296
+627,777\t0,0325988
+628,27\t0,037105
+628,764\t0,0414557
+629,257\t0,037105
+629,751\t0,0377656
+630,244\t0,0377656
+630,738\t0,0377656
+631,231\t0,0395796
+631,725\t0,0395796
+632,219\t0,0395796
+632,712\t0,0412154
+633,206\t0,0384085
+633,7\t0,0337333
+634,194\t0,0325972
+634,688\t0,0337333
+635,181\t0,0380789
+635,675\t0,0380789
+636,169\t0,0412001
+636,663\t0,0374858
+637,157\t0,0366843
+637,651\t0,0332212
+638,145\t0,0366843
+638,639\t0,0332212
+639,133\t0,0297491
+639,628\t0,0297491
+640,122\t0,0372647
+640,616\t0,0372647
+641,11\t0,0318878
+641,604\t0,0318878
+642,099\t0,032435
+642,593\t0,0415651
+643,087\t0,0415651
+643,582\t0,0348809
+644,076\t0,0348809
+644,57\t0,0367825
+645,065\t0,0391159
+645,559\t0,0444936
+646,054\t0,0444936
+646,548\t0,0367071
+647,043\t0,028808
+647,538\t0,028808
+648,032\t0,0300499
+648,527\t0,0315001
+649,022\t0,0300499
+649,516\t0,0325728
+650,011\t0,0355455
+650,506\t0,037409
+651,001\t0,037409
+651,495\t0,0354222
+651,99\t0,0354222
+652,485\t0,0356878
+652,98\t0,0356878
+653,475\t0,0376887
+653,97\t0,0360187
+654,465\t0,0365954
+654,96\t0,0365954
+655,455\t0,0365954
+655,95\t0,0284276
+656,445\t0,0284276
+656,94\t0,0364702
+657,435\t0,0364702
+657,93\t0,0288044
+658,426\t0,0184047
+658,921\t0,0288044
+659,416\t0,0320111
+659,911\t0,0320111
+660,407\t0,0291492
+660,902\t0,0291492
+661,397\t0,0314131
+661,893\t0,0361351
+662,388\t0,0361351
+662,883\t0,0361351
+663,379\t0,0180644
+663,874\t0,0377602
+664,37\t0,0377602
+664,865\t0,0377602
+665,361\t0,039544
+665,857\t0,030894
+666,352\t0,039544
+666,848\t0,0310725
+667,343\t0,0310725
+667,839\t0,0281545
+668,335\t0,0281545
+668,83\t0,0323447
+669,326\t0,0335961
+669,822\t0,0323447
+670,318\t0,0300778
+670,814\t0,0300778
+671,309\t0,0300778
+671,805\t0,0336712
+672,301\t0,0295197
+672,797\t0,0191148
+673,293\t0,0191148
+673,789\t0,0191148
+674,285\t0,0271405
+674,781\t0,0255697
+675,277\t0,0271405
+675,773\t0,0286287
+676,269\t0,0294786
+676,765\t0,0294786
+677,261\t0,0294786
+677,758\t0,0149383
+678,254\t0,0149383
+678,75\t0,0230961
+679,246\t0,0273296
+679,742\t0,0230961
+680,239\t0,0314729
+680,735\t0,0272872
+681,231\t0,0272872
+681,728\t0,0176112
+682,224\t0,0146938
+682,72\t0,00918174
+683,217\t0,00918174
+683,713\t0,0255698
+684,21\t0,0255698
+684,706\t0,0161751
+685,203\t0,0161751
+685,699\t0,0181939
+686,196\t0,0181939
+686,692\t0,0156412
+687,189\t0,0156412
+687,685\t0,0146598
+688,182\t0,0179166
+688,678\t0,0179166
+689,175\t0,0208627
+689,672\t0,0208627
+690,169\t0,0195122
+690,665\t0,016128
+691,162\t0,0167075
+691,659\t0,0139926
+692,155\t0,0112106
+692,652\t0,0112106
+693,149\t0,023608
+693,646\t0,023608
+694,143\t0,0127618
+694,64\t0,0115015
+695,137\t0,0127618
+695,633\t0,0144569
+696,13\t0,0144569
+696,627\t0,0144569
+697,124\t0,0239968
+697,621\t0,0239968
+698,118\t0,0323966
+698,615\t0,0184086
+699,112\t0,0234139
+699,609\t0,0197889
+700,107\t0,0214085
+700,604\t0,0214085
+701,101\t0,0232589
+701,598\t0,0232589
+702,095\t0,0190525
+702,592\t0,0190525
+703,089\t0,0128413
+703,587\t0,0206667
+704,084\t0,0166192
+704,581\t0,0166192
+705,078\t0,0146909
+705,576\t0,0118465
+706,073\t0,0118465
+706,57\t0,0167051
+707,068\t0,0167051
+707,565\t0,0205197
+708,062\t0,0185862
+708,56\t0,0205197
+709,057\t0,020688
+709,555\t0,0224143
+710,052\t0,020688
+710,55\t0,0140165
+711,047\t0,0113689
+711,545\t0,0113689
+712,042\t0,0113689
+712,54\t0,0219712
+713,037\t0,0219712
+713,535\t0,0126116
+714,032\t0,0118835
+714,53\t0,0108218
+715,028\t0,0118835
+715,525\t0,013037
+716,023\t0,0186648
+716,52\t0,0186648
+717,018\t0,0180206
+717,516\t0,0180206
+718,014\t0,0180206
+718,511\t0,0127281
+719,009\t0,0120013
+719,507\t0,0077447
+720,005\t0,0120013
+720,502\t0,00434324
+721\t0,0123685
+721,498\t0,0185961
+721,996\t0,0185961
+722,494\t0,0159142
+722,991\t0,0106393
+723,489\t0,0106393
+723,987\t0,00959668
+724,485\t0,00809504
+724,983\t0,00809504
+725,481\t0,00809504
+725,979\t0,00788126
+726,477\t0,00788126
+726,975\t0,0109294
+727,473\t0,0109294
+727,971\t0,0135715
+728,469\t0,00978632
+728,967\t0,0142183
+729,465\t0,00978632
+729,963\t0,00939134
+730,461\t0,0162699
+730,959\t0,0114022
+731,458\t0,0114022
+731,956\t0,0101584
+732,454\t0,0101584
+732,953\t0,0187875
+733,451\t0,0187875
+733,95\t0,0187875
+734,448\t0,0143116
+734,947\t0,0098073
+735,446\t0,00774264
+735,944\t0,00928994
+736,443\t0,0131629
+736,941\t0,0131629
+737,44\t0,012499
+737,939\t0,00987888
+738,438\t0,00987888
+738,937\t0,0129698
+739,436\t0,0135518
+739,935\t0,0135518
+740,434\t0,00965929
+740,933\t0,00965929
+741,432\t0,00838093
+741,931\t0,0155736
+742,43\t0,0196264
+742,929\t0,0145099
+743,429\t0,0145099
+743,928\t0,0145099
+744,428\t0,0135228
+744,927\t0,0100717
+745,426\t0,00945099
+745,926\t0,0146406
+746,425\t0,0167244
+746,925\t0,0167244
+747,424\t0,0116453
+747,924\t0,00805428
+748,424\t0,00805428
+748,923\t0,0156619
+749,423\t0,0156619
+749,923\t0,0117521
+750,423\t0,0117521
+750,923\t0,0117521
+751,422\t0,0138028
+751,922\t0,010966
+752,422\t0,0116736
+752,922\t0,0116736
+753,422\t0,0152513
+753,922\t0,0152513
+754,422\t0,0136408
+754,922\t0,0148793
+755,422\t0,0148793
+755,923\t0,0148793
+756,423\t0,0161059
+756,923\t0,0136014
+757,423\t0,0109131
+757,923\t0,0109131
+758,424\t0,0109131
+758,924\t0,0145604
+759,424\t0,0145604
+759,924\t0,0147207
+760,425\t0,0147207`;
+
+// ─── CIE 1931 colour matching functions (2° observer, 5nm steps 380-780, 81 points) ──────
+const CIE_X5 = [0.001368,0.002236,0.004243,0.007650,0.014310,0.023190,0.043510,0.077630,0.134380,0.214770,0.283900,0.328500,0.348280,0.348060,0.336200,0.318700,0.290800,0.251100,0.195360,0.142100,0.095640,0.057950,0.032010,0.014700,0.004900,0.002400,0.009300,0.029100,0.063270,0.109600,0.165500,0.225750,0.290400,0.359700,0.433450,0.512050,0.594500,0.678400,0.762100,0.842500,0.916300,0.978600,1.026300,1.056700,1.062200,1.045600,1.002600,0.938400,0.854450,0.751400,0.642400,0.541900,0.447900,0.360800,0.283500,0.218700,0.164900,0.121200,0.087400,0.063600,0.046770,0.032900,0.022700,0.015840,0.011359,0.008111,0.005790,0.004109,0.002899,0.002049,0.001440,0.001000,0.000690,0.000476,0.000332,0.000235,0.000166,0.000117,0.000083,0.000059,0.000042];
+const CIE_Y5 = [0.000039,0.000064,0.000120,0.000217,0.000396,0.000640,0.001210,0.002180,0.004000,0.007300,0.011600,0.016840,0.023000,0.029800,0.038000,0.048000,0.060000,0.073900,0.090980,0.112600,0.139020,0.169300,0.208020,0.258600,0.323000,0.407300,0.503000,0.608200,0.710000,0.793200,0.862000,0.914850,0.954000,0.980300,0.994950,1.000000,0.995000,0.978600,0.952000,0.915400,0.870000,0.816300,0.757000,0.694900,0.631000,0.566800,0.503000,0.441200,0.381000,0.321000,0.265000,0.217000,0.175000,0.138200,0.107000,0.081600,0.061000,0.044580,0.032000,0.023200,0.017000,0.011920,0.008210,0.005723,0.004102,0.002929,0.002091,0.001484,0.001047,0.000740,0.000520,0.000361,0.000249,0.000172,0.000120,0.000085,0.000060,0.000042,0.000030,0.000021,0.000015];
+const CIE_Z5 = [0.006450,0.010550,0.020050,0.036210,0.067850,0.110200,0.207400,0.371300,0.645600,1.039050,1.385600,1.622960,1.747060,1.782600,1.772110,1.744100,1.669200,1.528100,1.287640,1.041900,0.812950,0.616200,0.465180,0.353300,0.272000,0.212300,0.158200,0.111700,0.078250,0.057250,0.042160,0.029840,0.020300,0.013400,0.008750,0.005750,0.003900,0.002750,0.002100,0.001800,0.001650,0.001400,0.001100,0.001000,0.000800,0.000600,0.000340,0.000240,0.000190,0.000100,0.000050,0.000030,0.000020,0.000010,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000];
+// Keep legacy 10nm for any other uses
+const CIE_X = CIE_X5.filter((_,i)=>i%2===0);
+const CIE_Y = CIE_Y5.filter((_,i)=>i%2===0);
+const CIE_Z = CIE_Z5.filter((_,i)=>i%2===0);
+
+function parseSpectrum(text) {
+  const points = [];
+  const meta = {};
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    if (line.startsWith(';')) {
+      const content = line.slice(1).trim();
+      // First-line timestamp: ;2026-05-23T18:13:37 (no tab, pure ISO datetime)
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(content)) {
+        meta['measurement_date'] = content;
+        continue;
+      }
+      const parts = line.slice(1).split(/\t/);
+      if (parts[0] === 'Name') meta.name = parts[1];
+      if (parts[0] === 'status' && parts[1]) {
+        meta[parts[1]] = parts[2];
+        // Also store 'date' field as measurement_date (GL SpectroSoft 4.0 style)
+        if (parts[1] === 'date' && parts[2]) {
+          // Only set if not already set by header line
+          if (!meta['measurement_date']) meta['measurement_date'] = parts[2].trim();
+        }
+      }
+      continue;
+    }
+    if (line.startsWith('Wavelength') || line.startsWith(';Wavelength') || line.startsWith('Wave')) continue;
+    const sep = line.includes('\t') ? '\t' : (line.includes(';') ? ';' : ',');
+    const cols = line.split(sep);
+    if (cols.length < 2) continue;
+    const wl = parseFloat(cols[0].replace(',', '.'));
+    const val = parseFloat(cols[1].replace(',', '.'));
+    if (!isNaN(wl) && !isNaN(val)) points.push([wl, val]);
+  }
+  return { points, meta };
+}
+
+function interpolate(points, wl) {
+  for (let i = 0; i < points.length - 1; i++) {
+    if (points[i][0] <= wl && points[i+1][0] >= wl) {
+      const t = (wl - points[i][0]) / (points[i+1][0] - points[i][0]);
+      return points[i][1] + t * (points[i+1][1] - points[i][1]);
+    }
+  }
+  return 0;
+}
+
+function spectrumToRGB(points) {
+  let X = 0, Y = 0, Z = 0;
+  // Use 5nm CIE tables (81 points, 380–780nm) for higher accuracy
+  // SPD value at each 5nm node is interpolated directly from the raw ~0.5nm data
+  for (let i = 0; i < CIE_X5.length; i++) {
+    const wl = 380 + i * 5;
+    const spd = Math.max(0, interpolate(points, wl));
+    X += spd * CIE_X5[i];
+    Y += spd * CIE_Y5[i];
+    Z += spd * CIE_Z5[i];
+  }
+  // XYZ → linear sRGB
+  let rLin =  3.2406*X - 1.5372*Y - 0.4986*Z;
+  let gLin = -0.9689*X + 1.8758*Y + 0.0415*Z;
+  let bLin =  0.0557*X - 0.2040*Y + 1.0570*Z;
+  // Normalize by max linear value so the brightest channel = 1
+  const maxLin = Math.max(rLin, gLin, bLin, 0.0001);
+  rLin = rLin / maxLin;
+  gLin = gLin / maxLin;
+  bLin = bLin / maxLin;
+  // clamp negatives to 0
+  rLin = Math.max(0, rLin);
+  gLin = Math.max(0, gLin);
+  bLin = Math.max(0, bLin);
+  // sRGB gamma encoding
+  const gam = v => v <= 0.0031308 ? 12.92*v : 1.055*Math.pow(v, 1/2.4) - 0.055;
+  const r = Math.round(Math.min(1, gam(rLin)) * 255);
+  const g = Math.round(Math.min(1, gam(gLin)) * 255);
+  const b = Math.round(Math.min(1, gam(bLin)) * 255);
+  return [r, g, b];
+}
+
+function wavelengthToColor(wl) {
+  let r=0,g=0,b=0;
+  if (wl>=380&&wl<440){r=(440-wl)/60;g=0;b=1;}
+  else if(wl>=440&&wl<490){r=0;g=(wl-440)/50;b=1;}
+  else if(wl>=490&&wl<510){r=0;g=1;b=(510-wl)/20;}
+  else if(wl>=510&&wl<580){r=(wl-510)/70;g=1;b=0;}
+  else if(wl>=580&&wl<645){r=1;g=(645-wl)/65;b=0;}
+  else if(wl>=645&&wl<=760){r=1;g=0;b=0;}
+  let att=1;
+  if(wl<420)att=0.3+0.7*(wl-380)/40;
+  else if(wl>700)att=0.3+0.7*(760-wl)/60;
+  return `rgba(${Math.round(r*255*att)},${Math.round(g*255*att)},${Math.round(b*255*att)},`;
+}
+
+// ─── Canvas chart renderer ────────────────────────────────────────────────────
+function drawChart(points) {
+  const canvas = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 40;
+  const H = 460;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const padL=60, padR=20, padT=28, padB=48;
+  const cW=W-padL-padR, cH=H-padT-padB;
+
+  // filter to 380-760
+  const vis = points.filter(p=>p[0]>=380&&p[0]<=760);
+  if (!vis.length) return;
+
+  const maxVal = Math.max(...vis.map(p=>p[1]));
+  const minVal = Math.min(0, Math.min(...vis.map(p=>p[1])));
+  // Add 8% top headroom so the peak doesn't touch the top
+  const range = (maxVal - minVal) || 1;
+  const yTop = maxVal + range * 0.08;
+
+  const tx = wl => padL + (wl-380)/(760-380)*cW;
+  const ty = v  => padT + cH - (v-minVal)/(yTop-minVal)*cH;
+
+  // Background
+  const __light=document.body.classList.contains('light'); ctx.fillStyle=__light?'#ffffff':'#080808'; ctx.fillRect(0,0,W,H);
+
+  // Subtle vignette overlay
+  const vign = ctx.createRadialGradient(W/2, H/2, cH*0.3, W/2, H/2, W*0.75);
+  vign.addColorStop(0, 'rgba(0,0,0,0)');
+  vign.addColorStop(1, 'rgba(0,0,0,0.35)');
+
+  // Spectral gradient fill — bottom 70% filled, top fades to transparent
+  const grad=ctx.createLinearGradient(padL,0,padL+cW,0);
+  for(let wl=380;wl<=760;wl+=5) {
+    const stop=(wl-380)/380;
+    const col=wavelengthToColor(wl);
+    grad.addColorStop(stop, col+'0.72)');
+  }
+
+  // Build clip path matching the spectrum shape
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tx(vis[0][0]),ty(0));
+  for(const [wl,v] of vis) ctx.lineTo(tx(wl),ty(Math.max(v,minVal)));
+  ctx.lineTo(tx(vis[vis.length-1][0]),ty(0));
+  ctx.closePath();
+
+  // Vertical fade: bright at bottom, fades upward
+  const fadeGrad = ctx.createLinearGradient(0, padT, 0, padT+cH);
+  fadeGrad.addColorStop(0,   'rgba(0,0,0,0.0)');
+  fadeGrad.addColorStop(0.45,'rgba(0,0,0,0.0)');
+  fadeGrad.addColorStop(1,   'rgba(0,0,0,0.0)');
+
+  ctx.clip();
+  ctx.fillStyle=grad;
+  ctx.fillRect(padL, padT, cW, cH);
+
+  // Glow layer: slightly brighter fill on top of spectrum area
+  const glowGrad = ctx.createLinearGradient(0, padT, 0, padT+cH);
+  glowGrad.addColorStop(0,   'rgba(255,255,255,0.04)');
+  glowGrad.addColorStop(0.4, 'rgba(255,255,255,0.10)');
+  glowGrad.addColorStop(1,   'rgba(255,255,255,0.0)');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(padL, padT, cW, cH);
+  ctx.restore();
+
+  // Grid lines
+  ctx.strokeStyle=__light?'rgba(0,0,0,0.10)':'rgba(30,37,53,0.9)';
+  ctx.lineWidth=1;
+  for(let wl=400;wl<=760;wl+=40){
+    ctx.beginPath();ctx.moveTo(tx(wl),padT);ctx.lineTo(tx(wl),padT+cH);ctx.stroke();
+  }
+  const nLines=6;
+  for(let i=0;i<=nLines;i++){
+    const v=minVal+(yTop-minVal)*i/nLines;
+    ctx.beginPath();ctx.moveTo(padL,ty(v));ctx.lineTo(padL+cW,ty(v));ctx.stroke();
+  }
+
+  // Zero line
+  if(minVal<0){
+    ctx.strokeStyle='rgba(139,21,186,0.35)';ctx.lineWidth=1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(padL,ty(0));ctx.lineTo(padL+cW,ty(0));ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Spectrum curve — white glow effect (draw twice: soft wide + crisp thin)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tx(vis[0][0]),ty(vis[0][1]));
+  for(const [wl,v] of vis) ctx.lineTo(tx(wl),ty(v));
+  ctx.strokeStyle=__light?'rgba(0,0,0,0.10)':'rgba(255,255,255,0.18)';
+  ctx.lineWidth=5;
+  ctx.lineJoin='round';
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tx(vis[0][0]),ty(vis[0][1]));
+  for(const [wl,v] of vis) ctx.lineTo(tx(wl),ty(v));
+  ctx.strokeStyle=__light?'rgba(20,20,30,0.92)':'rgba(255,255,255,0.95)';
+  ctx.lineWidth=1.8;
+  ctx.lineJoin='round';
+  ctx.stroke();
+  ctx.restore();
+
+  // Peak marker
+  const peak=vis.reduce((a,b)=>b[1]>a[1]?b:a);
+  ctx.strokeStyle='rgba(192,106,224,0.8)';ctx.lineWidth=1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(tx(peak[0]),padT);ctx.lineTo(tx(peak[0]),padT+cH);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Peak label with background pill
+  const peakX = tx(peak[0]);
+  const peakLabelY = padT - 10;
+  ctx.font='bold 11px Share Tech Mono, monospace';
+  ctx.textAlign='center';
+  const labelText = peak[0].toFixed(1)+'nm';
+  const tw = ctx.measureText(labelText).width;
+  ctx.fillStyle='rgba(192,106,224,0.18)';
+  ctx.beginPath();
+  ctx.roundRect(peakX - tw/2 - 5, peakLabelY - 12, tw + 10, 16, 3);
+  ctx.fill();
+  ctx.fillStyle='#c06ae0';
+  ctx.fillText(labelText, peakX, peakLabelY);
+
+  // Axes
+  ctx.strokeStyle='rgba(74,90,106,0.8)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(padL,padT);ctx.lineTo(padL,padT+cH);ctx.lineTo(padL+cW,padT+cH);ctx.stroke();
+
+  // X-axis labels
+  ctx.fillStyle='#555555';ctx.font='10px Share Tech Mono, monospace';ctx.textAlign='center';
+  for(let wl=400;wl<=760;wl+=40){
+    const color=wavelengthToColor(wl)+'1)';
+    ctx.fillStyle=color;
+    ctx.fillText(wl+'nm',tx(wl),padT+cH+16);
+  }
+
+  // Y-axis labels
+  ctx.textAlign='right';ctx.fillStyle='#555555';
+  for(let i=0;i<=nLines;i++){
+    const v=minVal+(yTop-minVal)*i/nLines;
+    ctx.fillText(v.toFixed(2),padL-6,ty(v)+4);
+  }
+  ctx.save();
+  ctx.translate(12,padT+cH/2);ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center';ctx.font='10px Rajdhani, sans-serif';ctx.fillStyle='#3a4a5a';
+  ctx.fillText('mW/m²/nm',0,0);
+  ctx.restore();
+
+  // Tooltip interaction
+  canvas._vis=vis; canvas._tx=tx; canvas._ty=ty; canvas._padL=padL; canvas._padT=padT; canvas._cH=cH;
+}
+
+function setupTooltip() {
+  const canvas=document.getElementById('chart');
+  const tip=document.getElementById('tooltip');
+  canvas.addEventListener('mousemove', e=>{
+    if(!canvas._vis) return;
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left;
+    const my=e.clientY-rect.top;
+    const pL=canvas._padL, cW=canvas.offsetWidth-pL-20;
+    const wl=380+(mx-pL)/cW*380;
+    if(wl<380||wl>760){tip.style.display='none';return;}
+    // find nearest
+    let best=canvas._vis[0];
+    for(const p of canvas._vis) if(Math.abs(p[0]-wl)<Math.abs(best[0]-wl)) best=p;
+    tip.style.display='block';
+    tip.style.left=(e.clientX+14)+'px';
+    tip.style.top=(e.clientY-8)+'px';
+    tip.textContent=best[0].toFixed(2)+' nm → '+best[1].toFixed(5)+' mW/m²/nm';
+  });
+  canvas.addEventListener('mouseleave',()=>tip.style.display='none');
+}
+
+function updateUI(text, filename='BCentrum.txt') {
+  const {points, meta} = parseSpectrum(text);
+  document.getElementById('fname').textContent=filename;
+
+  // Date/time
+  const dt = meta['measurement_date'] || meta['name'] || '';
+  if(dt) {
+    const [datePart,timePart]=dt.split('T');
+    document.getElementById('meas-date').textContent=datePart||'';
+    document.getElementById('meas-time').textContent=(timePart||'').substring(0,8);
+  }
+
+  // Metrics
+  const setM=(id,val,unit='')=>{ const el=document.getElementById(id); if(el&&val!==undefined) el.textContent=val+(unit?' '+unit:''); };
+  setM('m-integ', meta['integration_time'], 'µs');
+  const peakWl=parseFloat(meta['measurement_maximum_wavelength']||0);
+  setM('m-peakwl', peakWl?peakWl.toFixed(3)+' nm':'—');
+  const peakVal=parseFloat(meta['measurement_maximum']||0);
+  setM('m-peakval', peakVal?peakVal.toFixed(1):'—');
+  const temp=parseFloat(meta['sensor_temperature']||0);
+  setM('m-temp', temp?temp.toFixed(2)+' °C':'—');
+  const sig=parseFloat(meta['signal_level']||0);
+  setM('m-sig', sig?sig.toFixed(2)+' %':'—');
+  const calDate=(meta['calibration_date']||'').substring(0,10);
+  setM('m-cal', calDate||'—');
+
+  // RGB + CIE xyY
+  const vis=points.filter(p=>p[0]>=380&&p[0]<=760);
+  const [r,g,b]=spectrumToRGB(vis.length?vis:points);
+  document.getElementById('rv').textContent=r;
+  document.getElementById('gv').textContent=g;
+  document.getElementById('bv').textContent=b;
+  const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+  document.getElementById('hexval').textContent=hex;
+  document.getElementById('swatch').style.background=`rgb(${r},${g},${b})`;
+
+  // Compute raw XYZ for xyY (unnormalized, for chromaticity)
+  let rX=0,rY=0,rZ=0;
+  const srcPts=vis.length?vis:points;
+  for(let i=0;i<CIE_X5.length;i++){
+    const wl=380+i*5;
+    const spd=Math.max(0,interpolate(srcPts,wl));
+    rX+=spd*CIE_X5[i];
+    rY+=spd*CIE_Y5[i];
+    rZ+=spd*CIE_Z5[i];
+  }
+  const s=rX+rY+rZ;
+  if(s>1e-10){
+    document.getElementById('cie-x').textContent=(rX/s).toFixed(4);
+    document.getElementById('cie-y').textContent=(rY/s).toFixed(4);
+    // Y normalized to 1 (relative luminance)
+    const Ynorm=rY/Math.max(rX,rY,rZ,1e-10);
+    document.getElementById('cie-Y').textContent=Ynorm.toFixed(4);
+  } else {
+    document.getElementById('cie-x').textContent='—';
+    document.getElementById('cie-y').textContent='—';
+    document.getElementById('cie-Y').textContent='—';
+  }
+
+  drawChart(points);
+
+  const count=points.filter(p=>p[0]>=380&&p[0]<=760).length;
+  document.getElementById('status').innerHTML=
+    `<span class="status-ok">✓</span> Wczytano ${points.length} punktów · zakres widmowy 380–760nm: ${count} pkt · RGB=(${r},${g},${b})`;
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', ()=>{
+  const saved = localStorage.getItem('spectral_single_rawdata');
+  if (saved) {
+    document.getElementById('rawdata').value = saved;
+    updateUI(saved);
+  }
+  setupTooltip();
+
+  document.getElementById('fileInput').addEventListener('change', e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const text=ev.target.result;
+      document.getElementById('rawdata').value=text;
+      try { localStorage.setItem('spectral_single_rawdata', text); } catch(ex) {}
+      updateUI(text, f.name);
+    };
+    reader.readAsText(f, 'UTF-8');
+  });
+
+  document.getElementById('rawdata').addEventListener('input', ()=>{
+    const text = document.getElementById('rawdata').value;
+    try { localStorage.setItem('spectral_single_rawdata', text); } catch(ex) {}
+    updateUI(text);
+  });
+});
+
+window.addEventListener('resize', ()=>{
+  const text=document.getElementById('rawdata').value;
+  if(text) { const {points}=parseSpectrum(text); drawChart(points); }
+  if(multiFiles.length) drawMultiChart();
+});
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────────────────
+function switchTab(name) {
+  const tabs = ['single','multi','mmg','mmggroup'];
+  document.querySelectorAll('.tab-pill').forEach((btn,i)=>{
+    btn.classList.toggle('active', tabs[i]===name);
+  });
+  tabs.forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+  });
+  if(name==='multi' && multiFiles.length) drawMultiChart();
+}
+
+// ─── MULTI-FILE ───────────────────────────────────────────────────────────────
+const MULTI_COLORS = [
+  '#c06ae0','#e8915b','#5fc9aa','#e85b5b','#5599ff','#f0d060','#a0e060','#e060c0',
+  '#60c8e0','#e0a060','#80e080','#e06080','#a0a0ff','#e0d040','#60e0c0','#d060e0'
+];
+const MAX_FILES = 16;
+let multiFiles = []; // [{name, points, meta, color}]
+let currentSortMode = 'date-desc'; // default: newest first
+
+// ── Sort helpers ──────────────────────────────────────────────────────────────
+const SORT_LABELS = {
+  'date-desc': '⬇ data (najnowsze)',
+  'date-asc':  '⬆ data (najstarsze)',
+  'name-asc':  'A→Z nazwa',
+  'name-desc': 'Z→A nazwa',
+  'manual':    '☰ ręcznie'
+};
+
+function getFileDate(f) {
+  // Priority: header-line ISO timestamp > status 'date' field > filename
+  return f.meta['measurement_date'] || f.meta['date'] || f.meta['name'] || '';
+}
+
+function parseDateMs(str) {
+  if (!str) return 0;
+  // Normalize: replace space separator with T if needed, ensure valid ISO
+  const iso = str.trim().replace(' ', 'T');
+  const ms = Date.parse(iso);
+  return isNaN(ms) ? 0 : ms;
+}
+
+function sortByMode(arr, mode) {
+  if(mode === 'manual') return arr; // preserve order
+  const sorted = [...arr];
+  if(mode === 'date-desc') {
+    sorted.sort((a,b)=>{
+      const da=parseDateMs(getFileDate(a)), db=parseDateMs(getFileDate(b));
+      if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1;
+      return db - da; // newest first
+    });
+  } else if(mode === 'date-asc') {
+    sorted.sort((a,b)=>{
+      const da=parseDateMs(getFileDate(a)), db=parseDateMs(getFileDate(b));
+      if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1;
+      return da - db; // oldest first
+    });
+  } else if(mode === 'name-asc') {
+    sorted.sort((a,b)=>a.name.localeCompare(b.name));
+  } else if(mode === 'name-desc') {
+    sorted.sort((a,b)=>b.name.localeCompare(a.name));
+  }
+  return sorted;
+}
+
+function applySortMode(mode) {
+  currentSortMode = mode;
+  // Update button states
+  const btnMap = {
+    'date-desc':'sortBtnDateDesc','date-asc':'sortBtnDateAsc',
+    'name-asc':'sortBtnNameAsc','name-desc':'sortBtnNameDesc','manual':'sortBtnManual'
+  };
+  Object.values(btnMap).forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.classList.remove('active','manual-active'); }
+  });
+  const activeBtn = document.getElementById(btnMap[mode]);
+  if(activeBtn) {
+    activeBtn.classList.add(mode==='manual'?'manual-active':'active');
+  }
+  // Show/hide manual hint
+  document.getElementById('manualHint').style.display = mode==='manual'?'':'none';
+  // Update sort badge
+  const badge = document.getElementById('sortBadge');
+  if(badge) badge.textContent = SORT_LABELS[mode]||mode;
+
+  if(mode !== 'manual') {
+    multiFiles = sortByMode(multiFiles, mode);
+  }
+  renderMultiChips();
+  drawMultiChart();
+  updateMultiTable();
+  generateCopyData();
+}
+
+function multiAddFiles(fileList) {
+  const remaining = MAX_FILES - multiFiles.length;
+  const toLoad = Math.min(fileList.length, remaining);
+  if(toLoad <= 0) {
+    alert(`Osiągnięto limit ${MAX_FILES} plików. Usuń plik aby dodać nowy.`);
+    return;
+  }
+  let loaded = 0;
+  for(let i=0;i<toLoad;i++){
+    const f = fileList[i];
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const {points,meta} = parseSpectrum(ev.target.result);
+      const usedColors = multiFiles.map(x=>x.color);
+      let color = MULTI_COLORS.find(c=>!usedColors.includes(c)) || MULTI_COLORS[multiFiles.length % MULTI_COLORS.length];
+      multiFiles.push({name: f.name, points, meta, color});
+      loaded++;
+      if(loaded === toLoad) {
+        // Apply current sort mode (default: date-desc = newest first)
+        if(currentSortMode !== 'manual') {
+          multiFiles = sortByMode(multiFiles, currentSortMode);
+        }
+        document.getElementById('sortControls').style.display = '';
+        renderMultiChips();
+        drawMultiChart();
+        updateMultiTable();
+        generateCopyData();
+      }
+    };
+    reader.readAsText(f, 'UTF-8');
+  }
+}
+
+// ── Chip drag-and-drop for manual reorder ─────────────────────────────────────
+let dragSrcIdx = null;
+
+function renderMultiChips() {
+  const chips = document.getElementById('fileChips');
+  chips.innerHTML = '';
+  const isManual = currentSortMode === 'manual';
+  // Update file counter
+  const counter = document.getElementById('fileCountLabel');
+  if(counter) counter.textContent = multiFiles.length ? `${multiFiles.length}/${MAX_FILES}` : '';
+  multiFiles.forEach((file, idx)=>{
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    chip.dataset.idx = idx;
+    if(isManual) {
+      chip.draggable = true;
+      chip.addEventListener('dragstart', onChipDragStart);
+      chip.addEventListener('dragover',  onChipDragOver);
+      chip.addEventListener('dragleave', onChipDragLeave);
+      chip.addEventListener('drop',      onChipDrop);
+      chip.addEventListener('dragend',   onChipDragEnd);
+    }
+    chip.innerHTML = `
+      ${isManual ? '<span class="chip-drag-handle" title="Przeciągnij aby zmienić kolejność">⠿</span>' : ''}
+      <span class="chip-dot" style="background:${file.color}"></span>
+      <span class="chip-name" title="${file.name}">${file.name}</span>
+      <span class="chip-date" style="font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--muted);margin-left:2px;opacity:0.7" title="Data pomiaru">${formatChipDate(getFileDate(file))}</span>
+      <span class="chip-remove" onclick="multiRemoveFile(${idx})" title="Usuń">✕</span>
+    `;
+    chips.appendChild(chip);
+  });
+  // show/hide sort controls
+  document.getElementById('sortControls').style.display = multiFiles.length ? '' : 'none';
+}
+
+function formatChipDate(dt) {
+  if(!dt) return '';
+  // ISO: 2026-04-28T12:23:25
+  const t = dt.replace('T',' ').substring(0,19);
+  return t;
+}
+
+function onChipDragStart(e) {
+  dragSrcIdx = parseInt(this.dataset.idx);
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onChipDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  this.classList.add('drag-over-chip');
+}
+function onChipDragLeave() {
+  this.classList.remove('drag-over-chip');
+}
+function onChipDrop(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over-chip');
+  const targetIdx = parseInt(this.dataset.idx);
+  if(dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+  // Reorder
+  const moved = multiFiles.splice(dragSrcIdx, 1)[0];
+  multiFiles.splice(targetIdx, 0, moved);
+  dragSrcIdx = null;
+  renderMultiChips();
+  drawMultiChart();
+  updateMultiTable();
+  generateCopyData();
+}
+function onChipDragEnd() {
+  dragSrcIdx = null;
+  document.querySelectorAll('.file-chip').forEach(c=>{
+    c.classList.remove('dragging','drag-over-chip');
+  });
+}
+
+// ─── CIE xyY computation (raw, unnormalized) ─────────────────────────────────
+function computeCIExyY(points) {
+  const srcPts = points.filter(p=>p[0]>=380&&p[0]<=760);
+  const usePts = srcPts.length ? srcPts : points;
+  let X=0, Y=0, Z=0;
+  for(let i=0;i<CIE_X5.length;i++){
+    const wl=380+i*5;
+    const spd=Math.max(0, interpolate(usePts, wl));
+    X+=spd*CIE_X5[i];
+    Y+=spd*CIE_Y5[i];
+    Z+=spd*CIE_Z5[i];
+  }
+  const s=X+Y+Z;
+  if(s<1e-10) return {cx:0,cy:0,Y_raw:0,Y_rel:0};
+  const cx=X/s, cy=Y/s;
+  const Y_raw=Y;
+  const Y_rel=Y/Math.max(X,Y,Z,1e-10);
+  return {cx,cy,Y_raw,Y_rel};
+}
+
+function detectChannel(filename) {
+  const upper = filename.toUpperCase();
+  // Match _R_, _R., -R-, (R), etc. or single letter channel markers
+  if(/[_\-\s\(\[]R[_\-\s\.\)\]]/.test(upper) || /[_\-]R\d/.test(upper) || upper.includes('_RED') || upper.includes('CZERW') || /\bR\b/.test(upper)) return 'R';
+  if(/[_\-\s\(\[]G[_\-\s\.\)\]]/.test(upper) || /[_\-]G\d/.test(upper) || upper.includes('_GREEN') || upper.includes('ZIEL') || /\bG\b/.test(upper)) return 'G';
+  if(/[_\-\s\(\[]B[_\-\s\.\)\]]/.test(upper) || /[_\-]B\d/.test(upper) || upper.includes('_BLUE') || upper.includes('NIEB') || /\bB\b/.test(upper)) return 'B';
+  if(/[_\-\s\(\[]W[_\-\s\.\)\]]/.test(upper) || /[_\-]W\d/.test(upper) || upper.includes('_WHITE') || upper.includes('BIEL') || upper.includes('BIAŁY') || /\bW\b/.test(upper)) return 'W';
+  return null;
+}
+
+function generateCopyData() {
+  if(!multiFiles.length) return;
+  const lumMode = document.getElementById('luminanceMode').value;
+  const grouping = document.getElementById('channelGrouping').value;
+
+  // Compute CIE xyY for each file
+  const entries = multiFiles.map(f => {
+    const {cx,cy,Y_raw,Y_rel} = computeCIExyY(f.points);
+    const integ = parseFloat(f.meta['integration_time']||0);
+    let L;
+    if(lumMode==='Y_rel') L=Y_rel;
+    else if(lumMode==='Y_raw') L=Y_raw;
+    else L=integ;
+    const ch = detectChannel(f.name);
+    const dt = f.meta['measurement_date'] || f.meta['name'] || '';
+    return {cx,cy,L,ch,name:f.name,dt};
+  });
+
+  let output = '';
+  const fmt = (v, dec=4) => {
+    // Remove trailing zeros but keep at least 2 decimals
+    let s = v.toFixed(dec);
+    if(s.includes('.')) s = s.replace(/\.?0+$/, '');
+    if(!s.includes('.')) return s;
+    return s;
+  };
+
+  if(grouping === 'single') {
+    output += entries.map(e => `${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L)}`).join('\n');
+  } else if(grouping !== 'auto') {
+    // specific channel filter
+    const filtered = entries.filter(e => e.ch === grouping || !e.ch);
+    output += `# Kanał ${grouping}\n`;
+    output += filtered.map(e => `${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L)}`).join('\n');
+  } else {
+    // auto: group by detected channel, preserve order R G B W, then unknown
+    const channels = ['R','G','B','W'];
+    const byChannel = {};
+    const unknown = [];
+    channels.forEach(c=>byChannel[c]=[]);
+    for(const e of entries){
+      if(e.ch && byChannel[e.ch]) byChannel[e.ch].push(e);
+      else unknown.push(e);
+    }
+    const hasAnyChannel = channels.some(c=>byChannel[c].length>0);
+    if(hasAnyChannel) {
+      channels.forEach(c=>{
+        if(byChannel[c].length){
+          output += `# Kanał ${c}\n`;
+          output += byChannel[c].map(e=>`${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L)}`).join('\n');
+          output += '\n';
+        }
+      });
+      if(unknown.length){
+        output += `# Pozostałe\n`;
+        output += unknown.map(e=>`${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L)}`).join('\n');
+        output += '\n';
+      }
+    } else {
+      // No channels detected - all in one block
+      output += entries.map(e=>`${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L)}`).join('\n');
+    }
+    output = output.trim();
+  }
+
+  document.getElementById('copyOutput').value = output;
+  const info = `${entries.length} pomiar(y) · ${SORT_LABELS[currentSortMode]||currentSortMode} · format: x(CIE)\ty(CIE)\tL`;
+  document.getElementById('copyInfo').textContent = info;
+}
+
+function copyTableData() {
+  const ta = document.getElementById('copyOutput');
+  if(!ta.value.trim()) return;
+  navigator.clipboard.writeText(ta.value).then(()=>{
+    const btn = document.getElementById('btnCopy');
+    btn.textContent = '✓ Skopiowano!';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='📋 Kopiuj'; btn.classList.remove('copied'); }, 2000);
+  }).catch(()=>{
+    ta.select();
+    document.execCommand('copy');
+  });
+}
+
+function multiRemoveFile(idx) {
+  multiFiles.splice(idx,1);
+  if(!multiFiles.length) document.getElementById('sortControls').style.display='none';
+  renderMultiChips();
+  drawMultiChart();
+  updateMultiTable();
+  generateCopyData();
+  persistMultiFiles();
+}
+
+function multiClearAll() {
+  if(!multiFiles.length) return;
+  if(!confirm(`Usunąć wszystkie ${multiFiles.length} wczytane pliki?`)) return;
+  multiFiles = [];
+  document.getElementById('sortControls').style.display='none';
+  renderMultiChips();
+  drawMultiChart();
+  updateMultiTable();
+  generateCopyData();
+  persistMultiFiles();
+}
+
+function drawMultiChart() {
+  const canvas = document.getElementById('multiChart');
+  const empty  = document.getElementById('multiEmpty');
+  const legend = document.getElementById('multiLegend');
+  const normalize = document.getElementById('normalizeChk').checked;
+
+  if(!multiFiles.length){
+    canvas.style.display='none'; empty.style.display='';
+    legend.innerHTML=''; return;
+  }
+  empty.style.display='none'; canvas.style.display='block';
+
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.parentElement.clientWidth - 40;
+  const H = 460;
+  canvas.style.width  = W+'px';
+  canvas.style.height = H+'px';
+  canvas.width  = W*dpr;
+  canvas.height = H*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  const padL=60,padR=20,padT=28,padB=48;
+  const cW=W-padL-padR, cH=H-padT-padB;
+
+  // global y range
+  let globalMax=0, globalMin=0;
+  const allVis = multiFiles.map(f=>{
+    const vis=f.points.filter(p=>p[0]>=380&&p[0]<=760);
+    const mx=vis.length?Math.max(...vis.map(p=>p[1])):0;
+    if(normalize) return {vis: vis.map(([wl,v])=>[wl, mx>0?v/mx:v]), mx:1, f};
+    if(mx>globalMax) globalMax=mx;
+    const mn=Math.min(0,...vis.map(p=>p[1]));
+    if(mn<globalMin) globalMin=mn;
+    return {vis, mx, f};
+  });
+  if(normalize){ globalMax=1; globalMin=0; }
+
+  // Add 8% headroom
+  const headroom = (globalMax - globalMin) * 0.08;
+  const yTop = globalMax + headroom;
+  const rangeY = yTop - globalMin || 1;
+  const tx = wl => padL+(wl-380)/(760-380)*cW;
+  const ty = v  => padT+cH - (v-globalMin)/rangeY*cH;
+
+  // Background
+  const __light=document.body.classList.contains('light'); ctx.fillStyle=__light?'#ffffff':'#080808'; ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle=__light?'rgba(0,0,0,0.10)':'rgba(30,37,53,0.9)'; ctx.lineWidth=1;
+  for(let wl=400;wl<=760;wl+=40){
+    ctx.beginPath();ctx.moveTo(tx(wl),padT);ctx.lineTo(tx(wl),padT+cH);ctx.stroke();
+  }
+  const nLines=6;
+  for(let i=0;i<=nLines;i++){
+    const v=globalMin+rangeY*i/nLines;
+    ctx.beginPath();ctx.moveTo(padL,ty(v));ctx.lineTo(padL+cW,ty(v));ctx.stroke();
+  }
+  // Zero line
+  if(globalMin<0){
+    ctx.strokeStyle='rgba(139,21,186,0.3)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(padL,ty(0));ctx.lineTo(padL+cW,ty(0));ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // spectral rainbow strip (background)
+  const grad=ctx.createLinearGradient(padL,0,padL+cW,0);
+  for(let wl=380;wl<=760;wl+=5){
+    const stop=(wl-380)/380;
+    grad.addColorStop(stop, wavelengthToColor(wl)+'0.06)');
+  }
+  ctx.fillStyle=grad; ctx.fillRect(padL,padT,cW,cH);
+
+  // Draw each spectrum
+  allVis.forEach(({vis,f},di)=>{
+    if(!vis.length) return;
+    const color = f.color;
+    const hex6 = color.startsWith('#') ? color.slice(1) : color;
+    const rr=parseInt(hex6.slice(0,2),16), gg=parseInt(hex6.slice(2,4),16), bb=parseInt(hex6.slice(4,6),16);
+
+    // Filled area (semi-transparent)
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tx(vis[0][0]),ty(0));
+    for(const [wl,v] of vis) ctx.lineTo(tx(wl),ty(Math.max(v,globalMin)));
+    ctx.lineTo(tx(vis[vis.length-1][0]),ty(0));
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${rr},${gg},${bb},0.14)`;
+    ctx.fill();
+    ctx.restore();
+
+    // Glow line (soft wide)
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tx(vis[0][0]),ty(vis[0][1]));
+    for(const [wl,v] of vis) ctx.lineTo(tx(wl),ty(v));
+    ctx.strokeStyle = `rgba(${rr},${gg},${bb},0.25)`;
+    ctx.lineWidth = 5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.restore();
+
+    // Line (crisp)
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tx(vis[0][0]),ty(vis[0][1]));
+    for(const [wl,v] of vis) ctx.lineTo(tx(wl),ty(v));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.restore();
+
+    // Peak marker
+    const peak=vis.reduce((a,b)=>b[1]>a[1]?b:a);
+    ctx.strokeStyle=color+'99'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(tx(peak[0]),padT);ctx.lineTo(tx(peak[0]),padT+cH);ctx.stroke();
+    ctx.setLineDash([]);
+    const peakX = tx(peak[0]);
+    ctx.font='bold 10px Share Tech Mono, monospace'; ctx.textAlign='center';
+    const labelY = padT - 8 - di*14;
+    const labelTxt = peak[0].toFixed(1)+'nm';
+    const tw = ctx.measureText(labelTxt).width;
+    ctx.fillStyle=`rgba(${rr},${gg},${bb},0.18)`;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(peakX-tw/2-4, labelY-11, tw+8, 14, 2);
+    else ctx.rect(peakX-tw/2-4, labelY-11, tw+8, 14);
+    ctx.fill();
+    ctx.fillStyle=color;
+    ctx.fillText(labelTxt, peakX, labelY);
+  });
+
+  // Axes
+  ctx.strokeStyle='rgba(74,90,106,0.8)'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(padL,padT);ctx.lineTo(padL,padT+cH);ctx.lineTo(padL+cW,padT+cH);ctx.stroke();
+
+  // X labels
+  ctx.font='10px Share Tech Mono, monospace'; ctx.textAlign='center';
+  for(let wl=400;wl<=760;wl+=40){
+    ctx.fillStyle=wavelengthToColor(wl)+'1)';
+    ctx.fillText(wl+'nm',tx(wl),padT+cH+16);
+  }
+  // Y labels
+  ctx.textAlign='right'; ctx.fillStyle='#555555';
+  for(let i=0;i<=nLines;i++){
+    const v=globalMin+rangeY*i/nLines;
+    ctx.fillText(normalize?v.toFixed(2):v.toFixed(2),padL-6,ty(v)+4);
+  }
+  ctx.save();
+  ctx.translate(12,padT+cH/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.font='10px Rajdhani, sans-serif'; ctx.fillStyle='#3a4a5a';
+  ctx.fillText(normalize?'Znormalizowane':'mW/m²/nm',0,0);
+  ctx.restore();
+
+  // store for tooltip
+  canvas._allVis = allVis;
+  canvas._padL=padL; canvas._padT=padT; canvas._cH=cH; canvas._cW=cW;
+  canvas._rangeY=rangeY; canvas._globalMin=globalMin;
+
+  // Legend
+  legend.innerHTML='';
+  multiFiles.forEach(f=>{
+    const item=document.createElement('div');
+    item.className='legend-item';
+    item.innerHTML=`<span class="legend-line" style="background:${f.color}"></span><span class="legend-name" title="${f.name}">${f.name}</span>`;
+    legend.appendChild(item);
+  });
+}
+
+function updateMultiTable() {
+  const tbody = document.getElementById('multiTableBody');
+  const panel = document.getElementById('multiTablePanel');
+  const copyPanel = document.getElementById('copyPanel');
+  tbody.innerHTML='';
+  if(!multiFiles.length){
+    panel.style.display='none';
+    copyPanel.style.display='none';
+    return;
+  }
+  panel.style.display='block';
+  copyPanel.style.display='block';
+  multiFiles.forEach(f=>{
+    const vis = f.points.filter(p=>p[0]>=380&&p[0]<=760);
+    const peak = vis.length ? vis.reduce((a,b)=>b[1]>a[1]?b:a) : [0,0];
+    const [r,g,b] = spectrumToRGB(vis.length?vis:f.points);
+    const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+    const integ = f.meta['integration_time']||'—';
+    const temp  = f.meta['sensor_temperature'] ? parseFloat(f.meta['sensor_temperature']).toFixed(2)+' °C' : '—';
+    const dt = f.meta['measurement_date'] || f.meta['name'] || '—';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="swatch-cell"><span class="chip-dot" style="background:${f.color}"></span><span class="dim">${f.name}</span></div></td>
+      <td class="mono" style="font-size:0.65rem;color:var(--muted)">${dt}</td>
+      <td class="mono">${peak[0].toFixed(2)} nm</td>
+      <td class="mono">${peak[1].toFixed(3)}</td>
+      <td><div class="swatch-cell"><span class="swatch-box" style="background:${hex}"></span><span class="mono">${r},${g},${b}</span></div></td>
+      <td class="mono" style="color:var(--accent)">${hex}</td>
+      <td class="dim">${integ !== '—' ? integ+' µs' : '—'}</td>
+      <td class="dim">${temp}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  generateCopyData();
+}
+
+// ─── Multi-file tooltip ──────────────────────────────────────────────────────
+function setupMultiTooltip() {
+  const canvas = document.getElementById('multiChart');
+  const tip = document.getElementById('tooltip');
+  canvas.addEventListener('mousemove', e=>{
+    if(!canvas._allVis||!canvas._allVis.length){tip.style.display='none';return;}
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left;
+    const pL=canvas._padL, cW=canvas._cW;
+    const wl=380+(mx-pL)/(cW)*380;
+    if(wl<380||wl>760){tip.style.display='none';return;}
+    const lines=canvas._allVis.map(({vis,f})=>{
+      if(!vis.length) return null;
+      let best=vis[0];
+      for(const p of vis) if(Math.abs(p[0]-wl)<Math.abs(best[0]-wl)) best=p;
+      return `<span style="color:${f.color}">${f.name.slice(0,18)}</span>: ${best[1].toFixed(4)}`;
+    }).filter(Boolean);
+    tip.style.display='block';
+    tip.style.left=(e.clientX+14)+'px';
+    tip.style.top=(e.clientY-8)+'px';
+    tip.innerHTML=`<span style="color:#888;font-size:9px">${wl.toFixed(1)} nm</span><br>${lines.join('<br>')}`;
+  });
+  canvas.addEventListener('mouseleave',()=>tip.style.display='none');
+}
+
+// ─── Init multi ───────────────────────────────────────────────────────────────
+window.addEventListener('load', ()=>{
+  // Drag & drop
+  const zone = document.getElementById('multiDropZone');
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', ()=>zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e=>{
+    e.preventDefault(); zone.classList.remove('drag-over');
+    multiAddFiles(e.dataTransfer.files);
+  });
+
+  document.getElementById('multiFileInput').addEventListener('change', e=>{
+    if(e.target.files.length) multiAddFiles(e.target.files);
+    e.target.value='';
+  });
+
+  document.getElementById('normalizeChk').addEventListener('change', ()=>drawMultiChart());
+  document.getElementById('channelGrouping').addEventListener('change', ()=>generateCopyData());
+  document.getElementById('luminanceMode').addEventListener('change', ()=>generateCopyData());
+  setupMultiTooltip();
+
+  // Restore previous sessions
+  renderRecentSingle();
+  renderRecentMulti();
+  restoreMultiSession();
+  mmgInitTab();
+  mmgGroupInitTab();
+});
+
+// ─── PERSISTENCE (localStorage) ──────────────────────────────────────────────
+const LS_SINGLE_KEY   = 'sa_single_file';
+const LS_RECENT_KEY   = 'sa_recent_single';
+const LS_MULTI_KEY    = 'sa_multi_files';
+const LS_RECENT_MULTI = 'sa_recent_multi';
+const MAX_RECENT      = 8;
+const MAX_FILE_BYTES  = 2 * 1024 * 1024;
+
+function lsSave(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) { /* quota */ }
+}
+function lsLoad(key) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
+}
+
+function persistSingleFile(text, filename) {
+  if(text.length < MAX_FILE_BYTES) {
+    lsSave(LS_SINGLE_KEY, { text, filename, savedAt: new Date().toISOString() });
+  }
+  let recent = lsLoad(LS_RECENT_KEY) || [];
+  recent = recent.filter(r => r.filename !== filename);
+  recent.unshift({ filename, savedAt: new Date().toISOString(), text: text.length < MAX_FILE_BYTES ? text : null });
+  if(recent.length > MAX_RECENT) recent = recent.slice(0, MAX_RECENT);
+  lsSave(LS_RECENT_KEY, recent);
+  renderRecentSingle();
+}
+
+function renderRecentSingle() {
+  const recent = lsLoad(LS_RECENT_KEY) || [];
+  const list   = document.getElementById('recentSingleList');
+  const panel  = document.getElementById('recentSinglePanel');
+  if(!list) return;
+  if(!recent.length) {
+    list.innerHTML = '<span class="recent-empty">Brak historii — wczytaj plik aby go zapamiętać</span>';
+    return;
+  }
+  list.innerHTML = '';
+  recent.forEach((item, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'recent-chip';
+    const dt = item.savedAt ? item.savedAt.replace('T',' ').substring(0,16) : '';
+    chip.innerHTML = `
+      <span class="rc-icon">📄</span>
+      <span class="rc-name" title="${item.filename}">${item.filename}</span>
+      <span class="rc-date">${dt}</span>
+      <span class="rc-remove" title="Usuń z historii" onclick="removeRecentSingle(${idx},event)">✕</span>
+    `;
+    if(item.text) {
+      chip.addEventListener('click', (e) => {
+        if(e.target.classList.contains('rc-remove')) return;
+        document.getElementById('rawdata').value = item.text;
+        document.getElementById('fname').textContent = item.filename;
+        updateUI(item.text, item.filename);
+        showRestoredBadge('fname');
+      });
+    } else {
+      chip.title = 'Plik był zbyt duży — wczytaj go ponownie z dysku';
+      chip.style.opacity  = '0.5';
+      chip.style.cursor   = 'not-allowed';
+    }
+    list.appendChild(chip);
+  });
+}
+
+function removeRecentSingle(idx, e) {
+  e.stopPropagation();
+  let recent = lsLoad(LS_RECENT_KEY) || [];
+  recent.splice(idx, 1);
+  lsSave(LS_RECENT_KEY, recent);
+  renderRecentSingle();
+}
+
+function clearRecentSingle() {
+  lsSave(LS_RECENT_KEY, []);
+  lsSave(LS_SINGLE_KEY, null);
+  renderRecentSingle();
+}
+
+function persistMultiFiles() {
+  try {
+    lsSave(LS_MULTI_KEY, { files: multiFiles.map(f=>({name:f.name,color:f.color,meta:f.meta,points:f.points})), sortMode: currentSortMode, savedAt: new Date().toISOString() });
+  } catch(e) { /* quota */ }
+  let recentMulti = lsLoad(LS_RECENT_MULTI) || [];
+  multiFiles.forEach(f => {
+    recentMulti = recentMulti.filter(r => r.name !== f.name);
+    recentMulti.unshift({ name:f.name, color:f.color, meta:f.meta, points:f.points, savedAt:new Date().toISOString() });
+  });
+  if(recentMulti.length > MAX_RECENT) recentMulti = recentMulti.slice(0, MAX_RECENT);
+  lsSave(LS_RECENT_MULTI, recentMulti);
+  renderRecentMulti();
+}
+
+function renderRecentMulti() {
+  const recent = lsLoad(LS_RECENT_MULTI) || [];
+  const list   = document.getElementById('recentMultiList');
+  if(!list) return;
+  if(!recent.length) {
+    list.innerHTML = '<span class="recent-empty">Brak historii — wczytaj pliki aby je zapamiętać</span>';
+    return;
+  }
+  list.innerHTML = '';
+  recent.forEach((item, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'recent-chip';
+    const dt = item.savedAt ? item.savedAt.replace('T',' ').substring(0,16) : '';
+    const alreadyLoaded = !!multiFiles.find(f => f.name === item.name);
+    chip.innerHTML = `
+      <span class="rc-icon" style="color:${item.color}">◉</span>
+      <span class="rc-name" title="${item.name}">${item.name}</span>
+      <span class="rc-date">${dt}</span>
+      ${alreadyLoaded ? '<span style="font-family:Share Tech Mono,monospace;font-size:0.55rem;color:#5fc9aa;opacity:0.7">✓</span>' : ''}
+      <span class="rc-remove" title="Usuń z historii" onclick="removeRecentMulti(${idx},event)">✕</span>
+    `;
+    if(!alreadyLoaded) {
+      chip.addEventListener('click', (e) => {
+        if(e.target.classList.contains('rc-remove')) return;
+        if(multiFiles.length >= MAX_FILES) { alert(`Osiągnięto limit ${MAX_FILES} plików.`); return; }
+        const usedColors = multiFiles.map(x => x.color);
+        const color = MULTI_COLORS.find(c => !usedColors.includes(c)) || item.color;
+        multiFiles.push({ name:item.name, points:item.points, meta:item.meta, color });
+        if(currentSortMode !== 'manual') multiFiles = sortByMode(multiFiles, currentSortMode);
+        document.getElementById('sortControls').style.display = '';
+        renderMultiChips();
+        drawMultiChart();
+        updateMultiTable();
+        generateCopyData();
+        persistMultiFiles();
+        showRestoredBadge('multiDropZone');
+      });
+    } else {
+      chip.style.opacity = '0.55';
+      chip.style.cursor  = 'default';
+      chip.title = 'Ten plik jest już wczytany';
+    }
+    list.appendChild(chip);
+  });
+}
+
+function removeRecentMulti(idx, e) {
+  e.stopPropagation();
+  let recent = lsLoad(LS_RECENT_MULTI) || [];
+  recent.splice(idx, 1);
+  lsSave(LS_RECENT_MULTI, recent);
+  renderRecentMulti();
+}
+
+function clearRecentMulti() {
+  lsSave(LS_RECENT_MULTI, []);
+  lsSave(LS_MULTI_KEY, null);
+  renderRecentMulti();
+}
+
+function restoreMultiSession() {
+  const saved = lsLoad(LS_MULTI_KEY);
+  if(!saved || !saved.files || !saved.files.length) return;
+  multiFiles = saved.files.map(f => ({ name:f.name, color:f.color, meta:f.meta, points:f.points }));
+  currentSortMode = saved.sortMode || 'date-desc';
+  applySortMode(currentSortMode);
+  showRestoredBadge('multiDropZone');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ─── MMG TAB ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+const MMG_COLORS = [
+  '#c06ae0','#e8915b','#5fc9aa','#e85b5b','#5599ff','#f0d060','#a0e060','#e060c0',
+  '#60c8e0','#e0a060','#80e080','#e06080','#a0a0ff','#e0d040','#60e0c0','#d060e0',
+  '#ff88aa','#88ffcc','#ffaa44','#44ddff','#bbff44','#ff44bb','#44bbff','#ffdd88',
+  '#99eeaa','#ee99cc','#77ccff','#ffcc77','#cc77ff','#77ffee','#ff7799','#aaccff'
+];
+const MMG_MAX_FILES = 32;
+let mmgFiles = []; // [{name, color, data:{x2,y2,Y2,cct,ra,domWl,peakWl,duv,integ,temp,date}}]
+let mmgSortMode = 'date-desc';
+
+const MMG_SORT_LABELS = {
+  'date-desc':'⬇ data (najnowsze)','date-asc':'⬆ data (najstarsze)',
+  'name-asc':'A→Z nazwa','name-desc':'Z→A nazwa','manual':'☰ ręcznie'
+};
+
+// ── Parse .mmg XML ────────────────────────────────────────────────────────────
+function parseMmg(xmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'text/xml');
+  if(doc.querySelector('parsererror')) return null;
+
+  function getResult(name) {
+    const el = doc.querySelector(`results parameter[name="${name}"]`);
+    return el ? el.textContent.trim() : null;
+  }
+  function getStatus(name) {
+    const el = doc.querySelector(`status parameter[name="${name}"]`);
+    return el ? el.textContent.trim() : null;
+  }
+
+  // Parse Polish decimal (comma as separator)
+  const pf = v => v ? parseFloat(v.replace(',','.')) : null;
+
+  const x2    = pf(getResult('x2'));
+  const y2    = pf(getResult('y2'));
+  const Y2    = pf(getResult('Y2'));      // cd/m²
+  const cct   = pf(getResult('CCT'));
+  const ra    = pf(getResult('Ra'));
+  const domWl = pf(getResult('ColDom'));
+  const peakWl= pf(getResult('ColPeak'));
+  const duv   = pf(getResult('Duv'));
+  const integ = pf(getStatus('integration_time'));
+  const temp  = pf(getStatus('temperature'));
+  const date  = getResult('measurement_time') || getStatus('date') || null;
+
+  return { x2, y2, Y2, cct, ra, domWl, peakWl, duv, integ, temp, date };
+}
+
+// ── Sort helpers ──────────────────────────────────────────────────────────────
+function mmgSortByMode(arr, mode) {
+  if(mode==='manual') return arr;
+  const s=[...arr];
+  if(mode==='date-desc') s.sort((a,b)=>{
+    const da=Date.parse(a.data.date||''), db=Date.parse(b.data.date||'');
+    if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1; return db-da;
+  });
+  else if(mode==='date-asc') s.sort((a,b)=>{
+    const da=Date.parse(a.data.date||''), db=Date.parse(b.data.date||'');
+    if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1; return da-db;
+  });
+  else if(mode==='name-asc') s.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(mode==='name-desc') s.sort((a,b)=>b.name.localeCompare(a.name));
+  return s;
+}
+
+function mmgApplySortMode(mode) {
+  mmgSortMode = mode;
+  const btnMap = {
+    'date-desc':'mmgSortBtnDateDesc','date-asc':'mmgSortBtnDateAsc',
+    'name-asc':'mmgSortBtnNameAsc','name-desc':'mmgSortBtnNameDesc','manual':'mmgSortBtnManual'
+  };
+  Object.values(btnMap).forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.remove('active','manual-active'); });
+  const ab=document.getElementById(btnMap[mode]);
+  if(ab) ab.classList.add(mode==='manual'?'manual-active':'active');
+  document.getElementById('mmgManualHint').style.display = mode==='manual'?'':'none';
+  const badge=document.getElementById('mmgSortBadge');
+  if(badge) badge.textContent = MMG_SORT_LABELS[mode]||mode;
+  if(mode!=='manual') mmgFiles = mmgSortByMode(mmgFiles, mode);
+  mmgRenderChips();
+  mmgUpdateTable();
+  mmgGenerateCopyData();
+}
+
+// ── Add files ─────────────────────────────────────────────────────────────────
+function mmgAddFiles(fileList) {
+  const remaining = MMG_MAX_FILES - mmgFiles.length;
+  const toLoad = Math.min(fileList.length, remaining);
+  if(toLoad<=0){ alert(`Osiągnięto limit ${MMG_MAX_FILES} plików MMG.`); return; }
+  let loaded=0;
+  for(let i=0;i<toLoad;i++){
+    const f=fileList[i];
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const data=parseMmg(ev.target.result);
+      if(!data){ loaded++; if(loaded===toLoad) mmgFinishLoad(); return; }
+      const usedColors=mmgFiles.map(x=>x.color);
+      const color=MMG_COLORS.find(c=>!usedColors.includes(c))||MMG_COLORS[mmgFiles.length%MMG_COLORS.length];
+      mmgFiles.push({name:f.name, color, data});
+      loaded++;
+      if(loaded===toLoad) mmgFinishLoad();
+    };
+    reader.readAsText(f,'UTF-8');
+  }
+}
+
+function mmgFinishLoad() {
+  if(mmgSortMode!=='manual') mmgFiles=mmgSortByMode(mmgFiles, mmgSortMode);
+  document.getElementById('mmgSortControls').style.display='';
+  mmgRenderChips();
+  mmgUpdateTable();
+  mmgGenerateCopyData();
+  mmgPersist();
+}
+
+// ── Chips ─────────────────────────────────────────────────────────────────────
+let mmgDragSrcIdx=null;
+
+function mmgRenderChips() {
+  const chips=document.getElementById('mmgFileChips');
+  chips.innerHTML='';
+  const isManual=mmgSortMode==='manual';
+  const counter=document.getElementById('mmgFileCountLabel');
+  if(counter) counter.textContent=mmgFiles.length?`${mmgFiles.length}/${MMG_MAX_FILES}`:'';
+  mmgFiles.forEach((f,idx)=>{
+    const chip=document.createElement('div');
+    chip.className='file-chip';
+    chip.dataset.idx=idx;
+    if(isManual){
+      chip.draggable=true;
+      chip.addEventListener('dragstart',mmgOnDragStart);
+      chip.addEventListener('dragover', mmgOnDragOver);
+      chip.addEventListener('dragleave',mmgOnDragLeave);
+      chip.addEventListener('drop',     mmgOnDrop);
+      chip.addEventListener('dragend',  mmgOnDragEnd);
+    }
+    const dt=f.data.date?f.data.date.replace('T',' ').substring(0,16):'';
+    chip.innerHTML=`
+      ${isManual?'<span class="chip-drag-handle" title="Przeciągnij aby zmienić kolejność">⠿</span>':''}
+      <span class="chip-dot" style="background:${f.color}"></span>
+      <span class="chip-name" title="${f.name}">${f.name}</span>
+      <span class="chip-date" style="font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--muted);margin-left:2px;opacity:0.7">${dt}</span>
+      <span class="chip-remove" onclick="mmgRemoveFile(${idx})" title="Usuń">✕</span>
+    `;
+    chips.appendChild(chip);
+  });
+  document.getElementById('mmgSortControls').style.display=mmgFiles.length?'':'none';
+}
+
+function mmgRemoveFile(idx){
+  mmgFiles.splice(idx,1);
+  if(!mmgFiles.length) document.getElementById('mmgSortControls').style.display='none';
+  mmgRenderChips(); mmgUpdateTable(); mmgGenerateCopyData(); mmgPersist();
+}
+
+function mmgClearAll(){
+  if(!mmgFiles.length) return;
+  if(!confirm(`Usunąć wszystkie ${mmgFiles.length} wczytane pliki MMG?`)) return;
+  mmgFiles=[];
+  document.getElementById('mmgSortControls').style.display='none';
+  mmgRenderChips(); mmgUpdateTable(); mmgGenerateCopyData(); mmgPersist();
+}
+
+// Drag & drop chip reorder
+function mmgOnDragStart(e){ mmgDragSrcIdx=parseInt(this.dataset.idx); this.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+function mmgOnDragOver(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; this.classList.add('drag-over-chip'); }
+function mmgOnDragLeave(){ this.classList.remove('drag-over-chip'); }
+function mmgOnDrop(e){
+  e.preventDefault(); this.classList.remove('drag-over-chip');
+  const ti=parseInt(this.dataset.idx);
+  if(mmgDragSrcIdx===null||mmgDragSrcIdx===ti) return;
+  const moved=mmgFiles.splice(mmgDragSrcIdx,1)[0];
+  mmgFiles.splice(ti,0,moved);
+  mmgDragSrcIdx=null;
+  mmgRenderChips(); mmgUpdateTable(); mmgGenerateCopyData();
+}
+function mmgOnDragEnd(){ mmgDragSrcIdx=null; document.querySelectorAll('#mmgFileChips .file-chip').forEach(c=>c.classList.remove('dragging','drag-over-chip')); }
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function mmgUpdateTable(){
+  const tbody=document.getElementById('mmgTableBody');
+  const panel=document.getElementById('mmgTablePanel');
+  const copyPanel=document.getElementById('mmgCopyPanel');
+  tbody.innerHTML='';
+  if(!mmgFiles.length){ panel.style.display='none'; copyPanel.style.display='none'; return; }
+  panel.style.display='block'; copyPanel.style.display='block';
+  mmgFiles.forEach(f=>{
+    const d=f.data;
+    const fmt=(v,dec=4)=>v!=null?v.toFixed(dec):'—';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="swatch-cell"><span class="chip-dot" style="background:${f.color}"></span><span class="dim">${f.name}</span></div></td>
+      <td class="mono" style="font-size:0.65rem;color:var(--muted)">${d.date?d.date.replace('T',' ').substring(0,16):'—'}</td>
+      <td class="mono" style="color:#5fc9aa">${fmt(d.x2,4)}</td>
+      <td class="mono" style="color:#5fc9aa">${fmt(d.y2,4)}</td>
+      <td class="mono" style="color:var(--accent);font-weight:600">${d.Y2!=null?d.Y2.toFixed(2)+' cd/m²':'—'}</td>
+      <td class="mono">${d.cct!=null?Math.round(d.cct)+' K':'—'}</td>
+      <td class="dim">${d.ra!=null?d.ra.toFixed(1):'—'}</td>
+      <td class="mono">${d.domWl!=null?d.domWl.toFixed(1)+' nm':'—'}</td>
+      <td class="mono">${d.peakWl!=null?d.peakWl.toFixed(2)+' nm':'—'}</td>
+      <td class="dim" style="color:${d.duv!=null&&Math.abs(d.duv)>0.006?'#e85b5b':'var(--muted)'}">${d.duv!=null?d.duv.toFixed(4):'—'}</td>
+      <td class="dim">${d.integ!=null?d.integ.toFixed(1)+' µs':'—'}</td>
+      <td class="dim">${d.temp!=null?d.temp.toFixed(2)+' °C':'—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  mmgGenerateCopyData();
+}
+
+// ── Copy data ─────────────────────────────────────────────────────────────────
+function mmgGenerateCopyData(){
+  if(!mmgFiles.length) return;
+  const grouping=document.getElementById('mmgChannelGrouping').value;
+  const entries=mmgFiles.map(f=>({
+    cx:f.data.x2, cy:f.data.y2, L:f.data.Y2,
+    ch:detectChannel(f.name), name:f.name, dt:f.data.date||''
+  }));
+  const fmt=(v,dec=4)=>{ if(v==null) return '—'; let s=v.toFixed(dec); s=s.replace(/\.?0+$/,''); return s; };
+  let output='';
+  if(grouping==='single'){
+    output=entries.map(e=>`${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L,2)}`).join('\n');
+  } else if(grouping!=='auto'){
+    const filtered=entries.filter(e=>e.ch===grouping||!e.ch);
+    output=`# Kanał ${grouping}\n`+filtered.map(e=>`${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L,2)}`).join('\n');
+  } else {
+    const channels=['R','G','B','W'];
+    const byChannel={}; const unknown=[];
+    channels.forEach(c=>byChannel[c]=[]);
+    for(const e of entries){ if(e.ch&&byChannel[e.ch]) byChannel[e.ch].push(e); else unknown.push(e); }
+    const hasAny=channels.some(c=>byChannel[c].length>0);
+    if(hasAny){
+      channels.forEach(c=>{ if(byChannel[c].length){ output+=`# Kanał ${c}\n`+byChannel[c].map(e=>`${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L,2)}`).join('\n')+'\n'; } });
+      if(unknown.length){ output+=`# Pozostałe\n`+unknown.map(e=>`${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L,2)}`).join('\n')+'\n'; }
+    } else {
+      output=entries.map(e=>`${fmt(e.cx)}\t${fmt(e.cy)}\t${fmt(e.L,2)}`).join('\n');
+    }
+    output=output.trim();
+  }
+  document.getElementById('mmgCopyOutput').value=output;
+  document.getElementById('mmgCopyInfo').textContent=`${entries.length} pomiar(y) · ${MMG_SORT_LABELS[mmgSortMode]||mmgSortMode} · format: x(CIE 2°)\ty(CIE 2°)\tY [cd/m²]`;
+}
+
+function mmgCopyTableData(){
+  const ta=document.getElementById('mmgCopyOutput');
+  if(!ta.value.trim()) return;
+  navigator.clipboard.writeText(ta.value).then(()=>{
+    const btn=document.getElementById('mmgBtnCopy');
+    btn.textContent='✓ Skopiowano!'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='📋 Kopiuj'; btn.classList.remove('copied'); },2000);
+  }).catch(()=>{ ta.select(); document.execCommand('copy'); });
+}
+
+// ── Persistence (localStorage) ────────────────────────────────────────────────
+const LS_MMG_KEY    = 'sa_mmg_files';
+const LS_MMG_RECENT = 'sa_mmg_recent';
+
+function mmgPersist(){
+  try { lsSave(LS_MMG_KEY,{files:mmgFiles.map(f=>({name:f.name,color:f.color,data:f.data})),sortMode:mmgSortMode,savedAt:new Date().toISOString()}); } catch(e){}
+  let recent=lsLoad(LS_MMG_RECENT)||[];
+  mmgFiles.forEach(f=>{
+    recent=recent.filter(r=>r.name!==f.name);
+    recent.unshift({name:f.name,color:f.color,data:f.data,savedAt:new Date().toISOString()});
+  });
+  if(recent.length>MAX_RECENT) recent=recent.slice(0,MAX_RECENT);
+  lsSave(LS_MMG_RECENT,recent);
+  renderRecentMmg();
+}
+
+function renderRecentMmg(){
+  const recent=lsLoad(LS_MMG_RECENT)||[];
+  const list=document.getElementById('recentMmgList');
+  if(!list) return;
+  if(!recent.length){ list.innerHTML='<span class="recent-empty">Brak historii — wczytaj pliki .mmg aby je zapamiętać</span>'; return; }
+  list.innerHTML='';
+  recent.forEach((item,idx)=>{
+    const chip=document.createElement('div');
+    chip.className='recent-chip';
+    const dt=item.savedAt?item.savedAt.replace('T',' ').substring(0,16):'';
+    const alreadyLoaded=!!mmgFiles.find(f=>f.name===item.name);
+    chip.innerHTML=`
+      <span class="rc-icon" style="color:${item.color}">◉</span>
+      <span class="rc-name" title="${item.name}">${item.name}</span>
+      <span class="rc-date">${dt}</span>
+      ${alreadyLoaded?'<span style="font-family:Share Tech Mono,monospace;font-size:0.55rem;color:#5fc9aa;opacity:0.7">✓</span>':''}
+      <span class="rc-remove" title="Usuń z historii" onclick="removeRecentMmg(${idx},event)">✕</span>
+    `;
+    if(!alreadyLoaded){
+      chip.addEventListener('click',(e)=>{
+        if(e.target.classList.contains('rc-remove')) return;
+        if(mmgFiles.length>=MMG_MAX_FILES){ alert(`Osiągnięto limit ${MMG_MAX_FILES} plików.`); return; }
+        const usedColors=mmgFiles.map(x=>x.color);
+        const color=MMG_COLORS.find(c=>!usedColors.includes(c))||item.color;
+        mmgFiles.push({name:item.name,color,data:item.data});
+        if(mmgSortMode!=='manual') mmgFiles=mmgSortByMode(mmgFiles,mmgSortMode);
+        document.getElementById('mmgSortControls').style.display='';
+        mmgRenderChips(); mmgUpdateTable(); mmgGenerateCopyData(); mmgPersist();
+        showRestoredBadge('mmgDropZone');
+      });
+    } else {
+      chip.style.opacity='0.55'; chip.style.cursor='default'; chip.title='Ten plik jest już wczytany';
+    }
+    list.appendChild(chip);
+  });
+}
+
+function removeRecentMmg(idx,e){
+  e.stopPropagation();
+  let recent=lsLoad(LS_MMG_RECENT)||[];
+  recent.splice(idx,1);
+  lsSave(LS_MMG_RECENT,recent);
+  renderRecentMmg();
+}
+
+function clearRecentMmg(){
+  lsSave(LS_MMG_RECENT,[]);
+  lsSave(LS_MMG_KEY,null);
+  renderRecentMmg();
+}
+
+function mmgRestoreSession(){
+  const saved=lsLoad(LS_MMG_KEY);
+  if(!saved||!saved.files||!saved.files.length) return;
+  mmgFiles=saved.files.map(f=>({name:f.name,color:f.color,data:f.data}));
+  mmgSortMode=saved.sortMode||'date-desc';
+  mmgApplySortMode(mmgSortMode);
+  showRestoredBadge('mmgDropZone');
+}
+
+// ── Init MMG ──────────────────────────────────────────────────────────────────
+function mmgInitTab(){
+  const mmgZone=document.getElementById('mmgDropZone');
+  mmgZone.addEventListener('dragover',e=>{ e.preventDefault(); mmgZone.classList.add('drag-over'); });
+  mmgZone.addEventListener('dragleave',()=>mmgZone.classList.remove('drag-over'));
+  mmgZone.addEventListener('drop',e=>{ e.preventDefault(); mmgZone.classList.remove('drag-over'); mmgAddFiles(e.dataTransfer.files); });
+  document.getElementById('mmgFileInput').addEventListener('change',e=>{ if(e.target.files.length) mmgAddFiles(e.target.files); e.target.value=''; });
+  document.getElementById('mmgChannelGrouping').addEventListener('change',()=>mmgGenerateCopyData());
+  renderRecentMmg();
+  mmgRestoreSession();
+}
+
+// ─── MMG GRUPOWY TAB ─────────────────────────────────────────────────────────
+// Jeden plik .mmg zawierający wiele bloków <measurement>
+
+let mmgGroupRows = [];      // [{idx, name, date, x2, y2, Y2, cct, ra, duv, integ, temp}]
+let mmgGroupSortMode = 'date-desc';
+let mmgGroupFileName = '';
+
+const MMGGRP_SORT_LABELS = {
+  'date-desc':'⬇ data (najnowsze)','date-asc':'⬆ data (najstarsze)',
+  'idx-asc':'1→N kolejność','idx-desc':'N→1 kolejność'
+};
+
+// Parse wszystkich <measurement> z jednego pliku .mmg
+function parseMmgGroup(xmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'text/xml');
+  if(doc.querySelector('parsererror')) return null;
+
+  const measurements = doc.querySelectorAll('measurement');
+  if(!measurements.length) return null;
+
+  const pf = v => v ? parseFloat(v.replace(',','.')) : null;
+  const rows = [];
+
+  measurements.forEach((meas, idx) => {
+    function getResult(name) {
+      const el = meas.querySelector(`results parameter[name="${name}"]`);
+      return el ? el.textContent.trim() : null;
+    }
+    function getStatus(name) {
+      const el = meas.querySelector(`status parameter[name="${name}"]`);
+      return el ? el.textContent.trim() : null;
+    }
+
+    const name  = getResult('name') || getStatus('date') || `Pomiar ${idx+1}`;
+    const date  = getResult('measurement_time') || getStatus('date') || null;
+    const x2    = pf(getResult('x2'));
+    const y2    = pf(getResult('y2'));
+    const Y2    = pf(getResult('Y2'));
+    const cct   = pf(getResult('CCT'));
+    const ra    = pf(getResult('Ra'));
+    const duv   = pf(getResult('Duv'));
+    const integ = pf(getStatus('integration_time'));
+    const temp  = pf(getStatus('temperature'));
+
+    rows.push({ idx, name, date, x2, y2, Y2, cct, ra, duv, integ, temp });
+  });
+
+  return rows;
+}
+
+function mmgGroupSortRows(arr, mode) {
+  const s = [...arr];
+  if(mode === 'date-desc') s.sort((a,b) => {
+    const da = Date.parse(a.date||''), db = Date.parse(b.date||'');
+    if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1; return db-da;
+  });
+  else if(mode === 'date-asc') s.sort((a,b) => {
+    const da = Date.parse(a.date||''), db = Date.parse(b.date||'');
+    if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1; return da-db;
+  });
+  else if(mode === 'idx-asc')  s.sort((a,b) => a.idx - b.idx);
+  else if(mode === 'idx-desc') s.sort((a,b) => b.idx - a.idx);
+  return s;
+}
+
+function mmgGroupApplySort(mode) {
+  mmgGroupSortMode = mode;
+  const btnMap = {
+    'date-desc':'mmgGrpBtnDateDesc','date-asc':'mmgGrpBtnDateAsc',
+    'idx-asc':'mmgGrpBtnIdxAsc','idx-desc':'mmgGrpBtnIdxDesc'
+  };
+  Object.values(btnMap).forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('active','manual-active');
+  });
+  const ab = document.getElementById(btnMap[mode]);
+  if(ab) ab.classList.add('active');
+  mmgGroupRows = mmgGroupSortRows(mmgGroupRows, mode);
+  mmgGroupRenderTable();
+  mmgGroupGenerateCopy();
+}
+
+function mmgGroupLoadFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const rows = parseMmgGroup(ev.target.result);
+    if(!rows || !rows.length) {
+      alert('Nie znaleziono pomiarów w pliku .mmg');
+      return;
+    }
+    mmgGroupFileName = file.name;
+    mmgGroupRows = mmgGroupSortRows(rows, mmgGroupSortMode);
+    mmgGroupRenderUI();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function mmgGroupRenderUI() {
+  // Info bar
+  const infoBar = document.getElementById('mmgGroupInfoBar');
+  infoBar.style.display = 'flex';
+  document.getElementById('mmgGroupFileName').textContent = mmgGroupFileName;
+  document.getElementById('mmgGroupCount').textContent = `${mmgGroupRows.length} pomiarów`;
+  // Sort controls
+  document.getElementById('mmgGroupSortControls').style.display = '';
+  mmgGroupRenderTable();
+  mmgGroupGenerateCopy();
+}
+
+function mmgGroupRenderTable() {
+  const tbody = document.getElementById('mmgGroupTableBody');
+  const panel = document.getElementById('mmgGroupTablePanel');
+  const copyPanel = document.getElementById('mmgGroupCopyPanel');
+  tbody.innerHTML = '';
+  if(!mmgGroupRows.length) {
+    panel.style.display = 'none';
+    copyPanel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  copyPanel.style.display = 'block';
+
+  const fmt = (v, dec=4) => v != null ? v.toFixed(dec) : '—';
+
+  mmgGroupRows.forEach((r, i) => {
+    const dt = r.date ? r.date.replace('T',' ').substring(0,19) : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="mono" style="color:var(--muted)">${i+1}</td>
+      <td class="dim" style="font-size:0.65rem">${r.name}</td>
+      <td class="mono" style="font-size:0.65rem;color:var(--muted)">${dt}</td>
+      <td class="mono" style="color:#5fc9aa">${fmt(r.x2,4)}</td>
+      <td class="mono" style="color:#5fc9aa">${fmt(r.y2,4)}</td>
+      <td class="mono" style="color:var(--accent);font-weight:600">${r.Y2!=null?r.Y2.toFixed(2)+' cd/m²':'—'}</td>
+      <td class="mono">${r.cct!=null?Math.round(r.cct)+' K':'—'}</td>
+      <td class="dim">${r.ra!=null?r.ra.toFixed(1):'—'}</td>
+      <td class="dim" style="color:${r.duv!=null&&Math.abs(r.duv)>0.006?'#e85b5b':'var(--muted)'}">${r.duv!=null?r.duv.toFixed(4):'—'}</td>
+      <td class="dim">${r.integ!=null?r.integ.toFixed(1)+' µs':'—'}</td>
+      <td class="dim">${r.temp!=null?r.temp.toFixed(2)+' °C':'—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function mmgGroupGenerateCopy() {
+  if(!mmgGroupRows.length) return;
+  const fmt = (v, dec=4) => { if(v==null) return '—'; let s=v.toFixed(dec); s=s.replace(/\.?0+$/,''); return s; };
+  const lines = mmgGroupRows.map(r => `${fmt(r.x2)}\t${fmt(r.y2)}\t${fmt(r.Y2,2)}`);
+  document.getElementById('mmgGroupCopyOutput').value = lines.join('\n');
+  document.getElementById('mmgGroupCopyInfo').textContent =
+    `${mmgGroupRows.length} pomiar(y) · ${MMGGRP_SORT_LABELS[mmgGroupSortMode]} · format: x(CIE 2°)\ty(CIE 2°)\tY [cd/m²]`;
+}
+
+function mmgGroupCopyData() {
+  const ta = document.getElementById('mmgGroupCopyOutput');
+  if(!ta.value.trim()) return;
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = document.getElementById('mmgGroupBtnCopy');
+    btn.textContent = '✓ Skopiowano!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Kopiuj'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => { ta.select(); document.execCommand('copy'); });
+}
+
+function mmgGroupClear() {
+  mmgGroupRows = [];
+  mmgGroupFileName = '';
+  document.getElementById('mmgGroupFileInput').value = '';
+  document.getElementById('mmgGroupInfoBar').style.display = 'none';
+  document.getElementById('mmgGroupSortControls').style.display = 'none';
+  document.getElementById('mmgGroupTablePanel').style.display = 'none';
+  document.getElementById('mmgGroupCopyPanel').style.display = 'none';
+  document.getElementById('mmgGroupTableBody').innerHTML = '';
+}
+
+function mmgGroupInitTab() {
+  const zone = document.getElementById('mmgGroupDropZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if(f) mmgGroupLoadFile(f);
+  });
+  document.getElementById('mmgGroupFileInput').addEventListener('change', e => {
+    if(e.target.files[0]) mmgGroupLoadFile(e.target.files[0]);
+    e.target.value = '';
+  });
+}
+
+function showRestoredBadge(nearId) {
+  const ref = document.getElementById(nearId);
+  if(!ref) return;
+  // Remove existing badge if any
+  const old = ref.parentNode.querySelector('.recent-restore-badge');
+  if(old) old.remove();
+  const badge = document.createElement('span');
+  badge.className = 'recent-restore-badge';
+  badge.innerHTML = '✓ przywrócono z historii';
+  ref.parentNode.insertBefore(badge, ref.nextSibling);
+  setTimeout(() => badge.remove(), 3000);
+}
+</script>
+<style>
+/* ── Suite light theme (purple accents preserved) — injected ── */
+body.light {
+  --bg: #f4f4f7;
+  --surface: #ffffff;
+  --border: #d6d8de;
+  --accent: #8b15ba;
+  --text: #1a1a1c;
+  --muted: #8c8c94;
+  --canvas-bg: #dcdce2;
+}
+</style>
+<script>
+/* Suite-wide theme listener (shell broadcasts + shared localStorage) */
+(function(){
+  var __at=null; function applyTheme(light){ if(!document.body) return; document.documentElement.classList.add('theme-anim'); document.body.classList.add('theme-anim'); document.body.classList.toggle('light', !!light); clearTimeout(__at); __at=setTimeout(function(){document.documentElement.classList.remove('theme-anim'); document.body.classList.remove('theme-anim');},950); }
+  function readLS(){ try { return localStorage.getItem('suite-theme')==='light'; } catch(e){ return false; } }
+  applyTheme(readLS());
+  document.addEventListener('DOMContentLoaded', function(){ applyTheme(readLS()); });
+  window.addEventListener('message', function(ev){
+    if(ev.data && ev.data.type==='suite-theme'){ if(!ev.data.noToggle) applyTheme(ev.data.light); try{ const t=document.getElementById('rawdata').value; if(t){ const {points}=parseSpectrum(t); drawChart(points); } if(typeof multiFiles!=='undefined' && multiFiles.length) drawMultiChart(); }catch(e){} }
+    if(ev.data && ev.data.type==='spectral-tab' && ev.data.tab){ try { switchTab(ev.data.tab); } catch(e){} }
+    if(ev.data && ev.data.type==='suite-reset'){
+      try {
+        const raw = document.getElementById('rawdata');
+        if(raw) { raw.value = ''; }
+        const st = document.getElementById('status');
+        if(st) st.innerHTML = '';
+        if(typeof multiFiles !== 'undefined') { multiFiles.length = 0; }
+        // Clear chart canvas
+        const chartEl = document.getElementById('chart');
+        if(chartEl){ const ctx=chartEl.getContext('2d'); ctx.clearRect(0,0,chartEl.width,chartEl.height); }
+        switchTab('single');
+      } catch(e) {}
+    }
+  });
+})();
+</script>
+
+<!-- ── Przekaż dane do... ─────────────────────────────────────────────── -->
+<style>
+#pass-data-btn {
+  position: fixed; bottom: 22px; right: 22px; z-index: 9000;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 8px; cursor: pointer;
+  font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 1.5px;
+  text-transform: uppercase; border: 1px solid var(--accent);
+  background: var(--accent-soft, rgba(139,21,186,0.12)); color: var(--accent, #8b15ba);
+  transition: background .2s, box-shadow .2s;
+}
+#pass-data-btn:hover { background: var(--accent, #8b15ba); color: #fff; box-shadow: 0 0 18px -4px var(--accent, #8b15ba); }
+#pass-data-modal {
+  display: none; position: fixed; inset: 0; z-index: 9100;
+  background: rgba(0,0,0,0.65); align-items: center; justify-content: center;
+}
+#pass-data-modal.open { display: flex; }
+.pass-modal-box {
+  background: var(--surface, #0f0f0f); border: 1px solid var(--border, #1e1e1e);
+  border-radius: 12px; padding: 28px 32px; min-width: 340px; max-width: 420px;
+}
+.pass-modal-title {
+  font-family: 'Share Tech Mono', monospace; font-size: 13px; letter-spacing: 2px;
+  color: var(--accent, #8b15ba); text-transform: uppercase; margin-bottom: 18px;
+}
+.pass-modal-sub {
+  font-size: 12px; color: var(--muted, #555); margin-bottom: 16px; line-height: 1.5;
+}
+.pass-channel-label {
+  font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 1.5px;
+  color: var(--muted, #555); text-transform: uppercase; margin-bottom: 8px;
+}
+.pass-channel-seg {
+  display: flex; gap: 6px; margin-bottom: 18px;
+}
+.pass-ch-btn {
+  flex: 1; padding: 8px 4px; border-radius: 8px; cursor: pointer;
+  font-family: 'Share Tech Mono', monospace; font-size: 13px; letter-spacing: 2px;
+  text-transform: uppercase; border: 1px solid var(--border, #1e1e1e);
+  background: var(--bg, #080808); color: var(--text2, #666); transition: all .2s;
+}
+.pass-ch-btn:hover { border-color: var(--accent, #8b15ba); color: var(--accent, #8b15ba); }
+.pass-ch-btn.active { border-color: var(--accent, #8b15ba); background: var(--accent-soft, rgba(139,21,186,.18)); color: var(--accent, #8b15ba); }
+.pass-ch-btn[data-ch="R"].active { border-color: #e53; background: rgba(238,85,51,.15); color: #e53; }
+.pass-ch-btn[data-ch="G"].active { border-color: #4c8; background: rgba(68,204,136,.15); color: #4c8; }
+.pass-ch-btn[data-ch="B"].active { border-color: #48f; background: rgba(68,136,255,.15); color: #48f; }
+.pass-target-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+.pass-target-btn {
+  padding: 10px 16px; border: 1px solid var(--border, #1e1e1e);
+  border-radius: 8px; cursor: pointer; text-align: left;
+  background: var(--bg, #080808); color: var(--text, #e0e0e0);
+  font-family: 'Rajdhani', sans-serif; font-size: 14px; letter-spacing: .5px;
+  transition: border-color .2s, color .2s;
+}
+.pass-target-btn:hover { border-color: var(--accent, #8b15ba); color: var(--accent, #8b15ba); }
+.pass-cancel {
+  width: 100%; padding: 9px; border: 1px solid var(--border, #1e1e1e);
+  border-radius: 8px; cursor: pointer; background: none;
+  font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 1.5px;
+  color: var(--muted, #555); text-transform: uppercase; transition: color .2s;
+}
+.pass-cancel:hover { color: var(--text, #e0e0e0); }
+.pass-level-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+}
+.pass-level-label {
+  font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 1.5px;
+  color: var(--muted, #555); text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
+}
+.pass-level-select {
+  flex: 1; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--border, #1e1e1e);
+  background: var(--bg, #080808); color: var(--text, #e0e0e0);
+  font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: .5px;
+  cursor: pointer; appearance: auto;
+}
+#pass-cda-row { display: none; }
+#pass-data-toast {
+  display: none; position: fixed; bottom: 80px; right: 22px; z-index: 9200;
+  padding: 12px 20px; background: var(--surface, #0f0f0f);
+  border: 1px solid var(--accent, #8b15ba); border-radius: 8px;
+  font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 1px;
+  color: var(--accent, #8b15ba);
+}
+</style>
+
+<button id="pass-data-btn" onclick="openPassDataModal()">→ Przekaż dane do...</button>
+
+<div id="pass-data-modal">
+  <div class="pass-modal-box">
+    <div class="pass-modal-title">Przekaż dane do aplikacji</div>
+    <div class="pass-modal-sub" id="pass-modal-sub">Dane z aktywnej zakładki zostaną zapisane i będą dostępne po otwarciu wybranej aplikacji.</div>
+    <div class="pass-channel-label">Kanał danych:</div>
+    <div class="pass-channel-seg">
+      <button class="pass-ch-btn" data-ch="R" onclick="selectPassChannel('R')">R</button>
+      <button class="pass-ch-btn" data-ch="G" onclick="selectPassChannel('G')">G</button>
+      <button class="pass-ch-btn" data-ch="B" onclick="selectPassChannel('B')">B</button>
+      <button class="pass-ch-btn" data-ch="W" onclick="selectPassChannel('W')">W</button>
+    </div>
+    <div class="pass-level-row" id="pass-cda-row">
+      <span class="pass-level-label">Slot (CDA):</span>
+      <select class="pass-level-select" id="pass-level-select">
+        <option value="">— wybierz poziom —</option>
+      </select>
+    </div>
+    <div class="pass-target-list">
+      <button class="pass-target-btn" onclick="passDataTo('chromaticAnalyzer')">Chromatic Data Analyzer</button>
+      <button class="pass-target-btn" onclick="passDataTo('gammaAnalyzer')">Gamma Analyzer</button>
+      <button class="pass-target-btn" onclick="passDataTo('ti3')">TI3 · Argyll Profiler</button>
+      <button class="pass-target-btn" onclick="passDataTo('gamutScope')">Gamut Scope</button>
+      <button class="pass-target-btn" onclick="passDataTo('colorCalculator')">Color Calculator</button>
+      <button class="pass-target-btn" onclick="passDataTo('calibrationPreview')">Calibration Preview</button>
+    </div>
+    <button class="pass-cancel" onclick="closePassDataModal()">Anuluj</button>
+  </div>
+</div>
+
+<div id="pass-data-toast"></div>
+
+<script>
+(function(){
+  const SINGLE_TARGETS = ['gamutScope','colorCalculator','calibrationPreview'];
+  let selectedChannel = null;
+
+  const CDA_LEVELS = {
+    8:  ['0','36','73','109','146','182','219','255'],
+    10: ['0','28','57','85','113','142','170','198','227','255'],
+    16: ['0','17','34','51','68','85','102','119','136','153','170','187','204','221','238','255']
+  };
+
+  function getCdaPrecisionAndLevels() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('wba_data_v1') || '{}');
+      const p = saved.precision || 8;
+      return { precision: p, levels: CDA_LEVELS[p] || CDA_LEVELS[8] };
+    } catch(e) { return { precision: 8, levels: CDA_LEVELS[8] }; }
+  }
+
+  /* Write one measurement point to the correct slot in wba_data_v1 (CDA's storage format) */
+  function writeToCdaSlot(ch, levelIdx, point) {
+    try {
+      let saved = JSON.parse(localStorage.getItem('wba_data_v1') || '{}');
+      const precision = saved.precision || 8;
+      const levels = CDA_LEVELS[precision] || CDA_LEVELS[8];
+      // Normalize to canonical {data:{R,G,B,W}, precision} shape
+      const savedData = (saved.data && typeof saved.data === 'object') ? saved.data : {};
+      ['R','G','B','W'].forEach(c => {
+        if (!Array.isArray(savedData[c]) || savedData[c].length !== levels.length) {
+          savedData[c] = levels.map(() => ({x:'',y:'',Y:''}));
+        }
+      });
+      const toStr = v => (v !== null && v !== undefined && !isNaN(v)) ? String(v) : '';
+      savedData[ch][levelIdx] = { x: toStr(point.x), y: toStr(point.y), Y: toStr(point.Y) };
+      localStorage.setItem('wba_data_v1', JSON.stringify({ data: savedData, precision }));
+      return levels[levelIdx];
+    } catch(e) { return null; }
+  }
+
+  window.selectPassChannel = function(ch) {
+    selectedChannel = ch;
+    document.querySelectorAll('.pass-ch-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.ch === ch);
+    });
+  };
+
+  function getActiveTab() {
+    const tabs = ['single','multi','mmg','mmggroup'];
+    return tabs.find(t => { const el = document.getElementById('tab-'+t); return el && el.classList.contains('active'); }) || 'single';
+  }
+
+  function collectSingleData() {
+    const xt = (document.getElementById('cie-x')||{}).textContent||'—';
+    const yt = (document.getElementById('cie-y')||{}).textContent||'—';
+    const Yt = (document.getElementById('cie-Y')||{}).textContent||'—';
+    const xv = parseFloat(xt), yv = parseFloat(yt), Yv = parseFloat(Yt);
+    const valid = !isNaN(xv) && !isNaN(yv);
+    const r = parseInt((document.getElementById('rv')||{}).textContent)||0;
+    const g = parseInt((document.getElementById('gv')||{}).textContent)||0;
+    const b = parseInt((document.getElementById('bv')||{}).textContent)||0;
+    return { valid, x: isNaN(xv)?null:xv, y: isNaN(yv)?null:yv, Y: isNaN(Yv)?null:Yv, rgb:{r,g,b} };
+  }
+
+  function collectMultiData() {
+    if (typeof multiFiles === 'undefined' || !multiFiles.length) return { valid: false };
+    const last = multiFiles[multiFiles.length - 1];
+    return { valid: true, filesCount: multiFiles.length, lastName: last.name };
+  }
+
+  window.openPassDataModal = function() {
+    const tab = getActiveTab();
+    selectedChannel = null;
+    document.querySelectorAll('.pass-ch-btn').forEach(btn => btn.classList.remove('active'));
+    const labels = { single:'Pojedynczy plik', multi:'Wiele plików', mmg:'Pliki MMG', mmggroup:'MMG grupowy' };
+    document.getElementById('pass-modal-sub').textContent =
+      'Aktywna zakładka: ' + (labels[tab]||tab) + '. Wybierz kanał RGBW, poziom i aplikację docelową.';
+
+    // Populate level select from CDA's current precision (reads from shared localStorage)
+    const { levels } = getCdaPrecisionAndLevels();
+    const levelSel = document.getElementById('pass-level-select');
+    levelSel.innerHTML = '<option value="">— wybierz poziom —</option>' +
+      levels.map((lv, i) => `<option value="${i}">Poziom ${lv} (${i+1}/${levels.length})</option>`).join('');
+
+    // Show CDA slot row only for single-file tab (others don't map to CDA levels)
+    document.getElementById('pass-cda-row').style.display = tab === 'single' ? 'flex' : 'none';
+
+    document.getElementById('pass-data-modal').classList.add('open');
+  };
+
+  window.closePassDataModal = function() {
+    document.getElementById('pass-data-modal').classList.remove('open');
+  };
+
+  window.passDataTo = function(targetId) {
+    if (!selectedChannel) {
+      alert('Wybierz kanał (R / G / B / W) przed przekazaniem danych.');
+      return;
+    }
+    const tab = getActiveTab();
+
+    // For CDA target on single tab, require a level slot selection
+    let levelIdx = -1;
+    if (targetId === 'chromaticAnalyzer' && tab === 'single') {
+      const sel = document.getElementById('pass-level-select');
+      levelIdx = sel && sel.value !== '' ? parseInt(sel.value, 10) : -1;
+      if (levelIdx < 0) {
+        alert('Wybierz poziom (slot) przed wysłaniem do Chromatic Data Analyzer.');
+        return;
+      }
+    }
+
+    let payload = { source: 'spectral', tab, target: targetId, channel: selectedChannel, ts: Date.now() };
+
+    if (tab === 'single') {
+      const d = collectSingleData();
+      if (!d.valid) {
+        alert('Brak danych pomiarowych w zakładce Pojedynczy plik.\nWczytaj plik spektralny.');
+        return;
+      }
+      payload.x = d.x; payload.y = d.y; payload.Y = d.Y; payload.rgb = d.rgb;
+      if (SINGLE_TARGETS.includes(targetId) && (d.x == null || d.y == null)) {
+        alert('Aplikacja ' + targetId + ' wymaga współrzędnych CIE xyY.\nWczytaj plik aby uzyskać dane chromatyczności.');
+        return;
+      }
+      if (targetId === 'chromaticAnalyzer') {
+        if (d.x === null || d.y === null) {
+          alert('Brak współrzędnych CIE x/y. Wczytaj plik spektralny przed przekazaniem danych.');
+          return;
+        }
+        const levelVal = writeToCdaSlot(selectedChannel, levelIdx, { x: d.x, y: d.y, Y: d.Y });
+        if (!levelVal && levelVal !== '0') {
+          alert('Błąd zapisu danych do Chromatic Data Analyzer. Sprawdź konsolę.');
+          return;
+        }
+        payload.levelIdx = levelIdx;
+        // Notify CDA in-memory state via parent relay (also fires storage event as backup)
+        try {
+          window.parent.postMessage({
+            type: 'spectral-to-cda',
+            channel: selectedChannel,
+            levelIdx,
+            point: {
+              x: d.x !== null ? String(d.x) : '',
+              y: d.y !== null ? String(d.y) : '',
+              Y: d.Y !== null ? String(d.Y) : ''
+            }
+          }, '*');
+        } catch(e) {}
+        closePassDataModal();
+        showToast('✓ [' + selectedChannel + '] poziom ' + levelVal + ' zapisany w CDA');
+        return;
+      }
+    } else if (tab === 'multi') {
+      const d = collectMultiData();
+      if (!d.valid) { alert('Brak wczytanych plików w zakładce Wiele plików.'); return; }
+      payload.filesCount = d.filesCount; payload.lastName = d.lastName;
+    } else {
+      payload.note = 'Dane z zakładki ' + tab;
+    }
+
+    try { localStorage.setItem('spectral_incoming', JSON.stringify(payload)); } catch(e) {
+      alert('Błąd zapisu danych: ' + e.message); return;
+    }
+    // Live relay through the shell so an already-open target imports immediately
+    try { window.parent.postMessage({ type: 'spectral-incoming', payload: payload }, '*'); } catch(e) {}
+    closePassDataModal();
+    showToast('✓ Dane przekazane [' + selectedChannel + '] → ' + targetId);
+  };
+
+  function showToast(msg) {
+    const t = document.getElementById('pass-data-toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+  }
+
+  document.getElementById('pass-data-modal').addEventListener('click', function(e) {
+    if (e.target === this) closePassDataModal();
+  });
+})();
+</script>
+
+</body>
+</html>

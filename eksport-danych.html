@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eksport danych — Display Calibration Suite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #080808;
+      --surface: #0f0f0f;
+      --surface2: #141414;
+      --border:  #1e1e1e;
+      --accent:  #8b15ba;
+      --accent-soft: rgba(139,21,186,0.12);
+      --accent3: #33ff33;
+      --warn:    #ff9100;
+      --danger:  #ff3b3b;
+      --text:    #e0e0e0;
+      --muted:   #555555;
+      --text2:   #777777;
+      --text3:   #3a3a3a;
+      --mono: 'Share Tech Mono', monospace;
+      --sans: 'Rajdhani', sans-serif;
+      --radius: 10px;
+    }
+    body.light {
+      --bg:      #f4f4f7;
+      --surface: #ffffff;
+      --surface2: #eef0f3;
+      --border:  #d6d8de;
+      --accent:  #8b15ba;
+      --accent-soft: rgba(139,21,186,0.10);
+      --accent3: #1a9e1a;
+      --warn:    #d97500;
+      --danger:  #d12b2b;
+      --text:    #1a1a1c;
+      --muted:   #8c8c94;
+      --text2:   #62626a;
+      --text3:   #b4b4bc;
+    }
+    html.theme-anim, body.theme-anim, body.theme-anim * {
+      transition: background-color .9s ease, color .9s ease, border-color .9s ease !important;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: none; }
+    ::-webkit-scrollbar { display: none; }
+    body {
+      min-height: 100vh; background: var(--bg); color: var(--text);
+      font-family: var(--sans); display: flex; flex-direction: column;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .page { position: relative; z-index: 1; max-width: 960px; width: 100%; margin: 0 auto; padding: 32px 26px; flex: 1; }
+
+    /* Header */
+    .page-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
+      padding-bottom: 20px; border-bottom: 1px solid var(--border);
+    }
+    .page-icon {
+      width: 48px; height: 48px; border: 1px solid var(--accent); border-radius: 10px;
+      display: grid; place-items: center; color: var(--accent); flex-shrink: 0;
+    }
+    .page-icon svg { width: 26px; height: 26px; }
+    .page-title-group h1 {
+      font-family: var(--mono); font-size: 18px; letter-spacing: 3px;
+      color: var(--accent); text-transform: uppercase;
+    }
+    .page-title-group p { font-size: 13px; color: var(--text2); margin-top: 4px; letter-spacing: .5px; }
+
+    /* Panel */
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 26px 28px; margin-bottom: 20px;
+    }
+    .panel-title {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 2px;
+      color: var(--accent); text-transform: uppercase; margin-bottom: 16px;
+      padding-bottom: 10px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .panel-title svg { width: 16px; height: 16px; }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-radius: 6px; font-family: var(--mono);
+      font-size: 12px; letter-spacing: 1px; margin-bottom: 16px;
+    }
+    .status-badge.ok { background: rgba(51,255,51,0.08); border: 1px solid rgba(51,255,51,0.3); color: var(--accent3); }
+    .status-badge.empty { background: rgba(255,145,0,0.08); border: 1px solid rgba(255,145,0,0.3); color: var(--warn); }
+    .dot-sm { width: 7px; height: 7px; border-radius: 50%; }
+    .dot-sm.on { background: var(--accent3); }
+    .dot-sm.off { background: var(--warn); }
+
+    /* Data summary */
+    .data-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .data-item {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px;
+    }
+    .data-item .di-label { font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; color: var(--text2); text-transform: uppercase; margin-bottom: 6px; }
+    .data-item .di-val { font-size: 22px; font-weight: 600; color: var(--text); }
+    .data-item .di-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* Channel rows */
+    .channel-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+    .channel-row:last-child { border-bottom: none; }
+    .ch-label {
+      width: 20px; height: 20px; border-radius: 4px; flex-shrink: 0;
+      display: grid; place-items: center; font-family: var(--mono); font-size: 10px; font-weight: 600;
+    }
+    .ch-r { background: rgba(255,59,59,0.2); color: #ff3b3b; }
+    .ch-g { background: rgba(51,255,51,0.15); color: #33ff33; }
+    .ch-b { background: rgba(59,107,255,0.2); color: #3b6bff; }
+    .ch-w { background: rgba(224,224,224,0.12); color: #e0e0e0; border: 1px solid var(--border); }
+    .ch-name { font-family: var(--mono); font-size: 11px; letter-spacing: 1px; color: var(--text2); width: 80px; text-transform: uppercase; }
+    .ch-pts { color: var(--text); }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 22px; border-radius: 8px; cursor: pointer;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+      border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent);
+      transition: background .2s, box-shadow .2s;
+    }
+    .btn-export:hover { background: var(--accent); color: #fff; box-shadow: 0 0 18px -4px var(--accent); }
+    .btn-export svg { width: 16px; height: 16px; }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 22px; border-radius: 8px; cursor: pointer;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+      border: 1px solid var(--border); background: none; color: var(--text2);
+      transition: border-color .2s, color .2s;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-secondary svg { width: 16px; height: 16px; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center; padding: 48px 24px; color: var(--text2);
+    }
+    .empty-state svg { width: 56px; height: 56px; color: var(--text3); margin-bottom: 16px; }
+    .empty-state h3 { font-family: var(--mono); font-size: 14px; letter-spacing: 2px; color: var(--text2); text-transform: uppercase; margin-bottom: 10px; }
+    .empty-state p { font-size: 13.5px; line-height: 1.6; }
+    .empty-state .hint {
+      display: inline-block; margin-top: 16px; padding: 10px 18px;
+      background: var(--accent-soft); border: 1px solid rgba(139,21,186,0.25);
+      border-radius: 8px; font-family: var(--mono); font-size: 11px;
+      letter-spacing: 1px; color: var(--accent); text-transform: uppercase;
+    }
+
+    /* Device info */
+    .device-info {
+      display: flex; flex-wrap: wrap; gap: 16px;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 1px; color: var(--text2);
+    }
+    .device-info b { color: var(--text); font-weight: 400; }
+
+    /* Toast */
+    #toast {
+      display: none; position: fixed; bottom: 24px; right: 24px; z-index: 9000;
+      padding: 12px 20px; background: var(--surface); border: 1px solid var(--accent3);
+      border-radius: 8px; font-family: var(--mono); font-size: 12px;
+      letter-spacing: 1px; color: var(--accent3);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-icon">
+        <svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M28 34V8M18 18l10-10 10 10" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 34v12a2 2 0 0 0 2 2h36a2 2 0 0 0 2-2V34"/>
+        </svg>
+      </div>
+      <div class="page-title-group">
+        <h1>Eksport danych</h1>
+        <p>Dane pomiarowe z Chromatic Data Analyzer → CSV / JSON</p>
+      </div>
+    </div>
+
+    <div id="main-content"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const CDA_KEY = 'wba_data_v1';
+    const DEV_KEY = 'dcs-device';
+
+    function loadData() {
+      try { return JSON.parse(localStorage.getItem(CDA_KEY) || 'null'); } catch(e) { return null; }
+    }
+    function loadDevice() {
+      try { return JSON.parse(localStorage.getItem(DEV_KEY) || '{}'); } catch(e) { return {}; }
+    }
+
+    function channelPoints(chData) {
+      if (!chData) return 0;
+      return chData.filter(p => p && (p.x !== '' || p.y !== '' || p.Y !== '')).length;
+    }
+
+    function buildCSV(data) {
+      const channels = ['R','G','B','W'];
+      const header = 'Kanal,Poziom,x,y,Y';
+      const rows = [header];
+      channels.forEach(ch => {
+        const chData = data.data && data.data[ch.toLowerCase()];
+        if (!chData) return;
+        chData.forEach((pt, idx) => {
+          if (pt && (pt.x !== '' || pt.y !== '' || pt.Y !== '')) {
+            rows.push([ch, idx, pt.x || '', pt.y || '', pt.Y || ''].join(','));
+          }
+        });
+      });
+      return rows.join('\n');
+    }
+
+    function buildJSON(data) {
+      const device = loadDevice();
+      return JSON.stringify({
+        source: 'Display Calibration Suite — Chromatic Data Analyzer',
+        exportedAt: new Date().toISOString(),
+        device: { brand: device.brand, model: device.model, type: device.type, size: device.size, res: device.res },
+        precision: data.precision,
+        data: data.data,
+      }, null, 2);
+    }
+
+    function download(filename, content, mime) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    function render() {
+      const data = loadData();
+      const device = loadDevice();
+      const el = document.getElementById('main-content');
+
+      if (!data || !data.data) {
+        el.innerHTML = `
+          <div class="panel">
+            <div class="empty-state">
+              <svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M28 34V8M18 18l10-10 10 10" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 34v12a2 2 0 0 0 2 2h36a2 2 0 0 0 2-2V34"/>
+              </svg>
+              <h3>Brak danych pomiarowych</h3>
+              <p>Otwórz <b>Chromatic Data Analyzer → Dane wejściowe</b><br>i wklej dane pomiarowe — zostaną automatycznie<br>udostępnione w tym module.</p>
+              <span class="hint">Dane przechowywane w kluczu: ${CDA_KEY}</span>
+            </div>
+          </div>`;
+        return;
+      }
+
+      const channels = ['r','g','b','w'];
+      const chLabels = { r:'R', g:'G', b:'B', w:'W' };
+      const chClass  = { r:'ch-r', g:'ch-g', b:'ch-b', w:'ch-w' };
+      const totalPts = channels.reduce((s, ch) => s + channelPoints(data.data[ch]), 0);
+      const precision = data.precision || 8;
+      const devStr = device.brand && device.model ? `${device.brand} ${device.model}` : '—';
+      const dateStr = new Date().toISOString().slice(0,10);
+      const fname = (device.model || 'dane').replace(/\s+/g,'_');
+
+      const chRows = channels.map(ch => {
+        const pts = channelPoints(data.data[ch]);
+        return `<div class="channel-row">
+          <div class="ch-label ${chClass[ch]}">${chLabels[ch]}</div>
+          <span class="ch-name">Kanał ${chLabels[ch]}</span>
+          <span class="ch-pts">${pts} punkt${pts === 1 ? '' : pts < 5 ? 'y' : 'ów'}</span>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="panel">
+          <div class="panel-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            Status danych
+          </div>
+          <div class="status-badge ok">
+            <span class="dot-sm on"></span>
+            Dane CDA dostępne · precision: ${precision} · klucz: ${CDA_KEY}
+          </div>
+          <div class="data-summary">
+            <div class="data-item">
+              <div class="di-label">Łączna liczba punktów</div>
+              <div class="di-val">${totalPts}</div>
+              <div class="di-sub">we wszystkich kanałach</div>
+            </div>
+            <div class="data-item">
+              <div class="di-label">Precyzja</div>
+              <div class="di-val">${precision}</div>
+              <div class="di-sub">poziomów pomiaru</div>
+            </div>
+            <div class="data-item">
+              <div class="di-label">Urządzenie</div>
+              <div class="di-val" style="font-size:14px">${devStr}</div>
+              <div class="di-sub">${device.type || '—'} · ${device.size || '—'}″</div>
+            </div>
+          </div>
+          <div>${chRows}</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Eksport
+          </div>
+          <div class="btn-row">
+            <button class="btn-export" onclick="exportCSV()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Pobierz CSV
+            </button>
+            <button class="btn-export" onclick="exportJSON()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Pobierz JSON
+            </button>
+            <button class="btn-secondary" onclick="refreshData()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Odśwież dane
+            </button>
+          </div>
+          <div style="margin-top:14px; font-size:12px; color:var(--text2); line-height:1.6;">
+            CSV: tabela kanał/poziom/x/y/Y · JSON: pełna struktura z metadanymi urządzenia
+          </div>
+        </div>`;
+
+      window._exportFname = fname;
+      window._exportDate  = dateStr;
+    }
+
+    window.exportCSV = function() {
+      const data = loadData();
+      if (!data) { showToast('Brak danych do eksportu'); return; }
+      download(`${window._exportFname}_${window._exportDate}.csv`, buildCSV(data), 'text/csv');
+      showToast('✓ Pobrano CSV');
+    };
+
+    window.exportJSON = function() {
+      const data = loadData();
+      if (!data) { showToast('Brak danych do eksportu'); return; }
+      download(`${window._exportFname}_${window._exportDate}.json`, buildJSON(data), 'application/json');
+      showToast('✓ Pobrano JSON');
+    };
+
+    window.refreshData = function() { render(); showToast('✓ Dane odświeżone'); };
+
+    render();
+
+    /* Suite theme listener */
+    (function(){
+      var __at = null;
+      function applyTheme(light) {
+        if (!document.body) return;
+        document.documentElement.classList.add('theme-anim');
+        document.body.classList.add('theme-anim');
+        document.body.classList.toggle('light', !!light);
+        clearTimeout(__at);
+        __at = setTimeout(function() {
+          document.documentElement.classList.remove('theme-anim');
+          document.body.classList.remove('theme-anim');
+        }, 950);
+      }
+      function readLS() { try { return localStorage.getItem('suite-theme') === 'light'; } catch(e) { return false; } }
+      applyTheme(readLS());
+      document.addEventListener('DOMContentLoaded', function() { applyTheme(readLS()); });
+      window.addEventListener('message', function(ev) {
+        if (ev.data && ev.data.type === 'suite-theme') {
+          if (!ev.data.noToggle) applyTheme(ev.data.light);
+        }
+        if (ev.data && ev.data.type === 'suite-reset') {
+          try { if (typeof render === 'function') render(); } catch(e) {}
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

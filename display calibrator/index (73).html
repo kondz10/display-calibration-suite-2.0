@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Display Calibrator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #080808;
+    --surface: #0f0f0f;
+    --border: #1e1e1e;
+    --accent: #8b15ba;
+    --text: #e0e0e0;
+    --muted: #555;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+  }
+
+* { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: none; }
+::-webkit-scrollbar { display: none; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 52px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+
+  .header-icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--accent);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    padding: 7px;
+    flex-shrink: 0;
+    border-radius: 10px;
+  }
+
+  .header-icon span { display: block; border-radius: 3px; }
+  .header-icon span:nth-child(1) { background: #ff3333; }
+  .header-icon span:nth-child(2) { background: #33ff33; }
+  .header-icon span:nth-child(3) { background: #3333ff; }
+  .header-icon span:nth-child(4) { background: #fff; }
+
+  .header-text h1 {
+    font-family: var(--mono);
+    font-size: 24px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .header-text p {
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  .header-badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* CARDS GRID */
+  .card-grid {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+
+  .card-grid.cols4 { grid-template-columns: repeat(4, 1fr); }
+  .card-grid.cols2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+
+  .card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 18px 14px;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    user-select: none;
+    border-radius: 10px;
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+  }
+
+  .card:hover { border-color: var(--border); background: var(--surface); }
+  .card:hover::after { transform: scaleX(0.5); }
+
+  .card.active {
+    border-color: var(--accent);
+    background: rgba(139,21,186,0.06);
+  }
+
+  .card.active::after { transform: scaleX(1); }
+
+  .card-main {
+    font-family: var(--mono);
+    font-size: 22px;
+    color: var(--accent);
+    font-weight: bold;
+    letter-spacing: 2px;
+    transition: text-shadow 0.18s;
+  }
+
+  .card.active .card-main { text-shadow: 0 0 18px rgba(139,21,186,0.6); }
+
+  .card-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 5px;
+    letter-spacing: 1px;
+  }
+
+  /* MODE CARDS — left-aligned with number */
+  .mode-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 20px 18px;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    user-select: none;
+    border-radius: 10px;
+  }
+
+  .mode-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+  }
+
+  .mode-card:hover { border-color: var(--border); background: var(--surface); }
+  .mode-card:hover::after { transform: scaleX(0.5); }
+  .mode-card.active { border-color: var(--accent); background: rgba(139,21,186,0.06); }
+  .mode-card.active::after { transform: scaleX(1); }
+
+  .mode-num {
+    font-family: var(--mono);
+    font-size: 26px;
+    color: var(--border);
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.18s;
+  }
+
+  .mode-card.active .mode-num,
+  .mode-card:hover .mode-num { color: var(--accent); }
+
+  .mode-title {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+  }
+
+  .mode-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* CHANNEL BUTTONS */
+  .ch-grid {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+
+  .ch-btn {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 20px;
+    letter-spacing: 4px;
+    padding: 18px 10px;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-align: center;
+    border-radius: 10px;
+  }
+
+  .ch-btn-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-top: 3px;
+    opacity: 0.5;
+  }
+
+  .ch-btn.r { border-color: #2a0000; }
+  .ch-btn.r:hover, .ch-btn.r.active { border-color: #ff3333; color: #ff3333; background: rgba(255,51,51,0.07); }
+  .ch-btn.g { border-color: #002a00; }
+  .ch-btn.g:hover, .ch-btn.g.active { border-color: #33ff33; color: #33ff33; background: rgba(51,255,51,0.07); }
+  .ch-btn.b { border-color: #00002a; }
+  .ch-btn.b:hover, .ch-btn.b.active { border-color: #4488ff; color: #4488ff; background: rgba(68,136,255,0.07); }
+  .ch-btn.w { border-color: #222; }
+  .ch-btn.w:hover, .ch-btn.w.active { border-color: #fff; color: #fff; background: rgba(255,255,255,0.05); }
+
+  /* HIDDEN — channel picker only visible for mode 2 */
+  .hidden { display: none !important; }
+
+  /* START BUTTON */
+  .start-wrap {
+    margin-top: 44px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-start {
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 16px;
+    letter-spacing: 5px;
+    padding: 18px 56px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    display: block;
+    width: 100%;
+    border-radius: 10px;
+  }
+
+  .btn-start::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    z-index: 0;
+  }
+
+  .btn-start span { position: relative; z-index: 1; }
+  .btn-start:hover { color: #fff; }
+  .btn-start:hover::before { transform: translateX(0); }
+
+  .btn-start:disabled {
+    border-color: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  .btn-start:disabled:hover { color: var(--muted); }
+  .btn-start:disabled:hover::before { transform: translateX(-100%); }
+
+  /* ===== FULLSCREEN OVERLAY ===== */
+  .fs-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    cursor: none;
+  }
+
+  .fs-overlay.active { display: block; }
+
+  /* HUD */
+  .fs-hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+
+  .fs-hud.fade { opacity: 0; }
+  .fs-hud-label { font-size: 26px; letter-spacing: 8px; }
+  .fs-hud-info { color: rgba(255,255,255,0.5); }
+
+  .fs-hint {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.4);
+    pointer-events: none;
+    transition: opacity 0.5s;
+    white-space: nowrap;
+  }
+
+  .fs-hint.fade { opacity: 0; }
+
+  /* DONE SCREEN */
+  .fs-done {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    cursor: pointer;
+  }
+
+  .fs-done.active { display: flex; }
+
+  .fs-done h2 {
+    font-family: var(--mono);
+    font-size: 28px;
+    letter-spacing: 8px;
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(139,21,186,0.6);
+  }
+
+  .fs-done p {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .done-bars { display: flex; gap: 8px; }
+  .done-bar { width: 56px; height: 3px; }
+  .done-bar.r { background: #ff3333; box-shadow: 0 0 10px #ff3333; }
+  .done-bar.g { background: #33ff33; box-shadow: 0 0 10px #33ff33; }
+  .done-bar.b { background: #4488ff; box-shadow: 0 0 10px #4488ff; }
+  .done-bar.w { background: #fff;    box-shadow: 0 0 10px #fff; }
+  .done-bar.single { background: var(--accent); box-shadow: 0 0 10px var(--accent); width: 120px; }
+
+  /* PROGRESS DOTS */
+  .fs-dots {
+    position: absolute;
+    bottom: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 7px;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+
+  .fs-dots.fade { opacity: 0; }
+
+  .fs-dot {
+    width: 7px; height: 7px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    transition: all 0.25s;
+  }
+
+  .fs-dot.done    { background: rgba(255,255,255,0.55); }
+  .fs-dot.current { background: #fff; transform: scale(1.35); border-color: #fff; }
+
+  /* ===== INSTRUCTION OVERLAY ===== */
+  .instr-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .instr-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+    width: 100%;
+  }
+
+  .instr-header {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+
+  .instr-step {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* Device selector */
+  .device-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+
+  .device-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 28px 14px 22px;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    user-select: none;
+    border-radius: 10px;
+  }
+
+  .device-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+  }
+
+  .device-card:hover { border-color: var(--border); background: var(--surface); }
+  .device-card:hover::after { transform: scaleX(0.5); }
+  .device-card.active { border-color: var(--accent); background: rgba(139,21,186,0.06); }
+  .device-card.active::after { transform: scaleX(1); }
+
+  .device-icon {
+    display: block;
+    margin: 0 auto 14px;
+    opacity: 0.5;
+    transition: opacity 0.18s;
+  }
+  .device-card.active .device-icon,
+  .device-card:hover .device-icon { opacity: 1; }
+
+  .device-name {
+    font-family: var(--mono);
+    font-size: 17px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    font-weight: bold;
+    transition: text-shadow 0.18s;
+  }
+  .device-card.active .device-name { text-shadow: 0 0 18px rgba(139,21,186,0.6); }
+
+  /* Technology selector */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+
+  .tech-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    user-select: none;
+    border-radius: 10px;
+  }
+
+  .tech-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+  }
+
+  .tech-card:hover { border-color: var(--border); background: var(--surface); }
+  .tech-card:hover::after { transform: scaleX(0.5); }
+  .tech-card.active { border-color: var(--accent); background: rgba(139,21,186,0.06); }
+  .tech-card.active::after { transform: scaleX(1); }
+
+  .tech-name {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    transition: text-shadow 0.18s;
+  }
+  .tech-card.active .tech-name { text-shadow: 0 0 14px rgba(139,21,186,0.5); }
+
+  /* Step 2 — instructions panel */
+  .instr-panel {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 28px 28px 24px;
+    margin-bottom: 36px;
+    display: none;
+    border-radius: 10px;
+  }
+
+  .instr-panel.visible { display: block; }
+
+  .instr-panel-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .instr-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+  }
+
+  .instr-list li {
+    font-family: var(--sans);
+    font-size: 16px;
+    color: var(--text);
+    line-height: 1.7;
+    padding: 9px 0 9px 22px;
+    position: relative;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .instr-list li:last-child { border-bottom: none; }
+
+  .instr-list li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+
+  .instr-list li.sub {
+    padding-left: 38px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .instr-list li.sub::before {
+    content: '–';
+    left: 20px;
+    color: var(--muted);
+  }
+
+  /* Step 3 — preparation */
+  .prep-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+
+  .prep-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 22px 20px;
+    border-radius: 10px;
+  }
+
+  .prep-card-title {
+    font-family: var(--mono);
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .prep-card-desc {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* Dalej button */
+  .instr-next-wrap {
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+
+  .instr-page { display: none; }
+  .instr-page.active { display: block; }
+
+  .page-indicator {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+
+  .page-dot {
+    width: 24px;
+    height: 3px;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+
+  .page-dot.active { background: var(--accent); }
+
+  /* ===== COLOR CHECKER ===== */
+  #colorCheckerOverlay {
+    background: #000;
+    cursor: none;
+  }
+
+  .cc-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 0;
+  }
+
+  .cc-cell {
+    position: relative;
+    transition: none;
+  }
+
+  .cc-cell-label {
+    position: absolute;
+    bottom: 6px;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    pointer-events: none;
+    opacity: 0.75;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 4px;
+    transition: opacity 0.5s;
+  }
+
+  .cc-cell-rgb {
+    position: absolute;
+    bottom: 20px;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    opacity: 0.55;
+    transition: opacity 0.5s;
+  }
+
+  .cc-center-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(0,0,0,0.4);
+    pointer-events: none;
+    display: none;
+  }
+
+  .cc-labels-fade .cc-cell-label,
+  .cc-labels-fade .cc-cell-rgb {
+    opacity: 0;
+  }
+
+  /* ===== WHITE ZONE LUMINANCE ===== */
+  .wzl-zone-label {
+    position: absolute;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(0,0,0,0.55);
+    pointer-events: none;
+    text-align: center;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+
+html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
+</style>
+</head>
+<body>
+
+<!-- ===== SKIP MODAL: ROZDZIELCZOŚĆ ===== -->
+<div id="skipResModal" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(8,8,8,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+  <div style="background:#0f0f0f;border:1px solid #2a2a2a;border-radius:14px;padding:40px 36px;width:min(460px,92vw);">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:#555;text-transform:uppercase;margin-bottom:8px;">SZYBKI START</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:600;color:#e0e0e0;margin-bottom:28px;">Wybierz rozdzielczość ekranu</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px;">
+      <div class="card" id="skipResCard1280" onclick="skipSelectRes(1280,720)"><div class="card-main">HD</div><div class="card-sub">1280 × 720</div></div>
+      <div class="card" id="skipResCard1920" onclick="skipSelectRes(1920,1080)"><div class="card-main">FHD</div><div class="card-sub">1920 × 1080</div></div>
+      <div class="card" id="skipResCard2560" onclick="skipSelectRes(2560,1440)"><div class="card-main">QHD</div><div class="card-sub">2560 × 1440</div></div>
+      <div class="card" id="skipResCard3840" onclick="skipSelectRes(3840,2160)"><div class="card-main">4K</div><div class="card-sub">3840 × 2160</div></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="document.getElementById('skipResModal').style.display='none'" style="flex:0 0 auto;background:transparent;border:1px solid #2a2a2a;color:#555;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;padding:12px 20px;border-radius:8px;cursor:pointer;text-transform:uppercase;">WRÓĆ</button>
+      <button id="skipResConfirm" onclick="skipResConfirm()" disabled style="flex:1;background:transparent;border:1px solid #8b15ba;color:#8b15ba;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:4px;padding:12px 20px;border-radius:8px;cursor:pointer;text-transform:uppercase;transition:all 0.18s;opacity:0.4;">DALEJ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== INSTRUCTION OVERLAY ===== -->
+<div class="instr-overlay" id="instrOverlay">
+  <div class="instr-inner">
+
+    <header class="instr-header">
+      <div class="header-icon">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="header-text">
+        <h1>Display Calibrator</h1>
+        <p>KONFIGURACJA</p>
+      </div>
+      <div class="header-badge">
+        CHANNELS: R · G · B · W<br>
+        MODES: GRADIENT · SOLID · CONTRAST<br>
+        SCALE: 8 · 16 STEPS
+      </div>
+    </header>
+
+    <!-- SKIP BAR -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:24px;margin-top:-8px;">
+      <button id="dcSkipBtn" onclick="skipInstructions()" style="background:rgba(139,21,186,0.12);border:1px solid rgba(139,21,186,0.5);color:#c06ae0;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:3px;padding:11px 24px;border-radius:8px;cursor:pointer;text-transform:uppercase;" onmouseover="this.style.background='rgba(139,21,186,0.22)'" onmouseout="this.style.background='rgba(139,21,186,0.12)'">POMIŃ INSTRUKCJE &rarr;</button>
+    </div>
+
+    <!-- PAGE DOTS -->
+    <div class="page-indicator">
+      <div class="page-dot active" id="pdot0"></div>
+      <div class="page-dot" id="pdot1"></div>
+      <div class="page-dot" id="pdot2"></div>
+      <div class="page-dot" id="pdot3"></div>
+    </div>
+
+    <!-- PAGE 1: Urządzenie + Technologia -->
+    <div class="instr-page active" id="instrPage0">
+
+      <div class="instr-step">01 / Typ urządzenia</div>
+      <div class="device-grid">
+        <div class="device-card" id="devTV" onclick="selectDevice('tv')">
+          <svg class="device-icon" width="52" height="40" viewBox="0 0 52 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="48" height="32" rx="2" stroke="#8b15ba" stroke-width="1.5"/>
+            <rect x="8" y="8" width="36" height="20" fill="rgba(139,21,186,0.15)" stroke="#8b15ba" stroke-width="0.5"/>
+            <line x1="20" y1="34" x2="18" y2="39" stroke="#8b15ba" stroke-width="1.5"/>
+            <line x1="32" y1="34" x2="34" y2="39" stroke="#8b15ba" stroke-width="1.5"/>
+            <line x1="16" y1="39" x2="36" y2="39" stroke="#8b15ba" stroke-width="1.5"/>
+          </svg>
+          <div class="device-name">TELEWIZOR</div>
+        </div>
+        <div class="device-card" id="devMon" onclick="selectDevice('monitor')">
+          <svg class="device-icon" width="52" height="40" viewBox="0 0 52 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="48" height="30" rx="2" stroke="#8b15ba" stroke-width="1.5"/>
+            <rect x="8" y="7" width="36" height="18" fill="rgba(139,21,186,0.15)" stroke="#8b15ba" stroke-width="0.5"/>
+            <line x1="26" y1="32" x2="26" y2="37" stroke="#8b15ba" stroke-width="1.5"/>
+            <line x1="20" y1="37" x2="32" y2="37" stroke="#8b15ba" stroke-width="1.5"/>
+          </svg>
+          <div class="device-name">MONITOR</div>
+        </div>
+        <div class="device-card" id="devLap" onclick="selectDevice('laptop')">
+          <svg class="device-icon" width="52" height="40" viewBox="0 0 52 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="2" width="36" height="24" rx="2" stroke="#8b15ba" stroke-width="1.5"/>
+            <rect x="13" y="6" width="26" height="15" fill="rgba(139,21,186,0.15)" stroke="#8b15ba" stroke-width="0.5"/>
+            <path d="M2 28 Q26 28 50 28 L50 31 Q26 33 2 31 Z" stroke="#8b15ba" stroke-width="1.5" fill="rgba(139,21,186,0.08)"/>
+            <line x1="22" y1="28" x2="30" y2="28" stroke="#8b15ba" stroke-width="2"/>
+          </svg>
+          <div class="device-name">LAPTOP</div>
+        </div>
+      </div>
+
+      <div class="instr-step">02 / Technologia ekranu</div>
+      <div class="tech-grid">
+        <div class="tech-card" onclick="selectTech(this)"><div class="tech-name">LED Edge-lit</div></div>
+        <div class="tech-card" onclick="selectTech(this)"><div class="tech-name">LED Backlit FALD</div></div>
+        <div class="tech-card" onclick="selectTech(this)"><div class="tech-name">Mini LED</div></div>
+        <div class="tech-card" onclick="selectTech(this)"><div class="tech-name">OLED</div></div>
+        <div class="tech-card" onclick="selectTech(this)"><div class="tech-name">WOLED</div></div>
+        <div class="tech-card" onclick="selectTech(this)"><div class="tech-name">QD-OLED</div></div>
+      </div>
+
+      <div class="instr-next-wrap">
+        <button class="btn-start" id="nextBtn0" onclick="goPage(1)" disabled><span>DALEJ</span></button>
+      </div>
+    </div>
+
+    <!-- PAGE 2: Rozdzielczość -->
+    <div class="instr-page" id="instrPage1">
+
+      <div class="instr-step">02 / Rozdzielczość ekranu</div>
+      <div class="card-grid cols2" style="margin-bottom:36px;">
+        <div class="card" id="resCard1280" onclick="selectResolution(1280,720)">
+          <div class="card-main">HD</div>
+          <div class="card-sub">1280 × 720</div>
+        </div>
+        <div class="card" id="resCard1920" onclick="selectResolution(1920,1080)">
+          <div class="card-main">FHD</div>
+          <div class="card-sub">1920 × 1080</div>
+        </div>
+        <div class="card" id="resCard2560" onclick="selectResolution(2560,1440)">
+          <div class="card-main">QHD</div>
+          <div class="card-sub">2560 × 1440</div>
+        </div>
+        <div class="card" id="resCard3840" onclick="selectResolution(3840,2160)">
+          <div class="card-main">4K</div>
+          <div class="card-sub">3840 × 2160</div>
+        </div>
+      </div>
+
+      <div class="instr-next-wrap">
+        <button class="btn-start" id="nextBtn1" onclick="goPage(2)" disabled><span>DALEJ</span></button>
+      </div>
+    </div>
+
+    <!-- PAGE 3: Zalecenia kalibracji -->
+    <div class="instr-page" id="instrPage2">
+
+      <div class="instr-step">02 / Zalecenia do prawidłowej kalibracji</div>
+
+      <!-- TV instructions -->
+      <div class="instr-panel" id="instrTV">
+        <div class="instr-panel-title">Telewizor</div>
+        <ul class="instr-list">
+          <li>Przywróć fabryczne ustawienia obrazu (zalecany tryb: Standard)</li>
+          <li>Ustaw jasność podświetlenia na 100%</li>
+          <li>Wyłącz funkcje poprawy obrazu: dynamiczny kontrast, Eco, redukcję szumów, AI Picture, HDR Tone Mapping</li>
+          <li>Kalibrację wykonuj w warunkach zbliżonych do użytkowania:
+            <ul class="instr-list" style="margin-top:6px;margin-bottom:0;">
+              <li class="sub">wieczorem / nocą — ciemne pomieszczenie,</li>
+              <li class="sub">w dzień — umiarkowane oświetlenie bez bezpośredniego światła na ekran.</li>
+            </ul>
+          </li>
+          <li>Unikaj odbić i bezpośredniego światła padającego na ekran</li>
+          <li>Odczekaj min. 30 minut od włączenia telewizora</li>
+          <li>Zachowaj temperaturę otoczenia 20–25 °C</li>
+          <li>Dla OLED: unikaj długiego wyświetlania statycznych plansz przy maksymalnej jasności</li>
+        </ul>
+      </div>
+
+      <!-- Monitor instructions -->
+      <div class="instr-panel" id="instrMonitor">
+        <div class="instr-panel-title">Monitor</div>
+        <ul class="instr-list">
+          <li>Przywróć ustawienia fabryczne monitora</li>
+          <li>Ustaw natywną rozdzielczość i maksymalne zalecane odświeżanie</li>
+          <li>Wyłącz HDR, tryby Gaming, Eco oraz filtr światła niebieskiego</li>
+          <li>Ustaw jasność podświetlenia na 100%</li>
+          <li>Jasność ustaw zgodnie z warunkami użytkowania</li>
+          <li>Unikaj odbić i bezpośredniego światła padającego na ekran</li>
+          <li>Odczekaj min. 30 minut od włączenia monitora</li>
+          <li>Zachowaj temperaturę otoczenia 20–25 °C</li>
+          <li>W przypadku ekranów OLED ogranicz długie wyświetlanie statycznych plansz testowych</li>
+        </ul>
+      </div>
+
+      <!-- Laptop instructions -->
+      <div class="instr-panel" id="instrLaptop">
+        <div class="instr-panel-title">Laptop</div>
+        <ul class="instr-list">
+          <li>Podłącz laptop do zasilania sieciowego</li>
+          <li>Wyłącz automatyczną jasność, adaptacyjne kolory i oszczędzanie energii</li>
+          <li>Ustaw natywną rozdzielczość ekranu</li>
+          <li>Ustaw jasność podświetlenia na 100%</li>
+          <li>Unikaj odbić i bezpośredniego światła padającego na ekran</li>
+          <li>Kalibrację wykonuj w stabilnym oświetleniu — bez zmiennego światła słonecznego</li>
+          <li>Odczekaj min. 30 minut od włączenia laptopa</li>
+          <li>Zachowaj temperaturę otoczenia 20–25 °C</li>
+          <li>W przypadku ekranów OLED ogranicz długie wyświetlanie statycznych plansz testowych</li>
+        </ul>
+      </div>
+
+      <div class="instr-next-wrap">
+        <button class="btn-start" onclick="recommendNext()"><span>DALEJ</span></button>
+      </div>
+    </div>
+
+    <!-- PAGE 4: Przygotowanie do pomiaru -->
+    <div class="instr-page" id="instrPage3">
+
+      <div class="instr-step">04 / Przygotowanie do pomiaru</div>
+
+      <div class="prep-grid">
+        <div class="prep-card">
+          <div class="prep-card-title">01 · Gradient Steps</div>
+          <div class="prep-card-desc">Pomiar matrycowym miernikiem luminancji. Każdy kanał (R, G, B, W) wyświetlany sekwencyjnie w 8 lub 16 blokach od czerni do pełnej jasności.</div>
+        </div>
+        <div class="prep-card">
+          <div class="prep-card-title">02 · Solid Levels</div>
+          <div class="prep-card-desc">Pomiar spektroradiometrem. Pełnoekranowe pola jednorodne — 8 lub 16 poziomów wybranego kanału, od bieli do czerni.</div>
+        </div>
+        <div class="prep-card">
+          <div class="prep-card-title">03 · Contrast Check</div>
+          <div class="prep-card-desc">Pomiar luminancji dla bieli (255,255,255) i czerni (0,0,0). Przełączanie kliknięciem — podstawa do obliczenia kontrastu statycznego.</div>
+        </div>
+        <div class="prep-card">
+          <div class="prep-card-title">04 · APL White Fill</div>
+          <div class="prep-card-desc">Pomiar luminancji przy 9 poziomach wypełnienia ekranu bielą: 2% · 5% · 10% · 15% · 20% · 25% · 50% · 75% · 100%. Biały prostokąt wyśrodkowany na czarnym tle.</div>
+        </div>
+        <div class="prep-card" style="grid-column: 1 / -1;">
+          <div class="prep-card-title">05 · Color Checker</div>
+          <div class="prep-card-desc">Pomiar spektroradiometrem w centrum ekranu. Plansza 24 pól barwnych X-Rite ColorChecker Classic wyświetlana sekwencyjnie na pełnym ekranie.</div>
+        </div>
+        <div class="prep-card">
+          <div class="prep-card-title">06 · White Zone Luminance</div>
+          <div class="prep-card-desc">Pomiar miernikiem luminancji. Białe pole (domyślnie 2% powierzchni) wyświetlane kolejno w 4 rogach ekranu, centrum oraz wszystkich strefach jednocześnie.</div>
+        </div>
+        <div class="prep-card">
+          <div class="prep-card-title">07 · Halo Test</div>
+          <div class="prep-card-desc">Pomiar miernikiem luminancji. Biała plama na czarnym tle rosnąca od centrum ekranu — 7 kroków: 1% · 2% · 5% · 10% · 20% · 25% · 50% powierzchni.</div>
+        </div>
+      </div>
+
+      <div class="instr-next-wrap">
+        <button class="btn-start" onclick="closeInstructions()"><span>DALEJ</span></button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div class="app">
+  <header class="header">
+    <div class="header-icon">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="header-text">
+      <h1>Display Calibrator</h1>
+      <p>RGB MEASUREMENT TOOL</p>
+    </div>
+    <div class="header-badge">
+      CHANNELS: R · G · B · W<br>
+      MODES: GRADIENT · SOLID · CONTRAST<br>
+      SCALE: 8 · 16 STEPS
+    </div>
+  </header>
+
+  <!-- 01 TRYB -->
+  <div class="section-label">01 / Tryb pomiaru</div>
+  <div class="card-grid cols3" style="margin-bottom:36px;">
+    <div class="mode-card active" id="modeCard1" onclick="selectMode(1)">
+      <div class="mode-num">01</div>
+      <div>
+        <div class="mode-title">GRADIENT STEPS</div>
+        <div class="mode-desc">Podział ekranu na 8, 10, 16 lub 32 bloki od czerni do bieli — osobno R, G, B, W.</div>
+      </div>
+    </div>
+    <div class="mode-card" id="modeCard2" onclick="selectMode(2)">
+      <div class="mode-num">02</div>
+      <div>
+        <div class="mode-title">SOLID LEVELS</div>
+        <div class="mode-desc">Pełnoekranowe jednolite pola — 8, 10, 16 lub 32 poziomy wybranego kanału.</div>
+      </div>
+    </div>
+    <div class="mode-card" id="modeCard3" onclick="selectMode(3)">
+      <div class="mode-num">03</div>
+      <div>
+        <div class="mode-title">CONTRAST CHECK</div>
+        <div class="mode-desc">Czysta biel (255,255,255) i czerń (0,0,0) — pomiar kontrastu statycznego.</div>
+      </div>
+    </div>
+    <div class="mode-card" id="modeCard4" onclick="selectMode(4)" style="grid-column: 1 / -1;">
+      <div class="mode-num">04</div>
+      <div>
+        <div class="mode-title">APL WHITE FILL</div>
+        <div class="mode-desc">Wypełnienie ekranu bielą — 9 poziomów APL: 2% · 5% · 10% · 15% · 20% · 25% · 50% · 75% · 100%. Czarne tło, biały prostokąt zajmuje dokładnie N% powierzchni ekranu.</div>
+      </div>
+    </div>
+    <div class="mode-card" id="modeCard5" onclick="selectMode(5)" style="grid-column: 1 / -1;">
+      <div class="mode-num">05</div>
+      <div>
+        <div class="mode-title">COLOR CHECKER</div>
+        <div class="mode-desc">Plansza 24 pól barwnych X-Rite ColorChecker Classic. Wykonanie pomiaru za pomocą spektroradiometru, pomiar w centrum ekranu.</div>
+      </div>
+    </div>
+    <div class="mode-card" id="modeCard6" onclick="selectMode(6)" style="grid-column: 1 / -1;">
+      <div class="mode-num">06</div>
+      <div>
+        <div class="mode-title">WHITE ZONE LUMINANCE</div>
+        <div class="mode-desc">5 stref pomiaru luminancji bieli (2% powierzchni ekranu każda): 4 rogi + centrum — sekwencyjnie, na końcu wszystkie jednocześnie. Kostki odsunięte od rogów o 1/10 szerokości i wysokości ekranu.</div>
+      </div>
+    </div>
+    <div class="mode-card" id="modeCard7" onclick="selectMode(7)" style="grid-column: 1 / -1;">
+      <div class="mode-num">07</div>
+      <div>
+        <div class="mode-title">HALO TEST</div>
+        <div class="mode-desc">Test efektu halo lokalnego podświetlenia — biała plama na czarnym tle, rosnąca sekwencyjnie od centrum: 1% · 2% · 5% · 10% · 20% · 25% · 50% powierzchni ekranu.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 SKALA — tylko dla trybu 1 i 2 -->
+  <div id="scaleSection">
+    <div class="section-label">02 / Skala kroków</div>
+    <div class="card-grid cols4" style="margin-bottom:36px;">
+      <div class="card active" id="scaleCard8" onclick="selectScale(8)">
+        <div class="card-main">8</div>
+        <div class="card-sub">0 · 36 · 73 · 109 · 146 · 182 · 219 · 255</div>
+      </div>
+      <div class="card" id="scaleCard10" onclick="selectScale(10)">
+        <div class="card-main">10</div>
+        <div class="card-sub">0 · 28 · 57 · 85 · 113 · 142 · 170 · 198 · 227 · 255</div>
+      </div>
+      <div class="card" id="scaleCard16" onclick="selectScale(16)">
+        <div class="card-main">16</div>
+        <div class="card-sub">0 · 17 · 34 · 51 · … · 204 · 221 · 238 · 255</div>
+      </div>
+      <div class="card" id="scaleCard32" onclick="selectScale(32)">
+        <div class="card-main">32</div>
+        <div class="card-sub">0 · 8 · 16 · 24 · … · 232 · 240 · 248 · 255</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 KANAŁ — tylko dla trybu 2 -->
+  <div id="channelSection" class="hidden">
+    <div class="section-label">03 / Kanał</div>
+    <div class="ch-grid">
+      <button class="ch-btn r" onclick="selectChannel(this,0)">R<span class="ch-btn-label">RED</span></button>
+      <button class="ch-btn g" onclick="selectChannel(this,1)">G<span class="ch-btn-label">GREEN</span></button>
+      <button class="ch-btn b" onclick="selectChannel(this,2)">B<span class="ch-btn-label">BLUE</span></button>
+      <button class="ch-btn w" onclick="selectChannel(this,3)">W<span class="ch-btn-label">WHITE</span></button>
+    </div>
+  </div>
+
+  <!-- 04 SIATKA — tylko dla trybu 2 -->
+  <div id="gridSection" class="hidden">
+    <div class="section-label">04 / Siatka pomiarowa</div>
+    <div class="card-grid cols2" style="margin-bottom:36px;">
+      <div class="card active" id="gridCardOff" onclick="selectGrid(false)">
+        <div class="card-main" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <rect x="1" y="1" width="24" height="24" rx="2" stroke="#555" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="card-sub">WYŁĄCZONA</div>
+      </div>
+      <div class="card" id="gridCardOn" onclick="selectGrid(true)">
+        <div class="card-main" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <rect x="1" y="1" width="24" height="24" rx="2" stroke="#8b15ba" stroke-width="1.5"/>
+            <line x1="7" y1="1" x2="7" y2="25" stroke="#8b15ba" stroke-width="0.8" opacity="0.7"/>
+            <line x1="13" y1="1" x2="13" y2="25" stroke="#8b15ba" stroke-width="0.8" opacity="0.7"/>
+            <line x1="19" y1="1" x2="19" y2="25" stroke="#8b15ba" stroke-width="0.8" opacity="0.7"/>
+            <line x1="1" y1="7" x2="25" y2="7" stroke="#8b15ba" stroke-width="0.8" opacity="0.7"/>
+            <line x1="1" y1="13" x2="25" y2="13" stroke="#8b15ba" stroke-width="0.8" opacity="0.7"/>
+            <line x1="1" y1="19" x2="25" y2="19" stroke="#8b15ba" stroke-width="0.8" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="card-sub" id="gridCardLabel">8 × AUTO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 KSZTAŁT — tylko dla trybu 6 -->
+  <div id="shapeSection" class="hidden">
+    <div class="section-label">03 / Kształt pola pomiarowego</div>
+    <div class="card-grid cols2" style="margin-bottom:36px;">
+      <div class="card active" id="shapeCardSquare" onclick="selectShape('square')">
+        <div class="card-main" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="1" width="20" height="20" fill="#8b15ba"/></svg>
+        </div>
+        <div class="card-sub">KWADRAT</div>
+      </div>
+      <div class="card" id="shapeCardCircle" onclick="selectShape('circle')">
+        <div class="card-main" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" fill="#8b15ba"/></svg>
+        </div>
+        <div class="card-sub">KOŁO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 ROZMIAR — tylko dla trybu 6 -->
+  <div id="fillSection" class="hidden">
+    <div class="section-label">04 / Rozmiar pola pomiarowego</div>
+    <div class="card-grid cols4" style="margin-bottom:36px;">
+      <div class="card" id="fillCard1" onclick="selectFill(1)">
+        <div class="card-main">1%</div>
+        <div class="card-sub">MAŁY</div>
+      </div>
+      <div class="card active" id="fillCard2" onclick="selectFill(2)">
+        <div class="card-main">2%</div>
+        <div class="card-sub">STANDARD</div>
+      </div>
+      <div class="card" id="fillCard5" onclick="selectFill(5)">
+        <div class="card-main">5%</div>
+        <div class="card-sub">ŚREDNI</div>
+      </div>
+      <div class="card" id="fillCard7" onclick="selectFill(7)">
+        <div class="card-main">7%</div>
+        <div class="card-sub">DUŻY</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- START -->
+  <div class="start-wrap">
+    <button class="btn-start" id="startBtn" onclick="launch()"><span id="startLabel">WYKONAJ POMIAR</span></button>
+  </div>
+</div>
+
+<!-- ===== GRADIENT OVERLAY ===== -->
+<div class="fs-overlay" id="gradOverlay">
+  <canvas id="gradCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
+  <div class="fs-hud" id="gradHud">
+    <div class="fs-hud-label" id="gradLabel">R</div>
+    <div class="fs-hud-info" id="gradInfo">KANAŁ 1/4 · SKALA 8</div>
+  </div>
+  <div class="fs-hint" id="gradHint">KLIKNIJ ABY PRZEJŚĆ DALEJ · ESC ABY ZAKOŃCZYĆ</div>
+  <div class="fs-done" id="gradDone">
+    <div class="done-bars">
+      <div class="done-bar r"></div>
+      <div class="done-bar g"></div>
+      <div class="done-bar b"></div>
+      <div class="done-bar w"></div>
+    </div>
+    <h2>POMIAR ZAKOŃCZONY</h2>
+    <p>KLIKNIJ ABY WRÓCIĆ</p>
+  </div>
+</div>
+
+<!-- ===== SOLID OVERLAY ===== -->
+<div class="fs-overlay" id="solidOverlay">
+  <canvas id="solidGridCanvas" style="position:absolute;top:0;left:0;display:block;pointer-events:none;"></canvas>
+  <div class="fs-hud" id="solidHud">
+    <div class="fs-hud-label" id="solidLabel">R</div>
+    <div class="fs-hud-info" id="solidInfo">POZIOM 1/8</div>
+  </div>
+  <div class="fs-hint" id="solidHint">KLIKNIJ ABY PRZEJŚĆ DALEJ · ESC ABY ZAKOŃCZYĆ</div>
+  <div class="fs-dots" id="solidDots"></div>
+  <div class="fs-done" id="solidDone">
+    <div class="done-bars"><div class="done-bar single" id="solidDoneBar"></div></div>
+    <h2>POMIAR ZAKOŃCZONY</h2>
+    <p>KLIKNIJ ABY WRÓCIĆ</p>
+  </div>
+</div>
+
+<!-- ===== CONTRAST OVERLAY ===== -->
+<div class="fs-overlay" id="contrastOverlay" style="background:#fff;">
+  <div class="fs-hud" id="contrastHud" style="background:linear-gradient(to bottom,rgba(0,0,0,0.15),transparent);">
+    <div class="fs-hud-label" id="contrastLabel" style="color:rgba(0,0,0,0.6);">WHITE</div>
+    <div class="fs-hud-info" id="contrastInfo" style="color:rgba(0,0,0,0.4);">RGB: 255, 255, 255</div>
+  </div>
+  <div class="fs-hint" id="contrastHint" style="color:rgba(0,0,0,0.35);">KLIKNIJ ABY PRZEŁĄCZYĆ · ESC ABY ZAKOŃCZYĆ</div>
+</div>
+
+<!-- ===== APL OVERLAY ===== -->
+<div class="fs-overlay" id="aplOverlay" style="background:#000;">
+  <canvas id="aplCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
+  <div class="fs-hud" id="aplHud">
+    <div class="fs-hud-label" id="aplLabel" style="color:#fff;">APL 2%</div>
+    <div class="fs-hud-info" id="aplInfo" style="color:rgba(255,255,255,0.5);">POZIOM 1/9</div>
+  </div>
+  <div class="fs-hint" id="aplHint" style="color:rgba(255,255,255,0.4);">KLIKNIJ ABY PRZEJŚĆ DALEJ · ESC ABY ZAKOŃCZYĆ</div>
+  <div class="fs-dots" id="aplDots"></div>
+  <div class="fs-done" id="aplDone">
+    <div class="done-bars"><div class="done-bar single"></div></div>
+    <h2>POMIAR ZAKOŃCZONY</h2>
+    <p>KLIKNIJ ABY WRÓCIĆ</p>
+  </div>
+</div>
+
+<!-- ===== COLOR CHECKER OVERLAY ===== -->
+<div class="fs-overlay" id="colorCheckerOverlay">
+  <div class="fs-hud" id="ccHud">
+    <div class="fs-hud-label" id="ccLabel" style="color:#fff;">DARK SKIN</div>
+    <div class="fs-hud-info" id="ccInfo" style="color:rgba(255,255,255,0.5);">POLE 1/24</div>
+  </div>
+  <div class="fs-hint" id="ccHint" style="color:rgba(255,255,255,0.4);">KLIKNIJ ABY PRZEJŚĆ DALEJ · ESC ABY ZAKOŃCZYĆ</div>
+  <div class="fs-dots" id="ccDots"></div>
+  <div class="fs-done" id="ccDone">
+    <div class="done-bars"><div class="done-bar single"></div></div>
+    <h2>POMIAR ZAKOŃCZONY</h2>
+    <p>KLIKNIJ ABY WRÓCIĆ</p>
+  </div>
+</div>
+
+<script>
+  let selectedDevice = null;
+  let selectedTech = null;
+  let instrCurrentPage = 0;
+  let selectedResW = 0;
+  let selectedResH = 0;
+
+  function selectDevice(dev) {
+    selectedDevice = dev;
+    ['tv','monitor','laptop'].forEach(d => {
+      document.getElementById('dev' + (d==='tv'?'TV':d==='monitor'?'Mon':'Lap')).classList.toggle('active', d===dev);
+    });
+    checkPage0Ready();
+  }
+
+  function selectTech(card) {
+    document.querySelectorAll('.tech-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    selectedTech = card.querySelector('.tech-name').textContent;
+    checkPage0Ready();
+  }
+
+  function checkPage0Ready() {
+    document.getElementById('nextBtn0').disabled = !(selectedDevice && selectedTech);
+  }
+
+  function selectResolution(w, h) {
+    selectedResW = w;
+    selectedResH = h;
+    const ids = ['resCard1280','resCard1920','resCard2560','resCard3840'];
+    const widths = [1280, 1920, 2560, 3840];
+    ids.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('active', widths[i] === w);
+    });
+    document.getElementById('nextBtn1').disabled = false;
+  }
+
+  function goPage(n) {
+    document.getElementById('instrPage' + instrCurrentPage).classList.remove('active');
+    document.getElementById('pdot' + instrCurrentPage).classList.remove('active');
+
+    if (n === 2) {
+      // Show the right instructions panel based on device
+      ['instrTV','instrMonitor','instrLaptop'].forEach(id => document.getElementById(id).classList.remove('visible'));
+      const map = {tv:'instrTV', monitor:'instrMonitor', laptop:'instrLaptop'};
+      document.getElementById(map[selectedDevice]).classList.add('visible');
+    }
+
+    instrCurrentPage = n;
+    document.getElementById('instrPage' + n).classList.add('active');
+    document.getElementById('pdot' + n).classList.add('active');
+    document.getElementById('instrOverlay').scrollTop = 0;
+  }
+
+  function closeInstructions() {
+    document.getElementById('instrOverlay').style.display = 'none';
+  }
+
+  // ── Suite launch mode ──────────────────────────────────────────────
+  // The shell can open this calibrator pre-filtered for one measurement method:
+  // jump straight to the calibration-recommendations step, then offer only the
+  // allowed patterns. allow = list of mode numbers, e.g. [1,2,5] or [3,4,6,7].
+  let dcLaunchActive = false;
+  function recommendNext() {
+    if (dcLaunchActive) closeInstructions();   // launch mode: recommendations → patterns
+    else goPage(3);                            // normal flow: → preparation page
+  }
+  function applyDcLaunch(allow, opts) {
+    allow = allow || [];
+    opts = opts || {};
+    dcLaunchActive = true;
+    // Device + resolution come from the suite's main-menu setup.
+    if (opts.device) selectedDevice = opts.device;
+    if (opts.resW)   selectedResW = opts.resW;
+    if (opts.resH)   selectedResH = opts.resH;
+    // Only the recommendations step remains — hide the page dots.
+    document.querySelectorAll('.page-dot').forEach(d => d.style.display = 'none');
+    const sb = document.getElementById('dcSkipBtn'); if (sb) sb.style.display = 'none';
+    // Jump straight to the recommendations page.
+    document.querySelectorAll('.instr-page').forEach(p => p.classList.remove('active'));
+    // Show ONLY the panel matching the chosen device (fallback: all if unknown).
+    const map = { tv:'instrTV', monitor:'instrMonitor', laptop:'instrLaptop' };
+    ['instrTV','instrMonitor','instrLaptop'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.remove('visible'); });
+    if (map[selectedDevice]) {
+      const e = document.getElementById(map[selectedDevice]); if (e) e.classList.add('visible');
+    } else {
+      ['instrTV','instrMonitor','instrLaptop'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.add('visible'); });
+    }
+    instrCurrentPage = 2;
+    const p2 = document.getElementById('instrPage2'); if (p2) p2.classList.add('active');
+    const ov = document.getElementById('instrOverlay'); if (ov) { ov.style.display = ''; ov.scrollTop = 0; }
+    // Offer only the allowed patterns in the main selector.
+    for (let m = 1; m <= 7; m++) { const c = document.getElementById('modeCard' + m); if (c) c.style.display = allow.indexOf(m) >= 0 ? '' : 'none'; }
+    if (allow.length) selectMode(allow[0]);
+  }
+
+  let skipSelectedResW = 0;
+  let skipSelectedResH = 0;
+
+  function skipInstructions() {
+    skipSelectedResW = 0;
+    skipSelectedResH = 0;
+    // Reset selection state in modal
+    ['skipResCard1280','skipResCard1920','skipResCard2560','skipResCard3840'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+    const confirmBtn = document.getElementById('skipResConfirm');
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '0.4'; }
+    // Show modal
+    const modal = document.getElementById('skipResModal');
+    modal.style.display = 'flex';
+  }
+
+  function skipSelectRes(w, h) {
+    skipSelectedResW = w;
+    skipSelectedResH = h;
+    ['skipResCard1280','skipResCard1920','skipResCard2560','skipResCard3840'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+    const cardMap = {1280:'skipResCard1280', 1920:'skipResCard1920', 2560:'skipResCard2560', 3840:'skipResCard3840'};
+    const active = document.getElementById(cardMap[w]);
+    if (active) active.classList.add('active');
+    const confirmBtn = document.getElementById('skipResConfirm');
+    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.style.opacity = '1'; }
+  }
+
+  function skipResConfirm() {
+    if (!skipSelectedResW) return;
+    // Apply chosen resolution
+    selectedResW = skipSelectedResW;
+    selectedResH = skipSelectedResH;
+    // Hide modal and instruction overlay
+    document.getElementById('skipResModal').style.display = 'none';
+    document.getElementById('instrOverlay').style.display = 'none';
+  }
+</script>
+
+<script>
+
+  /* ===== STATE ===== */
+  let mode = 1;
+  let scale = 8;
+  let channel = -1;
+
+  /* ===== RESOLUTION HELPERS ===== */
+  function getCanvasDims() {
+    const W = (typeof selectedResW !== 'undefined' && selectedResW > 0) ? selectedResW : window.innerWidth;
+    const H = (typeof selectedResH !== 'undefined' && selectedResH > 0) ? selectedResH : window.innerHeight;
+    return { W, H };
+  }
+
+  function setupCanvas(canvas) {
+    const { W, H } = getCanvasDims();
+    canvas.width = W;
+    canvas.height = H;
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    return { W, H };
+  }
+
+  const CH_NAMES  = ['R','G','B','W'];
+  const CH_COLORS = [[255,0,0],[0,255,0],[0,0,255],[255,255,255]];
+  const CH_HUD    = ['#ff4444','#44ff44','#4488ff','#ffffff'];
+
+  function stepValues(n) {
+    const v = [];
+    for (let i = 0; i < n; i++) v.push(Math.round(i/(n-1)*255));
+    return v;
+  }
+
+  /* ===== UI ===== */
+  function selectMode(m) {
+    mode = m;
+    [1,2,3,4,5,6,7].forEach(n => document.getElementById(`modeCard${n}`) && document.getElementById(`modeCard${n}`).classList.toggle('active', n===m));
+    document.getElementById('scaleSection').classList.toggle('hidden', m===3 || m===4 || m===5 || m===6 || m===7);
+    document.getElementById('channelSection').classList.toggle('hidden', m!==2);
+    document.getElementById('gridSection').classList.toggle('hidden', m!==2);
+    document.getElementById('shapeSection').classList.toggle('hidden', m!==6);
+    document.getElementById('fillSection').classList.toggle('hidden', m!==6);
+    if (m===2) channel = -1;
+    updateBtn();
+  }
+
+  function selectScale(s) {
+    scale = s;
+    document.getElementById('scaleCard8').classList.toggle('active', s===8);
+    const c10 = document.getElementById('scaleCard10');
+    if (c10) c10.classList.toggle('active', s===10);
+    document.getElementById('scaleCard16').classList.toggle('active', s===16);
+    document.getElementById('scaleCard32').classList.toggle('active', s===32);
+    updateGridLabel();
+    updateBtn();
+  }
+
+  function updateGridLabel() {
+    const lbl = document.getElementById('gridCardLabel');
+    if (lbl) lbl.textContent = scale + ' × AUTO';
+    const svg = document.getElementById('gridIconSvg');
+    if (!svg) return;
+    // Remove old lines, keep only the rect
+    [...svg.querySelectorAll('line')].forEach(l => l.remove());
+    const ns = 'http://www.w3.org/2000/svg';
+    // Draw scale vertical lines (scale-1 dividers across 24px wide box, x from 1 to 25)
+    for (let i = 1; i < scale; i++) {
+      const x = Math.round(1 + i * 24 / scale);
+      const vl = document.createElementNS(ns, 'line');
+      vl.setAttribute('x1', x); vl.setAttribute('y1', 1);
+      vl.setAttribute('x2', x); vl.setAttribute('y2', 25);
+      vl.setAttribute('stroke', '#8b15ba'); vl.setAttribute('stroke-width', '0.8'); vl.setAttribute('opacity', '0.7');
+      svg.appendChild(vl);
+    }
+    // Draw matching horizontal lines (rows = round(24 / (24/scale)) = scale rows)
+    for (let i = 1; i < scale; i++) {
+      const y = Math.round(1 + i * 24 / scale);
+      const hl = document.createElementNS(ns, 'line');
+      hl.setAttribute('x1', 1); hl.setAttribute('y1', y);
+      hl.setAttribute('x2', 25); hl.setAttribute('y2', y);
+      hl.setAttribute('stroke', '#8b15ba'); hl.setAttribute('stroke-width', '0.8'); hl.setAttribute('opacity', '0.7');
+      svg.appendChild(hl);
+    }
+  }
+
+  function selectChannel(btn, ch) {
+    document.querySelectorAll('.ch-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    channel = ch;
+    updateBtn();
+  }
+
+  function updateBtn() {
+    const btn = document.getElementById('startBtn');
+    const label = document.getElementById('startLabel');
+    if (mode === 3) {
+      btn.disabled = false;
+      label.textContent = 'CONTRAST CHECK';
+    } else if (mode === 4) {
+      btn.disabled = false;
+      label.textContent = 'APL WHITE FILL';
+    } else if (mode === 5) {
+      btn.disabled = false;
+      label.textContent = 'COLOR CHECKER';
+    } else if (mode === 6) {
+      btn.disabled = false;
+      label.textContent = 'WHITE ZONE LUMINANCE';
+    } else if (mode === 7) {
+      btn.disabled = false;
+      label.textContent = 'HALO TEST';
+    } else if (mode === 2) {
+      btn.disabled = (channel < 0);
+      label.textContent = channel >= 0 ? `SOLID — ${CH_NAMES[channel]} · ${scale} KROKÓW` : 'WYBIERZ KANAŁ';
+    } else {
+      btn.disabled = false;
+      label.textContent = `GRADIENT STEPS · ${scale} KROKÓW`;
+    }
+  }
+
+  function launch() {
+    window.parent.postMessage({type:'shellFS', on:true}, '*');
+    if (mode === 1) startGradient();
+    else if (mode === 2) startSolid();
+    else if (mode === 3) startContrast();
+    else if (mode === 4) startAPL();
+    else if (mode === 5) startColorChecker();
+    else if (mode === 6) startWZL();
+    else if (mode === 7) startHalo();
+  }
+
+  /* ===== HUD FADE ===== */
+  function fadeHud(delay, ...ids) {
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('fade');
+    });
+    return setTimeout(() => ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('fade');
+    }), delay);
+  }
+
+  /* ===== MODE 1 — GRADIENT ===== */
+  let gradStep = 0;
+  let gradTimer = null;
+
+  function startGradient() {
+    gradStep = 0;
+    const ov = document.getElementById('gradOverlay');
+    document.getElementById('gradDone').classList.remove('active');
+    document.getElementById('gradHud').style.display = '';
+    document.getElementById('gradHint').style.display = '';
+    ov.classList.add('active');
+    ov.onclick = onGradClick;
+    document.addEventListener('keydown', onGradKey);
+    renderGrad();
+    gradTimer = fadeHud(3000,'gradHud','gradHint');
+  }
+
+  function onGradKey(e) { if (e.key === 'Escape') closeGradient(); }
+
+  function closeGradient() {
+    clearTimeout(gradTimer);
+    document.getElementById('gradOverlay').classList.remove('active');
+    document.removeEventListener('keydown', onGradKey);
+    window.parent.postMessage({type:'shellFS', on:false}, '*');
+  }
+
+  function onGradClick() {
+    if (document.getElementById('gradDone').classList.contains('active')) {
+      closeGradient();
+      return;
+    }
+    gradStep++;
+    if (gradStep >= 4) {
+      showGradDone();
+    } else {
+      clearTimeout(gradTimer);
+      renderGrad();
+      gradTimer = fadeHud(3000,'gradHud','gradHint');
+    }
+  }
+
+  function renderGrad() {
+    const canvas = document.getElementById('gradCanvas');
+    const { W, H } = setupCanvas(canvas);
+    const ctx = canvas.getContext('2d', {alpha:false});
+    ctx.imageSmoothingEnabled = false;
+
+    const [cr,cg,cb] = CH_COLORS[gradStep];
+    const steps = stepValues(scale);
+
+    steps.forEach((v, i) => {
+      const r = Math.round(cr*v/255), g = Math.round(cg*v/255), b = Math.round(cb*v/255);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      const x1 = Math.floor(i * W / scale);
+      const x2 = i === scale-1 ? W : Math.floor((i+1) * W / scale);
+      ctx.fillRect(x1, 0, x2-x1, H);
+    });
+
+    // labels
+    const fs = Math.max(9, Math.floor(scale > 8 ? 12 : 16));
+    ctx.font = `${fs}px 'Share Tech Mono', monospace`;
+    ctx.textAlign = 'center';
+    steps.forEach((v, i) => {
+      const x1 = Math.floor(i * W / scale);
+      const x2 = i === scale-1 ? W : Math.floor((i+1) * W / scale);
+      const xc = Math.round((x1+x2)/2);
+      ctx.fillStyle = v > 150 ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.75)';
+      ctx.fillText(v, xc, H - 12);
+    });
+
+    const lbl = document.getElementById('gradLabel');
+    lbl.textContent = CH_NAMES[gradStep];
+    lbl.style.color = CH_HUD[gradStep];
+    document.getElementById('gradInfo').textContent = `KANAŁ ${gradStep+1}/4 · SKALA ${scale}`;
+  }
+
+  function showGradDone() {
+    const canvas = document.getElementById('gradCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    document.getElementById('gradHud').style.display = 'none';
+    document.getElementById('gradHint').style.display = 'none';
+    document.getElementById('gradDone').classList.add('active');
+  }
+
+  window.addEventListener('resize', () => {
+    if (document.getElementById('gradOverlay').classList.contains('active') &&
+        !document.getElementById('gradDone').classList.contains('active')) renderGrad();
+    if (document.getElementById('solidOverlay').classList.contains('active') &&
+        !document.getElementById('solidDone').classList.contains('active')) renderSolid();
+  });
+
+  /* ===== MODE 2 — SOLID ===== */
+  let solidStep = 0;
+  let solidTimer = null;
+  let solidVals = [];
+
+  function startSolid() {
+    solidVals = [...stepValues(scale)].reverse();
+    solidStep = 0;
+    const ov = document.getElementById('solidOverlay');
+    document.getElementById('solidDone').classList.remove('active');
+    document.getElementById('solidHud').style.display = '';
+    document.getElementById('solidHint').style.display = '';
+    document.getElementById('solidDots').style.display = '';
+    ov.classList.add('active');
+    ov.onclick = onSolidClick;
+    document.addEventListener('keydown', onSolidKey);
+    buildDots();
+    renderSolid();
+    solidTimer = fadeHud(3000,'solidHud','solidHint','solidDots');
+  }
+
+  function onSolidKey(e) { if (e.key === 'Escape') closeSolid(); }
+
+  function closeSolid() {
+    clearTimeout(solidTimer);
+    document.getElementById('solidOverlay').classList.remove('active');
+    document.removeEventListener('keydown', onSolidKey);
+    window.parent.postMessage({type:'shellFS', on:false}, '*');
+  }
+
+  function buildDots() {
+    const c = document.getElementById('solidDots');
+    c.innerHTML = '';
+    solidVals.forEach((_,i) => {
+      const d = document.createElement('div');
+      d.className = 'fs-dot' + (i===0?' current':'');
+      d.id = `sdot${i}`;
+      c.appendChild(d);
+    });
+  }
+
+  function updateDots() {
+    solidVals.forEach((_,i) => {
+      const d = document.getElementById(`sdot${i}`);
+      if (!d) return;
+      d.className = 'fs-dot' + (i<solidStep?' done':i===solidStep?' current':'');
+    });
+  }
+
+  function onSolidClick() {
+    if (document.getElementById('solidDone').classList.contains('active')) {
+      closeSolid();
+      return;
+    }
+    solidStep++;
+    if (solidStep >= solidVals.length) {
+      showSolidDone();
+    } else {
+      clearTimeout(solidTimer);
+      renderSolid();
+      updateDots();
+      solidTimer = fadeHud(3000,'solidHud','solidHint','solidDots');
+    }
+  }
+
+  function renderSolid() {
+    const v = solidVals[solidStep];
+    const [cr,cg,cb] = CH_COLORS[channel];
+    const r = Math.round(cr*v/255), g = Math.round(cg*v/255), b = Math.round(cb*v/255);
+    const ov = document.getElementById('solidOverlay');
+    ov.style.background = `rgb(${r},${g},${b})`;
+
+    // Siatka
+    const gridCanvas = document.getElementById('solidGridCanvas');
+    if (solidGrid) {
+      const W = window.innerWidth, H = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      gridCanvas.width = W * dpr;
+      gridCanvas.height = H * dpr;
+      gridCanvas.style.width = W + 'px';
+      gridCanvas.style.height = H + 'px';
+      gridCanvas.style.display = 'block';
+      const ctx = gridCanvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      const cols = scale;
+      const cellW = W / cols;
+      // kwadratowe kratki — dobierz rows tak by cellH ≈ cellW
+      const rows = Math.round(H / cellW);
+      const cellH = H / rows;
+
+      const bright = 0.299*r + 0.587*g + 0.114*b;
+      const dark = bright > 130;
+      ctx.strokeStyle = dark ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.18)';
+      ctx.lineWidth = 1;
+
+      for (let c = 1; c < cols; c++) {
+        const x = Math.round(c * cellW) + 0.5;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let row = 1; row < rows; row++) {
+        const y = Math.round(row * cellH) + 0.5;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+    } else {
+      gridCanvas.style.display = 'none';
+    }
+
+    const bright = 0.299*r + 0.587*g + 0.114*b;
+    const dark = bright > 130;
+    const hudColor = dark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.65)';
+
+    const lbl = document.getElementById('solidLabel');
+    lbl.textContent = CH_NAMES[channel];
+    lbl.style.color = dark ? 'rgba(0,0,0,0.8)' : CH_HUD[channel];
+
+    const info = document.getElementById('solidInfo');
+    info.textContent = `POZIOM ${solidStep+1}/${solidVals.length}  ·  RGB: ${r},${g},${b}  ·  VAL: ${v}`;
+    info.style.color = hudColor;
+
+    document.getElementById('solidHud').style.background = dark
+      ? 'linear-gradient(to bottom,rgba(255,255,255,0.25),transparent)'
+      : 'linear-gradient(to bottom,rgba(0,0,0,0.6),transparent)';
+
+    const hint = document.getElementById('solidHint');
+    hint.style.color = dark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.4)';
+
+    document.querySelectorAll('.fs-dot').forEach(d => {
+      d.style.borderColor = dark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)';
+    });
+    document.querySelectorAll('.fs-dot.done').forEach(d => {
+      d.style.background = dark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
+    });
+    const cur = document.querySelector('.fs-dot.current');
+    if (cur) cur.style.background = dark ? '#000' : '#fff';
+  }
+
+  function showSolidDone() {
+    document.getElementById('solidOverlay').style.background = '#000';
+    const bar = document.getElementById('solidDoneBar');
+    bar.style.background = CH_HUD[channel];
+    bar.style.boxShadow = `0 0 14px ${CH_HUD[channel]}`;
+    ['solidHud','solidHint','solidDots'].forEach(id => document.getElementById(id).style.display='none');
+    document.getElementById('solidDone').classList.add('active');
+  }
+
+  /* ===== MODE 3 — CONTRAST ===== */
+  let contrastWhite = true;
+  let contrastTimer = null;
+
+  function startContrast() {
+    contrastWhite = true;
+    const ov = document.getElementById('contrastOverlay');
+    ov.classList.add('active');
+    ov.onclick = onContrastClick;
+    renderContrast();
+    contrastTimer = fadeHud(3000,'contrastHud','contrastHint');
+    document.addEventListener('keydown', onContrastKey);
+  }
+
+  function onContrastKey(e) {
+    if (e.key==='Escape') closeContrast();
+  }
+
+  function closeContrast() {
+    clearTimeout(contrastTimer);
+    document.getElementById('contrastOverlay').classList.remove('active');
+    document.removeEventListener('keydown', onContrastKey);
+    window.parent.postMessage({type:'shellFS', on:false}, '*');
+  }
+
+  function onContrastClick() {
+    contrastWhite = !contrastWhite;
+    renderContrast();
+    clearTimeout(contrastTimer);
+    contrastTimer = fadeHud(3000,'contrastHud','contrastHint');
+  }
+
+  function renderContrast() {
+    const ov  = document.getElementById('contrastOverlay');
+    const hud = document.getElementById('contrastHud');
+    const lbl = document.getElementById('contrastLabel');
+    const inf = document.getElementById('contrastInfo');
+    const hnt = document.getElementById('contrastHint');
+
+    if (contrastWhite) {
+      ov.style.background = '#ffffff';
+      lbl.textContent = 'WHITE';
+      inf.textContent = 'RGB: 255, 255, 255';
+      lbl.style.color = 'rgba(0,0,0,0.65)';
+      inf.style.color = 'rgba(0,0,0,0.4)';
+      hnt.style.color = 'rgba(0,0,0,0.3)';
+      hud.style.background = 'linear-gradient(to bottom,rgba(255,255,255,0.3),transparent)';
+    } else {
+      ov.style.background = '#000000';
+      lbl.textContent = 'BLACK';
+      inf.textContent = 'RGB: 0, 0, 0';
+      lbl.style.color = 'rgba(255,255,255,0.65)';
+      inf.style.color = 'rgba(255,255,255,0.4)';
+      hnt.style.color = 'rgba(255,255,255,0.3)';
+      hud.style.background = 'linear-gradient(to bottom,rgba(0,0,0,0.5),transparent)';
+    }
+  }
+
+  /* ===== MODE 4 — APL WHITE FILL ===== */
+  const APL_LEVELS = [2, 5, 10, 15, 20, 25, 50, 75, 100];
+  let aplStep = 0;
+  let aplTimer = null;
+
+  function startAPL() {
+    aplStep = 0;
+    const ov = document.getElementById('aplOverlay');
+    document.getElementById('aplDone').classList.remove('active');
+    document.getElementById('aplHud').style.display = '';
+    document.getElementById('aplHint').style.display = '';
+    document.getElementById('aplDots').style.display = '';
+    ov.classList.add('active');
+    ov.onclick = onAPLClick;
+    document.addEventListener('keydown', onAPLKey);
+    buildAPLDots();
+    renderAPL();
+    aplTimer = fadeHud(2000,'aplHud','aplHint','aplDots');
+  }
+
+  function onAPLKey(e) { if (e.key === 'Escape') closeAPL(); }
+
+  function closeAPL() {
+    clearTimeout(aplTimer);
+    document.getElementById('aplOverlay').classList.remove('active');
+    document.removeEventListener('keydown', onAPLKey);
+    window.parent.postMessage({type:'shellFS', on:false}, '*');
+  }
+
+  function buildAPLDots() {
+    const c = document.getElementById('aplDots');
+    c.innerHTML = '';
+    APL_LEVELS.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'fs-dot' + (i === 0 ? ' current' : '');
+      d.id = `adot${i}`;
+      c.appendChild(d);
+    });
+  }
+
+  function updateAPLDots() {
+    APL_LEVELS.forEach((_, i) => {
+      const d = document.getElementById(`adot${i}`);
+      if (!d) return;
+      d.className = 'fs-dot' + (i < aplStep ? ' done' : i === aplStep ? ' current' : '');
+      d.style.borderColor = 'rgba(255,255,255,0.35)';
+      if (i < aplStep) d.style.background = 'rgba(255,255,255,0.55)';
+      if (i === aplStep) d.style.background = '#fff';
+    });
+  }
+
+  function onAPLClick() {
+    if (document.getElementById('aplDone').classList.contains('active')) {
+      closeAPL();
+      return;
+    }
+    aplStep++;
+    if (aplStep >= APL_LEVELS.length) {
+      showAPLDone();
+    } else {
+      clearTimeout(aplTimer);
+      renderAPL();
+      updateAPLDots();
+      aplTimer = fadeHud(2000,'aplHud','aplHint','aplDots');
+    }
+  }
+
+  function renderAPL() {
+    const apl = APL_LEVELS[aplStep];
+    const canvas = document.getElementById('aplCanvas');
+    const { W, H } = setupCanvas(canvas);
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    // czarne tło
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    if (apl === 100) {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      // biały prostokąt wycentrowany zajmujący dokładnie apl% powierzchni
+      const area = W * H * (apl / 100);
+      const ratio = W / H;
+      const rH = Math.round(Math.sqrt(area / ratio));
+      const rW = Math.round(area / rH);
+      const rx = Math.round((W - rW) / 2);
+      const ry = Math.round((H - rH) / 2);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(rx, ry, rW, rH);
+    }
+
+    document.getElementById('aplLabel').textContent = `APL ${apl}%`;
+    document.getElementById('aplInfo').textContent = `POZIOM ${aplStep+1}/${APL_LEVELS.length}  ·  WYPEŁNIENIE ${apl}%`;
+  }
+
+  function showAPLDone() {
+    ['aplHud','aplHint','aplDots'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('aplDone').classList.add('active');
+  }
+
+  window.addEventListener('resize', () => {
+    if (document.getElementById('aplOverlay').classList.contains('active') &&
+        !document.getElementById('aplDone').classList.contains('active')) renderAPL();
+  });
+
+  /* ===== MODE 5 — COLOR CHECKER ===== */
+  const CC_PATCHES = [
+    { name: 'Dark Skin',     rgb: [115, 82, 68]   },
+    { name: 'Light Skin',    rgb: [194, 150, 130]  },
+    { name: 'Blue Sky',      rgb: [98, 122, 157]   },
+    { name: 'Foliage',       rgb: [87, 108, 67]    },
+    { name: 'Blue Flower',   rgb: [133, 128, 177]  },
+    { name: 'Bluish Green',  rgb: [103, 189, 170]  },
+    { name: 'Orange',        rgb: [214, 126, 44]   },
+    { name: 'Purplish Blue', rgb: [80, 91, 166]    },
+    { name: 'Moderate Red',  rgb: [193, 90, 99]    },
+    { name: 'Purple',        rgb: [94, 60, 108]    },
+    { name: 'Yellow Green',  rgb: [157, 188, 64]   },
+    { name: 'Orange Yellow', rgb: [224, 163, 46]   },
+    { name: 'Blue',          rgb: [56, 61, 150]    },
+    { name: 'Green',         rgb: [70, 148, 73]    },
+    { name: 'Red',           rgb: [175, 54, 60]    },
+    { name: 'Yellow',        rgb: [231, 199, 31]   },
+    { name: 'Magenta',       rgb: [187, 86, 149]   },
+    { name: 'Cyan',          rgb: [8, 133, 161]    },
+    { name: 'White',         rgb: [243, 243, 242]  },
+    { name: 'Neutral 8',     rgb: [200, 200, 200]  },
+    { name: 'Neutral 6.5',   rgb: [160, 160, 160]  },
+    { name: 'Neutral 5',     rgb: [122, 122, 121]  },
+    { name: 'Neutral 3.5',   rgb: [85, 85, 85]     },
+    { name: 'Black',         rgb: [52, 52, 52]     },
+  ];
+
+  let ccStep = 0;
+  let ccTimer = null;
+
+  function startColorChecker() {
+    ccStep = 0;
+    const ov = document.getElementById('colorCheckerOverlay');
+    document.getElementById('ccDone').classList.remove('active');
+    document.getElementById('ccHud').style.display = '';
+    document.getElementById('ccHint').style.display = '';
+    document.getElementById('ccDots').style.display = '';
+    buildCCDots();
+    renderCC();
+    ov.classList.add('active');
+    ov.onclick = onCCClick;
+    document.addEventListener('keydown', onCCKey);
+    ccTimer = fadeHud(3000, 'ccHud', 'ccHint', 'ccDots');
+  }
+
+  function buildCCDots() {
+    const c = document.getElementById('ccDots');
+    c.innerHTML = '';
+    CC_PATCHES.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'fs-dot' + (i === 0 ? ' current' : '');
+      d.id = `ccdot${i}`;
+      c.appendChild(d);
+    });
+  }
+
+  function updateCCDots() {
+    CC_PATCHES.forEach((_, i) => {
+      const d = document.getElementById(`ccdot${i}`);
+      if (!d) return;
+      const [r, g, b] = CC_PATCHES[ccStep].rgb;
+      const bright = 0.299*r + 0.587*g + 0.114*b;
+      const dark = bright > 130;
+      d.className = 'fs-dot' + (i < ccStep ? ' done' : i === ccStep ? ' current' : '');
+      d.style.borderColor = dark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)';
+      if (i < ccStep) d.style.background = dark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
+      if (i === ccStep) d.style.background = dark ? '#000' : '#fff';
+    });
+  }
+
+  function renderCC() {
+    const patch = CC_PATCHES[ccStep];
+    const [r, g, b] = patch.rgb;
+    const ov = document.getElementById('colorCheckerOverlay');
+    ov.style.background = `rgb(${r},${g},${b})`;
+
+    const bright = 0.299*r + 0.587*g + 0.114*b;
+    const dark = bright > 130;
+    const hudColor = dark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.65)';
+
+    const lbl = document.getElementById('ccLabel');
+    lbl.textContent = patch.name.toUpperCase();
+    lbl.style.color = dark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.85)';
+
+    const info = document.getElementById('ccInfo');
+    info.textContent = `POLE ${ccStep+1}/${CC_PATCHES.length}  ·  RGB: ${r}, ${g}, ${b}`;
+    info.style.color = hudColor;
+
+    document.getElementById('ccHud').style.background = dark
+      ? 'linear-gradient(to bottom,rgba(255,255,255,0.25),transparent)'
+      : 'linear-gradient(to bottom,rgba(0,0,0,0.6),transparent)';
+
+    const hint = document.getElementById('ccHint');
+    hint.style.color = dark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.4)';
+
+    updateCCDots();
+  }
+
+  function onCCClick() {
+    if (document.getElementById('ccDone').classList.contains('active')) {
+      closeCCOverlay();
+      return;
+    }
+    ccStep++;
+    if (ccStep >= CC_PATCHES.length) {
+      showCCDone();
+    } else {
+      clearTimeout(ccTimer);
+      renderCC();
+      ccTimer = fadeHud(3000, 'ccHud', 'ccHint', 'ccDots');
+    }
+  }
+
+  function showCCDone() {
+    document.getElementById('colorCheckerOverlay').style.background = '#000';
+    ['ccHud','ccHint','ccDots'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('ccDone').classList.add('active');
+  }
+
+  function onCCKey(e) {
+    if (e.key === 'Escape') closeCCOverlay();
+  }
+
+  function closeCCOverlay() {
+    clearTimeout(ccTimer);
+    document.getElementById('colorCheckerOverlay').classList.remove('active');
+    document.removeEventListener('keydown', onCCKey);
+    window.parent.postMessage({type:'shellFS', on:false}, '*');
+  }
+
+  /* ===== MODE 7 — HALO TEST ===== */
+  const HALO_STEPS = [1, 2, 5, 10, 20, 25, 50]; // % powierzchni ekranu
+  let haloStep = 0;
+  let haloTimer = null;
+
+  function startHalo() {
+    haloStep = 0;
+    const ov = document.getElementById('haloOverlay');
+    document.getElementById('haloDone').classList.remove('active');
+    document.getElementById('haloHud').style.display = '';
+    document.getElementById('haloHint').style.display = '';
+    document.getElementById('haloDots').style.display = '';
+    ov.classList.add('active');
+    ov.onclick = onHaloClick;
+    document.addEventListener('keydown', onHaloKey);
+    buildHaloDots();
+    renderHalo();
+    haloTimer = fadeHud(2500, 'haloHud', 'haloHint', 'haloDots');
+  }
+
+  function buildHaloDots() {
+    const c = document.getElementById('haloDots');
+    c.innerHTML = '';
+    HALO_STEPS.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'fs-dot' + (i === 0 ? ' current' : '');
+      d.id = `halodot${i}`;
+      d.style.borderColor = 'rgba(255,255,255,0.35)';
+      c.appendChild(d);
+    });
+  }
+
+  function updateHaloDots() {
+    HALO_STEPS.forEach((_, i) => {
+      const d = document.getElementById(`halodot${i}`);
+      if (!d) return;
+      d.className = 'fs-dot' + (i < haloStep ? ' done' : i === haloStep ? ' current' : '');
+      d.style.borderColor = 'rgba(255,255,255,0.35)';
+      if (i < haloStep) d.style.background = 'rgba(255,255,255,0.55)';
+      else if (i === haloStep) d.style.background = '#fff';
+      else d.style.background = '';
+    });
+  }
+
+  function renderHalo() {
+    const canvas = document.getElementById('haloCanvas');
+    const { W, H } = setupCanvas(canvas);
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    // Czarne tło
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    const pct = HALO_STEPS[haloStep];
+    // Oblicz promień koła zajmującego pct% powierzchni ekranu
+    // π*r² = W*H*(pct/100)  →  r = sqrt(W*H*pct/100/π)
+    const radius = Math.round(Math.sqrt(W * H * (pct / 100) / Math.PI));
+
+    const cx = W / 2;
+    const cy = H / 2;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // HUD
+    const label = document.getElementById('haloLabel');
+    label.textContent = `HALO ${pct}%`;
+    const info = document.getElementById('haloInfo');
+    info.textContent = `KROK ${haloStep + 1}/${HALO_STEPS.length}  ·  ${pct}% POWIERZCHNI`;
+
+    updateHaloDots();
+  }
+
+  function onHaloClick() {
+    if (document.getElementById('haloDone').classList.contains('active')) {
+      closeHaloOverlay();
+      return;
+    }
+    haloStep++;
+    clearTimeout(haloTimer);
+    if (haloStep >= HALO_STEPS.length) {
+      showHaloDone();
+    } else {
+      renderHalo();
+      haloTimer = fadeHud(2500, 'haloHud', 'haloHint', 'haloDots');
+    }
+  }
+
+  function showHaloDone() {
+    ['haloHud', 'haloHint', 'haloDots'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('haloDone').classList.add('active');
+  }
+
+  function onHaloKey(e) {
+    if (e.key === 'Escape') closeHaloOverlay();
+  }
+
+  function closeHaloOverlay() {
+    clearTimeout(haloTimer);
+    document.getElementById('haloOverlay').classList.remove('active');
+    document.removeEventListener('keydown', onHaloKey);
+    window.parent.postMessage({type:'shellFS', on:false}, '*');
+  }
+
+  window.addEventListener('resize', () => {
+    if (document.getElementById('haloOverlay').classList.contains('active') &&
+        !document.getElementById('haloDone').classList.contains('active')) renderHalo();
+  });
+
+  /* ===== MODE 6 — WHITE ZONE LUMINANCE ===== */
+  /*
+   * 6 kroków:
+   * 0 = lewy górny róg
+   * 1 = prawy górny róg
+   * 2 = lewy dolny róg
+   * 3 = prawy dolny róg
+   * 4 = centrum
+   * 5 = wszystkie naraz
+   * Każda kostka odsunięta od rogu o W/20, H/20
+   */
+  const WZL_ZONES = [
+    { name: 'L-G',  getRect: (W,H,s) => { const ox=W/30, oy=H/20; return { x: ox, y: oy, w: s, h: s }; } },
+    { name: 'P-G',  getRect: (W,H,s) => { const ox=W/30, oy=H/20; return { x: W-ox-s, y: oy, w: s, h: s }; } },
+    { name: 'L-D',  getRect: (W,H,s) => { const ox=W/30, oy=H/20; return { x: ox, y: H-oy-s, w: s, h: s }; } },
+    { name: 'P-D',  getRect: (W,H,s) => { const ox=W/30, oy=H/20; return { x: W-ox-s, y: H-oy-s, w: s, h: s }; } },
+    { name: 'CTR',  getRect: (W,H,s) => { return { x: (W-s)/2, y: (H-s)/2, w: s, h: s }; } },
+  ];
+
+  let wzlStep = 0;
+  let wzlTimer = null;
+  let wzlShape = 'square'; // 'square' | 'circle'
+  let wzlFill = 2; // 2 | 5 | 10 (%)
+
+  let solidGrid = false; // siatka domyślnie wyłączona
+
+  function selectGrid(on) {
+    solidGrid = on;
+    document.getElementById('gridCardOn').classList.toggle('active', on);
+    document.getElementById('gridCardOff').classList.toggle('active', !on);
+    updateBtn();
+  }
+
+  function selectShape(s) {
+    wzlShape = s;
+    document.getElementById('shapeCardSquare').classList.toggle('active', s === 'square');
+    document.getElementById('shapeCardCircle').classList.toggle('active', s === 'circle');
+  }
+
+  function selectFill(pct) {
+    wzlFill = pct;
+    [1, 2, 5, 7].forEach(v => {
+      const el = document.getElementById(`fillCard${v}`);
+      if (el) el.classList.toggle('active', v === pct);
+    });
+  }
+
+  function startWZL() {
+    wzlStep = 0;
+    const ov = document.getElementById('wzlOverlay');
+    document.getElementById('wzlDone').classList.remove('active');
+    document.getElementById('wzlHud').style.display = '';
+    document.getElementById('wzlHint').style.display = '';
+    document.getElementById('wzlDots').style.display = '';
+    ov.classList.add('active');
+    ov.onclick = onWZLClick;
+    document.addEventListener('keydown', onWZLKey);
+    buildWZLDots();
+    renderWZL();
+    wzlTimer = fadeHud(2500, 'wzlHud', 'wzlHint', 'wzlDots');
+  }
+
+  function buildWZLDots() {
+    const c = document.getElementById('wzlDots');
+    c.innerHTML = '';
+    // 6 dots (5 zones + 1 "all")
+    for (let i = 0; i < 6; i++) {
+      const d = document.createElement('div');
+      d.className = 'fs-dot' + (i === 0 ? ' current' : '');
+      d.id = `wzldot${i}`;
+      d.style.borderColor = 'rgba(255,255,255,0.35)';
+      c.appendChild(d);
+    }
+  }
+
+  function updateWZLDots() {
+    for (let i = 0; i < 6; i++) {
+      const d = document.getElementById(`wzldot${i}`);
+      if (!d) return;
+      d.className = 'fs-dot' + (i < wzlStep ? ' done' : i === wzlStep ? ' current' : '');
+      d.style.borderColor = 'rgba(255,255,255,0.35)';
+      if (i < wzlStep) d.style.background = 'rgba(255,255,255,0.55)';
+      else if (i === wzlStep) d.style.background = '#fff';
+      else d.style.background = '';
+    }
+  }
+
+  function renderWZL() {
+    const canvas = document.getElementById('wzlCanvas');
+    const { W, H } = setupCanvas(canvas);
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    // Czarne tło
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    // Rozmiar figury = wzlFill% powierzchni ekranu
+    // Pole kwadratu = W*H*(wzlFill/100), side = sqrt(W*H*(wzlFill/100))
+    const side = Math.round(Math.sqrt(W * H * (wzlFill / 100)));
+
+    const isAll = wzlStep >= WZL_ZONES.length; // krok 5 = wszystkie
+
+    const zonesToDraw = isAll ? WZL_ZONES : [WZL_ZONES[wzlStep]];
+
+    zonesToDraw.forEach((zone) => {
+      const r = zone.getRect(W, H, side);
+      ctx.fillStyle = '#ffffff';
+      if (wzlShape === 'circle') {
+        // Promień koła o tej samej powierzchni co kwadrat (2% ekranu): π*r² = side²  →  r = side/√π
+        const radius = side / Math.sqrt(Math.PI);
+        const cx = r.x + r.w / 2;
+        const cy = r.y + r.h / 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        ctx.fill();
+      } else {
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+      }
+    });
+
+    // HUD tekst
+    const WZL_LABELS = ['LEWY GÓRNY', 'PRAWY GÓRNY', 'LEWY DOLNY', 'PRAWY DOLNY', 'CENTRUM'];
+    const hud = document.getElementById('wzlLabel');
+    const info = document.getElementById('wzlInfo');
+    if (isAll) {
+      hud.textContent = 'WSZYSTKIE';
+      info.textContent = `STREFA 6/6  ·  WSZYSTKIE STREFY  ·  ${wzlFill}% KAŻDA`;
+    } else {
+      hud.textContent = WZL_LABELS[wzlStep];
+      info.textContent = `STREFA ${wzlStep+1}/6  ·  ${wzlFill}% POWIERZCHNI`;
+    }
+
+    updateWZLDots();
+  }
+
+  function onWZLClick() {
+    if (document.getElementById('wzlDone').classList.contains('active')) {
+      closeWZLOverlay();
+      return;
+    }
+    wzlStep++;
+    clearTimeout(wzlTimer);
+    if (wzlStep > WZL_ZONES.length) {
+      showWZLDone();
+    } else {
+      renderWZL();
+      wzlTimer = fadeHud(2500, 'wzlHud', 'wzlHint', 'wzlDots');
+    }
+  }
+
+  function showWZLDone() {
+    ['wzlHud','wzlHint','wzlDots'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('wzlDone').classList.add('active');
+  }
+
+  function onWZLKey(e) {
+    if (e.key === 'Escape') closeWZLOverlay();
+  }
+
+  function closeWZLOverlay() {
+    clearTimeout(wzlTimer);
+    document.getElementById('wzlOverlay').classList.remove('active');
+    document.removeEventListener('keydown', onWZLKey);
+    window.parent.postMessage({type:'shellFS', on:false}, '*');
+  }
+
+  window.addEventListener('resize', () => {
+    if (document.getElementById('wzlOverlay').classList.contains('active') &&
+        !document.getElementById('wzlDone').classList.contains('active')) renderWZL();
+  });
+
+  // init
+  updateBtn();
+</script>
+<!-- ===== HALO TEST OVERLAY ===== -->
+<div class="fs-overlay" id="haloOverlay" style="background:#000;">
+  <canvas id="haloCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
+  <div class="fs-hud" id="haloHud">
+    <div class="fs-hud-label" id="haloLabel" style="color:#fff;">HALO 1%</div>
+    <div class="fs-hud-info" id="haloInfo" style="color:rgba(255,255,255,0.5);">KROK 1/7  ·  1% POWIERZCHNI</div>
+  </div>
+  <div class="fs-hint" id="haloHint" style="color:rgba(255,255,255,0.4);">KLIKNIJ ABY PRZEJŚĆ DALEJ · ESC ABY ZAKOŃCZYĆ</div>
+  <div class="fs-dots" id="haloDots"></div>
+  <div class="fs-done" id="haloDone">
+    <div class="done-bars"><div class="done-bar single"></div></div>
+    <h2>POMIAR ZAKOŃCZONY</h2>
+    <p>KLIKNIJ ABY WRÓCIĆ</p>
+  </div>
+</div>
+
+<!-- ===== WHITE ZONE LUMINANCE OVERLAY ===== -->
+<div class="fs-overlay" id="wzlOverlay" style="background:#000;">
+  <canvas id="wzlCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
+  <div class="fs-hud" id="wzlHud">
+    <div class="fs-hud-label" id="wzlLabel" style="color:#fff;">LEWO</div>
+    <div class="fs-hud-info" id="wzlInfo" style="color:rgba(255,255,255,0.5);">STREFA 1/6  ·  2% POWIERZCHNI</div>
+  </div>
+  <div class="fs-hint" id="wzlHint" style="color:rgba(255,255,255,0.4);">KLIKNIJ ABY PRZEJŚĆ DALEJ · ESC ABY ZAKOŃCZYĆ</div>
+  <div class="fs-dots" id="wzlDots"></div>
+  <div class="fs-done" id="wzlDone">
+    <div class="done-bars"><div class="done-bar single"></div></div>
+    <h2>POMIAR ZAKOŃCZONY</h2>
+    <p>KLIKNIJ ABY WRÓCIĆ</p>
+  </div>
+</div>
+
+<script>
+  // Notify the suite shell when a fullscreen measurement overlay is active,
+  // so the shell can hide its fullscreen-exit button for a perfectly clean
+  // measurement screen (nothing on top of the test pattern).
+  (function () {
+    const overlays = document.querySelectorAll('.fs-overlay');
+    function anyActive() {
+      for (const o of overlays) if (o.classList.contains('active')) return true;
+      return false;
+    }
+    function notify() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ source: 'dcs-calibrator', measuring: anyActive() }, '*');
+        }
+      } catch (e) {}
+    }
+    const obs = new MutationObserver(notify);
+    overlays.forEach(o => obs.observe(o, { attributes: true, attributeFilter: ['class'] }));
+  })();
+</script>
+
+<style>
+/* ── Suite light theme (purple accents preserved) — injected ── */
+body.light {
+  --bg: #f4f4f7;
+  --surface: #ffffff;
+  --border: #d6d8de;
+  --accent: #8b15ba;
+  --text: #1a1a1c;
+  --muted: #8c8c94;
+  --canvas-bg: #dcdce2;
+}
+</style>
+<script>
+/* Suite-wide theme listener (shell broadcasts + shared localStorage) */
+(function(){
+  var __at=null; function applyTheme(light){ if(!document.body) return; document.documentElement.classList.add('theme-anim'); document.body.classList.add('theme-anim'); document.body.classList.toggle('light', !!light); clearTimeout(__at); __at=setTimeout(function(){document.documentElement.classList.remove('theme-anim'); document.body.classList.remove('theme-anim');},950); }
+  function readLS(){ try { return localStorage.getItem('suite-theme')==='light'; } catch(e){ return false; } }
+  applyTheme(readLS());
+  document.addEventListener('DOMContentLoaded', function(){ applyTheme(readLS()); });
+  window.addEventListener('message', function(ev){
+    if(ev.data && ev.data.type==='suite-theme'){ if(!ev.data.noToggle) applyTheme(ev.data.light); }
+    if(ev.data && ev.data.type==='dc-launch'){ try{ applyDcLaunch(ev.data.allow||[], ev.data.opts||{}); }catch(e){} }
+  });
+})();
+</script>
+
+</body>
+</html>

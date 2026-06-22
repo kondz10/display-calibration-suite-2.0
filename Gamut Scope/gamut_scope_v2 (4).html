@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gamut Scope — CIE 1931</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05050a;
+  --s1: #0a0a12;
+  --s2: #0f0f1a;
+  --s3: #141420;
+  --b1: #18182a;
+  --b2: #22223a;
+  --b3: #2e2e50;
+  --acc: #a020f0;
+  --acc2: #7b10c8;
+  --acc-dim: rgba(160,32,240,.12);
+  --acc-glow: rgba(160,32,240,.35);
+  --grn: #00ff88;
+  --grn-dim: rgba(0,255,136,.15);
+  --red: #ff4466;
+  --ylw: #ffcc00;
+  --cyn: #00ccff;
+  --orn: #ff8800;
+  --txt: #d0d4e8;
+  --t2:  #7880aa;
+  --t3:  #3a3a5a;
+  --mono: 'Share Tech Mono', monospace;
+  --sans: 'Rajdhani', sans-serif;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: none; }
+::-webkit-scrollbar { display: none; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--txt); font-family: var(--mono); font-size: clamp(10px, 1.1vw, 14px); }
+
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(160,32,240,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(160,32,240,.028) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 60% 50%, transparent 40%, rgba(0,0,0,.7) 100%);
+}
+
+/* ── APP SHELL ── */
+#app {
+  position: relative; z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+.main-body {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px 20px;
+  min-height: 0;
+}
+.scope-unit {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  border: 1px solid var(--b2);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(160,32,240,.10), 0 12px 60px rgba(0,0,0,.8), 0 0 80px rgba(160,32,240,.07);
+  max-height: 100%;
+}
+
+/* ══ TOP BAR ══ */
+.topbar {
+  border-bottom: 1px solid var(--b1);
+  background: rgba(5,5,10,.96);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 24px;
+  border-right: 1px solid var(--b1);
+  flex-shrink: 0;
+}
+.logo-grid {
+  width: 40px; height: 40px;
+  border: 1px solid var(--acc);
+  border-radius: 10px; padding: 6px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+  box-shadow: 0 0 14px var(--acc-glow);
+  flex-shrink: 0;
+}
+.logo-grid span { border-radius: 2px; display: block; }
+.lr{background:#ff3333;} .lg{background:#33ff33;} .lb{background:#3355ff;} .lw{background:#fff;}
+.brand-text h1 {
+  font-family: var(--mono); font-size: 17px; letter-spacing: 4px;
+  color: var(--acc); text-transform: uppercase;
+  text-shadow: 0 0 18px var(--acc-glow);
+}
+.brand-text p { font-family: var(--sans); font-size: 11px; color: var(--t2); letter-spacing: 2px; margin-top: 2px; }
+
+
+.igroup {
+  display: flex; flex-direction: column; gap: 3px;
+  min-width: 72px;
+}
+.igroup-label {
+  font-size: 13px; letter-spacing: 2px; color: var(--t3);
+  text-transform: uppercase;
+}
+.igroup input {
+  background: var(--s2); border: 1px solid var(--b1);
+  border-radius: 7px; padding: 6px 8px;
+  color: var(--txt); font-family: var(--mono); font-size: 20px;
+  outline: none; transition: border-color .18s, box-shadow .18s;
+  width: 88px;
+}
+.igroup input:focus { border-color: var(--acc); box-shadow: 0 0 0 2px var(--acc-dim); }
+
+
+.wpb {
+  background: var(--s2); border: 1px solid var(--b1);
+  color: var(--t2); font-family: var(--mono); font-size: 14px; letter-spacing: 1px;
+  padding: 5px 11px; border-radius: 7px; cursor: pointer;
+  transition: all .18s;
+}
+.wpb:hover { border-color: var(--b3); color: var(--txt); }
+.wpb.on { border-color: var(--acc); color: var(--acc); background: var(--acc-dim); box-shadow: 0 0 8px var(--acc-glow); }
+
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 20px;
+  border-left: 1px solid var(--b1);
+  font-size: 15px; letter-spacing: 2px; color: var(--t2);
+  flex-shrink: 0;
+}
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--grn); box-shadow: 0 0 8px var(--grn);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+/* ══ CANVAS ══ */
+.canvas-col {
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  position: relative;
+  background: var(--bg);
+}
+.canvas-wrap { position: relative; }
+canvas {
+  display: block;
+  border-radius: 4px;
+}
+
+.tip {
+  position: fixed; z-index: 300;
+  background: rgba(10,10,18,.96); border: 1px solid var(--acc);
+  border-radius: 10px; padding: 10px 14px;
+  font-family: var(--mono); font-size: 11px; color: var(--txt);
+  pointer-events: none; display: none; white-space: nowrap;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 16px var(--acc-glow);
+}
+.tip-xy { color: var(--grn); font-size: 13px; letter-spacing: 1px; }
+.tip-nm { color: var(--t2); font-size: 9px; margin-top: 3px; letter-spacing: 1px; }
+
+/* ══ SIDEBAR ══ */
+.sidebar {
+  width: 316px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--b2);
+  background: rgba(8,8,14,.92);
+  backdrop-filter: blur(10px);
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 0;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+
+.panel {
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--b1);
+}
+
+.sec-label {
+  font-size: 13px; letter-spacing: 3px; color: var(--t3);
+  text-transform: uppercase; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--b1); }
+
+/* ── Custom gamut input panel (top of sidebar) ── */
+.custom-input-panel {
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--b2);
+  background: rgba(10,10,18,.6);
+  flex-shrink: 0;
+}
+
+.primary-row {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;
+}
+.primary-group {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.primary-label {
+  font-size: 12px; letter-spacing: 2px; color: var(--t2); text-transform: uppercase;
+  display: flex; align-items: center; gap: 7px;
+}
+.primary-label::before {
+  content: ''; width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex-shrink: 0;
+}
+.primary-label.r { color: #ff5555; }
+.primary-label.g { color: #44ff88; }
+.primary-label.b { color: #5588ff; }
+.xy-pair { display: flex; gap: 6px; align-items: center; }
+.xy-pair input {
+  flex: 1; min-width: 0;
+  background: var(--s2); border: 1px solid var(--b1);
+  border-radius: 7px; padding: 5px 6px;
+  color: var(--txt); font-family: var(--mono); font-size: 15px;
+  outline: none; transition: border-color .18s;
+}
+.xy-pair input:focus { border-color: var(--acc); }
+.xy-pair input.changed { border-color: var(--grn); }
+.xy-tag {
+  font-size: 13px; color: var(--t3); letter-spacing: 1px; min-width: 14px; text-align: center;
+}
+.xy-label {
+  font-size: 13px; color: var(--t3); letter-spacing: 1px; margin-bottom: 2px;
+  display: flex; gap: 0; justify-content: space-around;
+}
+.xy-label span { flex: 1; text-align: center; }
+
+.draw-row {
+  display: flex; gap: 6px;
+}
+.btn {
+  background: transparent; border: 1px solid var(--acc);
+  color: var(--acc); font-family: var(--mono); font-size: 14px;
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 9px 0; border-radius: 8px; cursor: pointer;
+  position: relative; overflow: hidden; transition: color .18s;
+  white-space: nowrap; flex: 1;
+}
+.btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--acc); transform: translateX(-101%);
+  transition: transform .22s ease; z-index: 0;
+}
+.btn:hover { color: #fff; } .btn:hover::before { transform: translateX(0); }
+.btn span { position: relative; z-index: 1; }
+.btn-ghost { border-color: var(--b2); color: var(--t2); }
+.btn-ghost::before { background: var(--s3); }
+.btn-ghost:hover { color: var(--txt); }
+.btn:disabled { opacity: .3; pointer-events: none; }
+
+/* Gamut list */
+.glist { display: flex; flex-direction: column; gap: 5px; }
+.gi {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px;
+  background: var(--s1); border: 1px solid var(--b1); border-radius: 9px;
+  cursor: pointer; transition: border-color .18s, background .18s;
+}
+.gi.on { border-color: var(--acc); background: var(--acc-dim); }
+.gi:hover:not(.on) { border-color: var(--b2); background: var(--s2); }
+.gdot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.gname { font-family: var(--mono); font-size: 14px; letter-spacing: 1px; flex: 1; }
+.gpct { font-family: var(--mono); font-size: 14px; color: var(--grn); min-width: 38px; text-align: right; }
+
+/* Coverage panel */
+.cov-list { display: flex; flex-direction: column; gap: 5px; }
+.cov-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: var(--s1); border: 1px solid var(--b1); border-radius: 9px;
+}
+.cbar { flex: 1; height: 4px; background: var(--s3); border-radius: 2px; overflow: hidden; }
+.cfill { height: 100%; border-radius: 2px; transition: width .5s ease; }
+.cpct { font-size: 16px; color: var(--grn); min-width: 42px; text-align: right; font-weight: bold; }
+.cov-check { width: 15px; height: 15px; accent-color: var(--acc); cursor: pointer; flex-shrink: 0; }
+.cov-ratio {
+  font-size: 11px; color: var(--acc); font-weight: bold;
+  letter-spacing: .5px; white-space: nowrap;
+  padding: 2px 6px; border: 1px solid var(--acc); border-radius: 5px;
+  background: rgba(139,21,186,0.12);
+}
+
+.empty-state {
+  text-align: center; padding: 24px 12px;
+  font-size: 15px; letter-spacing: 2px; color: var(--t3);
+  line-height: 1.8;
+}
+.empty-state .hint {
+  margin-top: 8px; color: var(--acc); opacity: .5;
+  font-size: 13px;
+}
+
+.drawn-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--grn-dim); border: 1px solid var(--grn);
+  color: var(--grn); border-radius: 6px; padding: 3px 8px;
+  font-size: 15px; letter-spacing: 1px;
+}
+
+/* White point inside sidebar */
+.wp-sidebar {
+  display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px;
+}
+.wp-presets { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.wp-xy { display: flex; flex-direction: column; gap: 4px; }
+.wp-xy-row { display: flex; gap: 6px; }
+.wp-xy-row input {
+  width: 72px;
+  background: var(--s2); border: 1px solid var(--b1);
+  border-radius: 7px; padding: 5px 6px;
+  color: var(--txt); font-family: var(--mono); font-size: 14px;
+  outline: none; transition: border-color .18s;
+}
+.wp-xy-row input:focus { border-color: var(--acc); }
+.wp-btns-v { display: flex; gap: 4px; flex-wrap: wrap; }
+body.light .topbar { background: rgba(255,255,255,.96); }
+body.light .sidebar { background: rgba(255,255,255,.94); }
+body.light .custom-input-panel { background: rgba(255,255,255,.6); }
+body.light canvas { box-shadow: 0 0 0 1px var(--b1); }
+/* Remove the dark vignette glow + soften the heavy panel shadow on light theme */
+body.light::after { background: none; }
+body.light .scope-unit { box-shadow: 0 0 0 1px rgba(160,32,240,.14), 0 8px 28px rgba(0,0,0,.10); }
+body.light::before { background-image:
+  linear-gradient(rgba(0,0,0,.035) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(0,0,0,.035) 1px, transparent 1px); }
+
+html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ TOP BAR ══ -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo-grid">
+        <span class="lr"></span><span class="lg"></span>
+        <span class="lb"></span><span class="lw"></span>
+      </div>
+      <div class="brand-text">
+        <h1>Gamut Scope</h1>
+        <p>CIE 1931 &middot; Analyzer</p>
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div class="status-pill">
+      <div class="live-dot"></div>LIVE
+    </div>
+  </div>
+
+  <!-- ══ MAIN BODY ══ -->
+  <div class="main-body">
+  <div class="scope-unit">
+
+  <!-- CANVAS -->
+  <div class="canvas-col">
+    <div class="canvas-wrap">
+      <canvas id="cv" width="1040" height="1040"></canvas>
+      <div class="tip" id="tip">
+        <div class="tip-xy" id="txy"></div>
+        <div class="tip-nm" id="tnm"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SIDEBAR ══ -->
+  <div class="sidebar">
+
+    <!-- INPUT at the top -->
+    <div class="custom-input-panel">
+      <div class="sec-label">Custom Gamut <span class="drawn-tag" id="drawnTag" style="display:none">● DRAWN</span></div>
+
+      <div class="primary-row">
+        <!-- R -->
+        <div class="primary-group">
+          <div class="primary-label r">R</div>
+          <div class="xy-pair">
+            <span class="xy-tag">x</span>
+            <input type="number" id="rx" step="0.001" min="0" max="0.85" value="0.640" oninput="markChanged(this)">
+            <span class="xy-tag">y</span>
+            <input type="number" id="ry" step="0.001" min="0" max="0.85" value="0.330" oninput="markChanged(this)">
+          </div>
+        </div>
+        <!-- G -->
+        <div class="primary-group">
+          <div class="primary-label g">G</div>
+          <div class="xy-pair">
+            <span class="xy-tag">x</span>
+            <input type="number" id="gx" step="0.001" min="0" max="0.85" value="0.300" oninput="markChanged(this)">
+            <span class="xy-tag">y</span>
+            <input type="number" id="gy" step="0.001" min="0" max="0.85" value="0.600" oninput="markChanged(this)">
+          </div>
+        </div>
+        <!-- B -->
+        <div class="primary-group">
+          <div class="primary-label b">B</div>
+          <div class="xy-pair">
+            <span class="xy-tag">x</span>
+            <input type="number" id="bx" step="0.001" min="0" max="0.85" value="0.150" oninput="markChanged(this)">
+            <span class="xy-tag">y</span>
+            <input type="number" id="by" step="0.001" min="0" max="0.85" value="0.060" oninput="markChanged(this)">
+          </div>
+        </div>
+      </div>
+
+      <!-- White point row -->
+      <div style="border-top:1px solid var(--b1);margin:10px 0 10px;padding-top:10px;">
+        <div class="sec-label" style="margin-bottom:8px;">White Point</div>
+        <div class="wp-sidebar">
+          <div class="wp-presets">
+            <div class="igroup-label" style="margin-bottom:5px;">Preset</div>
+            <div class="wp-btns-v" id="wpbtns"></div>
+          </div>
+          <div class="wp-xy">
+            <div class="igroup-label" style="margin-bottom:5px;">Custom xy</div>
+            <div class="wp-xy-row">
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <span style="font-size:11px;color:var(--t3);text-align:center;">x</span>
+                <input type="number" id="wpx" step="0.0001" min="0.2" max="0.5" value="0.3127" oninput="onWPxyChange()">
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <span style="font-size:11px;color:var(--t3);text-align:center;">y</span>
+                <input type="number" id="wpy" step="0.0001" min="0.2" max="0.5" value="0.3290" oninput="onWPxyChange()">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="draw-row">
+        <button class="btn" onclick="applyCustomGamut()"><span>▶ Draw</span></button>
+        <button class="btn btn-ghost" onclick="resetCustom()"><span>✕ Clear</span></button>
+      </div>
+    </div>
+
+    <!-- COVERAGE RESULTS -->
+    <div class="panel" style="flex:1">
+      <div class="sec-label">Coverage vs visible gamuts</div>
+      <div class="cov-list" id="customCovList">
+        <div class="empty-state">
+          Enter RGB primaries above<br>and click Draw
+          <div class="hint">▲ Results appear here</div>
+        </div>
+      </div>
+      <button class="btn" id="btnExportPng" onclick="exportGamutPNG()" style="margin-top:10px;width:100%;"><span>⬇ Eksport PNG (zaznaczone pokrycia)</span></button>
+    </div>
+
+    <!-- Standard gamuts toggle -->
+    <div class="panel">
+      <div class="sec-label">Standard Gamuts</div>
+      <div class="glist" id="glist"></div>
+    </div>
+
+  </div>
+
+  </div><!-- /scope-unit -->
+  </div><!-- /main-body -->
+
+</div>
+
+<script>
+/* ── DATA ── */
+const GAMUTS = {
+  'sRGB':       {pts:[{x:.64,y:.33},{x:.30,y:.60},{x:.15,y:.06}],    color:'#22dd55', wp:{x:.3127,y:.3290}, wpLabel:'D65'},
+  'Rec.709':    {pts:[{x:.64,y:.33},{x:.30,y:.60},{x:.15,y:.06}],    color:'#66ffcc', wp:{x:.3127,y:.3290}, wpLabel:'D65'},
+  'Adobe RGB':  {pts:[{x:.64,y:.33},{x:.21,y:.71},{x:.15,y:.06}],    color:'#9944ff', wp:{x:.3127,y:.3290}, wpLabel:'D65'},
+  'Display P3': {pts:[{x:.680,y:.320},{x:.265,y:.690},{x:.150,y:.060}], color:'#ffaa22', wp:{x:.3127,y:.3290}, wpLabel:'D65'},
+  'DCI-P3':     {pts:[{x:.680,y:.320},{x:.265,y:.690},{x:.150,y:.060}], color:'#00ccee', wp:{x:.3140,y:.3510}, wpLabel:'~D60'},
+  'Rec.2020':   {pts:[{x:.708,y:.292},{x:.170,y:.797},{x:.131,y:.046}], color:'#ee3333', wp:{x:.3127,y:.3290}, wpLabel:'D65'},
+};
+const WPS = {
+  D65: {x:.3127, y:.3290},
+  D50: {x:.3457, y:.3585},
+  DCI: {x:.3140, y:.3510},
+  E:   {x:.3333, y:.3333},
+};
+
+const CMF = [
+  [380,.001368,.000039,.006450],[385,.002236,.000064,.010550],[390,.004243,.000120,.020050],
+  [395,.007650,.000217,.036210],[400,.014310,.000396,.067850],[405,.023190,.000640,.110200],
+  [410,.043510,.001210,.207400],[415,.077630,.002180,.371300],[420,.134380,.004000,.645600],
+  [425,.214770,.007300,1.039050],[430,.283900,.011600,1.385600],[435,.328500,.016840,1.622960],
+  [440,.348280,.023000,1.747060],[445,.348060,.029800,1.782600],[450,.336200,.038000,1.772110],
+  [455,.318700,.048000,1.744100],[460,.290800,.060000,1.669200],[465,.251100,.073900,1.528100],
+  [470,.195360,.090980,1.287640],[475,.142100,.112600,1.041900],[480,.095640,.139020,.812950],
+  [485,.057950,.169300,.616200],[490,.032010,.208020,.465180],[495,.014700,.258600,.353300],
+  [500,.004900,.323000,.272000],[505,.002400,.407300,.212300],[510,.009300,.503000,.158200],
+  [515,.029100,.608200,.111700],[520,.063270,.710000,.078250],[525,.109600,.793200,.057250],
+  [530,.165500,.862000,.042160],[535,.225750,.914850,.029840],[540,.290400,.954000,.020300],
+  [545,.359700,.980300,.013400],[550,.433450,.994950,.008750],[555,.512050,1.000000,.005750],
+  [560,.594500,.995000,.003900],[565,.678400,.978600,.002750],[570,.762100,.952000,.002100],
+  [575,.842500,.915400,.001800],[580,.916300,.870000,.001650],[585,.978600,.816300,.001400],
+  [590,1.026300,.757000,.001100],[595,1.056700,.694900,.001000],[600,1.062200,.631000,.000800],
+  [605,1.045600,.566800,.000600],[610,1.002600,.503000,.000340],[615,.938400,.441200,.000240],
+  [620,.854450,.381000,.000190],[625,.751400,.321000,.000100],[630,.642400,.265000,.000050],
+  [635,.541900,.217000,.000030],[640,.447900,.175000,.000020],[645,.360800,.138200,.000010],
+  [650,.283500,.107000,.000000],[655,.218700,.081600,.000000],[660,.164900,.061000,.000000],
+  [665,.121200,.044580,.000000],[670,.087400,.032000,.000000],[675,.063600,.023200,.000000],
+  [680,.046770,.017000,.000000],[685,.032900,.011920,.000000],[690,.022700,.008210,.000000],
+  [695,.015840,.005723,.000000],[700,.011359,.004102,.000000],[705,.008111,.002929,.000000],
+  [710,.005790,.002091,.000000],[715,.004109,.001484,.000000],[720,.002899,.001047,.000000],
+  [725,.002049,.000740,.000000],[730,.001440,.000520,.000000],[735,.001000,.000361,.000000],
+  [740,.000690,.000249,.000000],[745,.000476,.000172,.000000],[750,.000332,.000120,.000000],
+  [755,.000235,.000085,.000000],[760,.000166,.000060,.000000],[765,.000117,.000042,.000000],
+  [770,.000083,.000030,.000000],[775,.000059,.000021,.000000],[780,.000042,.000015,.000000],
+];
+
+const LOCUS = CMF.map(r => {
+  const s = r[1]+r[2]+r[3];
+  return s < 1e-10 ? null : {nm:r[0], x:r[1]/s, y:r[2]/s};
+}).filter(Boolean);
+
+// Densified locus (matches the smoothed visible border) for the colour-fill test
+const LOCUS_DENSE = densifyCatmullRom(LOCUS.map(p => [p.x, p.y]), 12).map(([x, y]) => ({ x, y }));
+
+/* ── CANVAS SETUP ── */
+const CV  = document.getElementById('cv');
+const ctx = CV.getContext('2d');
+const W = CV.width, H = CV.height;
+const PAD = 72;
+const CX0=0, CX1=0.80, CY0=0, CY1=0.86;
+
+function c2p(x,y){ return [PAD+(x-CX0)/(CX1-CX0)*(W-2*PAD), H-PAD-(y-CY0)/(CY1-CY0)*(H-2*PAD)]; }
+function p2c(px,py){ return [(px-PAD)/(W-2*PAD)*(CX1-CX0)+CX0, (H-PAD-py)/(H-2*PAD)*(CY1-CY0)+CY0]; }
+
+/* ── STATE ── */
+const vis = {'sRGB':true,'Rec.709':true,'Rec.2020':true,'Adobe RGB':true,'DCI-P3':true,'Display P3':true};
+let activeWP = 'D65';
+let customOn = false;
+let customPts = [];
+let exportSel = {};  // {gamutName: bool} — which coverage rows appear in PNG export
+
+/* ── XYZ ↔ RGB ── */
+function xyz2rgb(X,Y,Z){
+  let r= 3.2406*X-1.5372*Y-0.4986*Z;
+  let g=-0.9689*X+1.8758*Y+0.0415*Z;
+  let b= 0.0557*X-0.2040*Y+1.0570*Z;
+  r=r<0?0:r; g=g<0?0:g; b=b<0?0:b;
+  const gc=v=>v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055;
+  return [gc(r),gc(g),gc(b)];
+}
+function xyY2XYZ(x,y,Y=1){ if(y<1e-10)return[0,0,0]; return[x*Y/y,Y,(1-x-y)*Y/y]; }
+
+/* ── COLOR CANVAS ── */
+let colorCanvas = null;
+function buildColorCanvas(){
+  const oc=document.createElement('canvas'); oc.width=W; oc.height=H;
+  const oc2=oc.getContext('2d');
+  const id=oc2.createImageData(W,H); const d=id.data;
+  for(let py=0;py<H;py++) for(let px=0;px<W;px++){
+    const [cx2,cy2]=p2c(px,py);
+    if(cx2<0||cy2<0||cx2>CX1||cy2>CY1) continue;
+    if(!ptInLocus(cx2,cy2)) continue;
+    const [X,Y,Z]=xyY2XYZ(cx2,cy2,1);
+    let [r,g,b]=xyz2rgb(X,Y,Z);
+    const mx=Math.max(r,g,b); if(mx>1){r/=mx;g/=mx;b/=mx;}
+    const i=(py*W+px)*4;
+    d[i]=r*255|0; d[i+1]=g*255|0; d[i+2]=b*255|0; d[i+3]=255;
+  }
+  oc2.putImageData(id,0,0); colorCanvas=oc;
+}
+
+function ptInLocus(x,y){
+  let inside=false;
+  for(let i=0,j=LOCUS_DENSE.length-1;i<LOCUS_DENSE.length;j=i++){
+    const xi=LOCUS_DENSE[i].x,yi=LOCUS_DENSE[i].y,xj=LOCUS_DENSE[j].x,yj=LOCUS_DENSE[j].y;
+    if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+
+/* ── RENDER ── */
+function isLightTheme(){ return document.body.classList.contains('light'); }
+function render(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = isLightTheme() ? '#ffffff' : '#05050a'; ctx.fillRect(0,0,W,H);
+  drawGrid();
+  if(colorCanvas) ctx.drawImage(colorCanvas,0,0);
+  drawLocusBorder();
+  Object.keys(GAMUTS).forEach(n=>{ if(vis[n]) drawGamut(n); });
+  drawWPs();
+  if(customOn && customPts.length===3) drawCustom();
+}
+
+function drawGrid(){
+  const light = isLightTheme();
+  ctx.font='14px Share Tech Mono,monospace';
+  ctx.strokeStyle = light ? 'rgba(0,0,0,.12)' : 'rgba(30,30,50,.9)'; ctx.lineWidth=.6;
+  ctx.fillStyle = light ? 'rgba(0,0,0,.55)' : 'rgba(90,90,120,.65)';
+  for(let v=0;v<=0.8;v+=0.1){
+    const [px]=c2p(v,0);
+    ctx.beginPath(); ctx.moveTo(px,H-PAD); ctx.lineTo(px,PAD); ctx.stroke();
+    ctx.fillText(v.toFixed(1),px-13,H-PAD+22);
+  }
+  for(let v=0;v<=0.8;v+=0.1){
+    const [,py]=c2p(0,v);
+    ctx.beginPath(); ctx.moveTo(PAD,py); ctx.lineTo(W-PAD,py); ctx.stroke();
+    if(v>0) ctx.fillText(v.toFixed(1),4,py+5);
+  }
+  ctx.fillStyle = light ? 'rgba(0,0,0,.55)' : 'rgba(140,140,170,.55)'; ctx.font='15px Share Tech Mono';
+  ctx.fillText('x',W/2,H-10);
+  ctx.save(); ctx.translate(16,H/2); ctx.rotate(-Math.PI/2); ctx.fillText('y',0,0); ctx.restore();
+}
+
+function densifyCatmullRom(pts, stepsPerSeg){
+  if(pts.length<3) return pts.slice();
+  const out=[]; const n=pts.length;
+  for(let i=0;i<n-1;i++){
+    const p0=pts[i===0?0:i-1], p1=pts[i], p2=pts[i+1], p3=pts[i+2<n?i+2:n-1];
+    for(let t=0;t<stepsPerSeg;t++){
+      const s=t/stepsPerSeg, s2=s*s, s3=s2*s;
+      const x=0.5*((2*p1[0])+(-p0[0]+p2[0])*s+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*s2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*s3);
+      const y=0.5*((2*p1[1])+(-p0[1]+p2[1])*s+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*s2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*s3);
+      out.push([x,y]);
+    }
+  }
+  out.push(pts[n-1]);
+  return out;
+}
+
+function drawLocusBorder(){
+  const pts=LOCUS.map(p=>c2p(p.x,p.y));
+  const dense=densifyCatmullRom(pts,12);
+  ctx.beginPath(); ctx.moveTo(dense[0][0],dense[0][1]);
+  for(let i=1;i<dense.length;i++) ctx.lineTo(dense[i][0],dense[i][1]);
+  ctx.closePath();
+  ctx.strokeStyle = isLightTheme() ? 'rgba(0,0,0,.5)' : 'rgba(255,255,255,.45)'; ctx.lineWidth=1.6; ctx.lineJoin='round'; ctx.stroke();
+}
+
+function drawWPs(){
+  // Draw one WP dot per visible gamut, grouped by position
+  const drawn = {};
+  Object.entries(GAMUTS).forEach(([name, g]) => {
+    if (!vis[name]) return;
+    const key = g.wp.x.toFixed(4) + ',' + g.wp.y.toFixed(4);
+    if (!drawn[key]) drawn[key] = {wp: g.wp, labels: [], colors: []};
+    drawn[key].labels.push(g.wpLabel);
+    drawn[key].colors.push(g.color);
+  });
+  Object.values(drawn).forEach(({wp, labels, colors}) => {
+    const [px, py] = c2p(wp.x, wp.y);
+    // outer ring
+    ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.5; ctx.stroke();
+    // inner dot
+    ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    // label (unique)
+    const label = [...new Set(labels)].join('/');
+    ctx.font = '12px Share Tech Mono'; ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.fillText(label, px + 13, py - 6);
+  });
+  // Also draw the user's custom WP selector (for the custom gamut input)
+  const wpx = parseFloat(document.getElementById('wpx').value);
+  const wpy = parseFloat(document.getElementById('wpy').value);
+  const customWPLabel = activeWP === 'custom' ? 'WP' : activeWP;
+  // only draw custom WP marker if it's not already covered by a gamut WP
+  const alreadyCovered = Object.values(GAMUTS).some(g =>
+    vis[Object.keys(GAMUTS).find(k => GAMUTS[k] === g)] &&
+    Math.abs(g.wp.x - wpx) < 0.001 && Math.abs(g.wp.y - wpy) < 0.001
+  );
+  if (!alreadyCovered || customOn) {
+    const [px, py] = c2p(wpx, wpy);
+    ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+    ctx.font = '12px Share Tech Mono'; ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.fillText(customWPLabel, px + 13, py - 6);
+  }
+}
+
+function drawGamut(name){
+  const g=GAMUTS[name];
+  const pts=g.pts.map(p=>c2p(p.x,p.y));
+  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.closePath();
+  ctx.strokeStyle=g.color; ctx.lineWidth=2.2; ctx.stroke();
+  g.pts.forEach(p=>{
+    const [px,py]=c2p(p.x,p.y);
+    ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2);
+    ctx.fillStyle=g.color; ctx.fill();
+  });
+  // name label at green (top) vertex
+  const [gx,gy]=pts[1];
+  ctx.font='bold 13px Share Tech Mono'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.lineWidth=3; ctx.strokeStyle='rgba(5,5,10,0.85)';
+  ctx.strokeText(name, gx+8, gy-6);
+  ctx.fillStyle=g.color;
+  ctx.fillText(name, gx+8, gy-6);
+}
+
+function drawCustom(){
+  const pts=customPts.map(p=>c2p(p.x,p.y));
+  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.closePath();
+  ctx.strokeStyle='#ffffff'; ctx.lineWidth=2.5;
+  ctx.setLineDash([9,4]); ctx.stroke(); ctx.setLineDash([]);
+  const labels=['R','G','B']; const cols=['#ff5555','#44ff88','#5588ff'];
+  customPts.forEach((p,i)=>{
+    const [px,py]=c2p(p.x,p.y);
+    ctx.beginPath(); ctx.arc(px,py,6,0,Math.PI*2);
+    ctx.fillStyle=cols[i]; ctx.fill();
+    ctx.fillStyle='#000'; ctx.font='bold 10px Share Tech Mono'; ctx.textAlign='center';
+    ctx.fillText(labels[i],px,py+4); ctx.textAlign='left';
+  });
+}
+
+/* ── PNG EXPORT (sama grafika diagramu z wypełnieniem kolorem, bez podpisów) ── */
+function exportGamutPNG(){
+  if(!customOn || customPts.length!==3){
+    alert('Najpierw narysuj swój gamut (Draw), aby wyeksportować.');
+    return;
+  }
+  const SCALE = 3;                         // very high resolution
+  // Square export — diagram fills the entire PNG
+  const DW = 1180, DH = 1180;
+  const cv = document.createElement('canvas');
+  cv.width = DW * SCALE; cv.height = DH * SCALE;
+  const x = cv.getContext('2d');
+  x.scale(SCALE, SCALE);
+
+  // transparent/white base
+  x.fillStyle = '#ffffff'; x.fillRect(0,0,DW,DH);
+
+  const EPAD = 70;
+  const EW = DW, EH = DH;
+  const ec2p = (cx,cy)=>[ EPAD+(cx-CX0)/(CX1-CX0)*(EW-2*EPAD), EH-EPAD-(cy-CY0)/(CY1-CY0)*(EH-2*EPAD) ];
+  const ep2c = (px,py)=>[ (px-EPAD)/(EW-2*EPAD)*(CX1-CX0)+CX0, (EH-EPAD-py)/(EH-2*EPAD)*(CY1-CY0)+CY0 ];
+
+  // ── Color fill over the spectral locus area (high-res) ──
+  const fillCanvas = document.createElement('canvas');
+  fillCanvas.width = EW; fillCanvas.height = EH;
+  const fctx = fillCanvas.getContext('2d');
+  const idata = fctx.createImageData(EW, EH);
+  const dd = idata.data;
+  for(let py=0;py<EH;py++) for(let px=0;px<EW;px++){
+    const [cx2,cy2]=ep2c(px,py);
+    if(cx2<0||cy2<0||cx2>CX1||cy2>CY1) continue;
+    if(!ptInLocus(cx2,cy2)) continue;
+    const [X,Y,Z]=xyY2XYZ(cx2,cy2,1);
+    let [r,g,b]=xyz2rgb(X,Y,Z);
+    const mx=Math.max(r,g,b); if(mx>1){r/=mx;g/=mx;b/=mx;}
+    const i=(py*EW+px)*4;
+    dd[i]=r*255|0; dd[i+1]=g*255|0; dd[i+2]=b*255|0; dd[i+3]=255;
+  }
+  fctx.putImageData(idata,0,0);
+  x.drawImage(fillCanvas,0,0);
+
+  // grid (subtle, over the color)
+  x.font='20px Share Tech Mono, monospace';
+  x.strokeStyle='rgba(0,0,0,.13)'; x.lineWidth=1;
+  x.fillStyle='rgba(0,0,0,.55)';
+  for(let v=0;v<=0.8;v+=0.1){
+    const [px]=ec2p(v,0);
+    x.beginPath(); x.moveTo(px,EH-EPAD); x.lineTo(px,EPAD); x.stroke();
+    x.fillText(v.toFixed(1),px-14,EH-EPAD+30);
+  }
+  for(let v=0;v<=0.8;v+=0.1){
+    const [,py]=ec2p(0,v);
+    x.beginPath(); x.moveTo(EPAD,py); x.lineTo(EW-EPAD,py); x.stroke();
+    if(v>0) x.fillText(v.toFixed(1),16,py+7);
+  }
+  x.fillStyle='rgba(0,0,0,.6)'; x.font='bold 24px Share Tech Mono';
+  x.fillText('x', EW/2, EH-18);
+  x.save(); x.translate(28,EH/2); x.rotate(-Math.PI/2); x.fillText('y',0,0); x.restore();
+
+  // spectral locus border (smoothed)
+  const lpts=LOCUS.map(p=>ec2p(p.x,p.y));
+  const dense=densifyCatmullRom(lpts,12);
+  x.beginPath(); x.moveTo(dense[0][0],dense[0][1]);
+  for(let i=1;i<dense.length;i++) x.lineTo(dense[i][0],dense[i][1]);
+  x.closePath();
+  x.strokeStyle='rgba(0,0,0,.55)'; x.lineWidth=2.4; x.lineJoin='round'; x.stroke();
+
+  // visible reference gamuts
+  Object.keys(GAMUTS).forEach(n=>{
+    if(!vis[n]) return;
+    const g=GAMUTS[n];
+    const pts=g.pts.map(p=>ec2p(p.x,p.y));
+    x.beginPath(); x.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++) x.lineTo(pts[i][0],pts[i][1]);
+    x.closePath();
+    x.strokeStyle=g.color; x.lineWidth=3; x.stroke();
+    pts.forEach(([px,py])=>{ x.beginPath(); x.arc(px,py,6,0,Math.PI*2); x.fillStyle=g.color; x.fill(); });
+    // name label near the green (top) vertex — small, colour-matched
+    const [gx,gy]=pts[1];
+    x.font='bold 17px Share Tech Mono'; x.textAlign='left'; x.textBaseline='alphabetic';
+    const lw=x.measureText(n).width;
+    // subtle white halo so the label stays readable over the colour fill
+    x.lineWidth=3; x.strokeStyle='rgba(255,255,255,0.85)';
+    x.strokeText(n, gx+10, gy-8);
+    x.fillStyle=g.color;
+    x.fillText(n, gx+10, gy-8);
+  });
+
+  // custom gamut (measured) — bold black dashed + RGB vertices
+  const cpts=customPts.map(p=>ec2p(p.x,p.y));
+  x.beginPath(); x.moveTo(cpts[0][0],cpts[0][1]);
+  for(let i=1;i<cpts.length;i++) x.lineTo(cpts[i][0],cpts[i][1]);
+  x.closePath();
+  x.strokeStyle='#111'; x.lineWidth=3.5; x.setLineDash([12,5]); x.stroke(); x.setLineDash([]);
+  const vlab=['R','G','B'], vcol=['#e23b3b','#28a05a','#2f6fe0'];
+  customPts.forEach((p,i)=>{
+    const [px,py]=ec2p(p.x,p.y);
+    x.beginPath(); x.arc(px,py,9,0,Math.PI*2); x.fillStyle=vcol[i]; x.fill();
+    x.fillStyle='#fff'; x.font='bold 15px Share Tech Mono'; x.textAlign='center'; x.textBaseline='middle';
+    x.fillText(vlab[i],px,py); x.textAlign='left'; x.textBaseline='alphabetic';
+  });
+
+  // white point marker
+  const wpx=parseFloat(document.getElementById('wpx').value);
+  const wpy=parseFloat(document.getElementById('wpy').value);
+  const [wpxp,wpyp]=ec2p(wpx,wpy);
+  x.beginPath(); x.arc(wpxp,wpyp,11,0,Math.PI*2); x.strokeStyle='#111'; x.lineWidth=2; x.stroke();
+  x.beginPath(); x.arc(wpxp,wpyp,4,0,Math.PI*2); x.fillStyle='#111'; x.fill();
+
+  // ── download ──
+  const a=document.createElement('a');
+  a.href=cv.toDataURL('image/png');
+  a.download='gamut_coverage.png';
+  a.click();
+}
+
+/* ── GEOMETRY ── */
+function area(pts){
+  let a=0;
+  for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length;a+=pts[i].x*pts[j].y-pts[j].x*pts[i].y;}
+  return Math.abs(a)/2;
+}
+function side(a,b,p){return(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);}
+function sect(a,b,c,d){
+  const A1=b.y-a.y,B1=a.x-b.x,C1=A1*a.x+B1*a.y;
+  const A2=d.y-c.y,B2=c.x-d.x,C2=A2*c.x+B2*c.y;
+  const det=A1*B2-A2*B1;
+  if(Math.abs(det)<1e-10)return{x:a.x,y:a.y};
+  return{x:(C1*B2-C2*B1)/det,y:(A1*C2-A2*C1)/det};
+}
+function intersectArea(subj,clip){
+  let out=subj.slice();
+  for(let i=0;i<clip.length;i++){
+    if(!out.length)return 0;
+    const inp=out.slice();out=[];
+    const p1=clip[i],p2=clip[(i+1)%clip.length];
+    for(let j=0;j<inp.length;j++){
+      const cur=inp[j],prv=inp[(j+inp.length-1)%inp.length];
+      const ci=side(p1,p2,cur)>=0,pi=side(p1,p2,prv)>=0;
+      if(ci){if(!pi)out.push(sect(p1,p2,prv,cur));out.push(cur);}
+      else if(pi)out.push(sect(p1,p2,prv,cur));
+    }
+  }
+  return out.length>=3?area(out):0;
+}
+function cov(a,b){return intersectArea(a,b)/area(b)*100;}
+
+/* ── UI BUILDERS ── */
+function buildGList(){
+  const el=document.getElementById('glist'); el.innerHTML='';
+  const sA=area(GAMUTS['sRGB'].pts);
+  Object.entries(GAMUTS).forEach(([n,g])=>{
+    const on=vis[n];
+    const pct=(area(g.pts)/sA*100).toFixed(0);
+    const d=document.createElement('div');
+    d.className='gi'+(on?' on':'');
+    d.innerHTML=`<div class="gdot" style="background:${g.color};opacity:${on?1:.3}"></div>
+      <div class="gname" style="opacity:${on?1:.45}">${n}</div>
+      <div style="font-size:11px;color:var(--t3);letter-spacing:1px;opacity:${on?.7:.25};margin-right:4px;">${g.wpLabel}</div>
+      <div class="gpct" style="opacity:${on?1:.35}">${pct}%</div>`;
+    d.onclick=()=>{
+      vis[n]=!vis[n];
+      buildGList();
+      // If custom is drawn, update coverage list to reflect new visible gamuts
+      if(customOn && customPts.length===3) updateCovList();
+      render();
+    };
+    el.appendChild(d);
+  });
+}
+
+function updateCovList(){
+  const cl=document.getElementById('customCovList');
+  cl.innerHTML='';
+  // Only show coverage for gamuts that are currently visible
+  const visibleGamuts = Object.entries(GAMUTS).filter(([n])=>vis[n]);
+  if(visibleGamuts.length===0){
+    cl.innerHTML='<div class="empty-state">Enable gamuts below<br>to compare coverage<div class="hint">Toggle gamuts to show results</div></div>';
+    return;
+  }
+  visibleGamuts.forEach(([n,g])=>{
+    const v=cov(customPts,g.pts);                       // overlap coverage (≤100)
+    const ratio = area(customPts)/area(g.pts)*100;       // area ratio (can exceed 100)
+    const vTxt = v.toFixed(1);
+    const barPct=Math.min(v,100);
+    const sel = exportSel[n] !== false; // default selected
+    const d=document.createElement('div');
+    d.className='cov-row';
+    // ratio badge shown when gamut is larger than reference (e.g. 130% sRGB)
+    const ratioBadge = ratio > 100.5
+      ? `<div class="cov-ratio" title="Powierzchnia gamutu względem ${n}">${ratio.toFixed(0)}%&nbsp;area</div>`
+      : '';
+    d.innerHTML=`<input type="checkbox" class="cov-check" ${sel?'checked':''} data-g="${n}" title="Pokaż w eksporcie PNG">
+      <div class="gdot" style="background:${g.color}"></div>
+      <div class="gname">${n}</div>
+      <div class="cbar"><div class="cfill" style="width:${barPct}%;background:${g.color}"></div></div>
+      ${ratioBadge}
+      <div class="cpct">${vTxt}%</div>`;
+    cl.appendChild(d);
+  });
+  // Wire checkboxes
+  cl.querySelectorAll('.cov-check').forEach(cb=>{
+    cb.onchange=()=>{ exportSel[cb.dataset.g] = cb.checked; };
+  });
+}
+
+function buildWPBtns(){
+  const el=document.getElementById('wpbtns'); el.innerHTML='';
+  Object.keys(WPS).forEach(k=>{
+    const b=document.createElement('button');
+    b.className='wpb'+(k===activeWP?' on':'');
+    b.textContent=k;
+    b.onclick=()=>{
+      activeWP=k;
+      document.getElementById('wpx').value=WPS[k].x.toFixed(4);
+      document.getElementById('wpy').value=WPS[k].y.toFixed(4);
+      buildWPBtns(); render();
+    };
+    el.appendChild(b);
+  });
+}
+
+/* ── CUSTOM GAMUT ── */
+function markChanged(inp){ inp.classList.add('changed'); }
+
+function applyCustomGamut(){
+  const rx=pf('rx'),ry=pf('ry');
+  const gx=pf('gx'),gy=pf('gy');
+  const bx=pf('bx'),by=pf('by');
+  if([rx,ry,gx,gy,bx,by].some(isNaN)){return;}
+  customPts=[{x:rx,y:ry},{x:gx,y:gy},{x:bx,y:by}];
+  customOn=true;
+  ['rx','ry','gx','gy','bx','by'].forEach(id=>document.getElementById(id).classList.remove('changed'));
+  document.getElementById('drawnTag').style.display='inline-flex';
+  updateCovList();
+  render();
+}
+
+function resetCustom(){
+  customOn=false; customPts=[];
+  document.getElementById('drawnTag').style.display='none';
+  const defaults={rx:.64,ry:.33,gx:.30,gy:.60,bx:.15,by:.06};
+  Object.entries(defaults).forEach(([id,v])=>{
+    const el=document.getElementById(id); el.value=v; el.classList.remove('changed');
+  });
+  document.getElementById('customCovList').innerHTML=`
+    <div class="empty-state">Enter RGB primaries above<br>and click Draw<div class="hint">▲ Results appear here</div></div>`;
+  render();
+}
+
+function onWPxyChange(){
+  activeWP='custom';
+  buildWPBtns();
+  render();
+}
+
+function pf(id){ return parseFloat(document.getElementById(id).value); }
+
+/* ── TOOLTIP ── */
+CV.addEventListener('mousemove',e=>{
+  const r=CV.getBoundingClientRect();
+  const scX=W/r.width, scY=H/r.height;
+  const px=(e.clientX-r.left)*scX, py=(e.clientY-r.top)*scY;
+  const [cx2,cy2]=p2c(px,py);
+  const tip=document.getElementById('tip');
+  if(cx2<0||cy2<0||cx2>CX1||cy2>CY1){tip.style.display='none';return;}
+  tip.style.display='block';
+  tip.style.left=(e.clientX+16)+'px';
+  tip.style.top=(e.clientY-48)+'px';
+  document.getElementById('txy').textContent=`x=${cx2.toFixed(4)}  y=${cy2.toFixed(4)}`;
+  let mn=99,nnm=null;
+  LOCUS.forEach(p=>{const d=Math.hypot(p.x-cx2,p.y-cy2);if(d<mn){mn=d;nnm=p.nm;}});
+  document.getElementById('tnm').textContent=mn<0.04?`≈ ${nnm} nm`:'';
+});
+CV.addEventListener('mouseleave',()=>{ document.getElementById('tip').style.display='none'; });
+
+/* ── CANVAS FIT ── */
+function fitCanvas(){
+  const body = document.querySelector('.main-body');
+  const sidebar = document.querySelector('.sidebar');
+  const topbar = document.querySelector('.topbar');
+  const availH = body.clientHeight - 32;
+  const availW = body.clientWidth - (sidebar ? sidebar.offsetWidth : 316) - 32;
+  const sz = Math.min(availW, availH, 900);
+  if(sz > 0){ CV.style.width = sz+'px'; CV.style.height = sz+'px'; }
+}
+window.addEventListener('resize', fitCanvas);
+
+/* ── INIT ── */
+buildGList();
+buildWPBtns();
+fitCanvas();
+setTimeout(()=>{ buildColorCanvas(); render(); }, 60);
+render();
+</script>
+<style>
+/* ── Suite light theme (purple accents preserved) — injected ── */
+body.light {
+  --bg: #f4f4f7;
+  --red: #d11030;
+  --canvas-bg: #dcdce2;
+  --s1: #ffffff;
+  --s2: #f6f6f9;
+  --s3: #eef0f3;
+  --b1: #e0e1e7;
+  --b2: #d2d4dc;
+  --b3: #c2c4cc;
+  --acc2: #7b10c8;
+  --t3: #9a9aa6;
+}
+</style>
+<script>
+/* Suite-wide theme listener (shell broadcasts + shared localStorage) */
+(function(){
+  var __at=null; function applyTheme(light){ if(!document.body) return; document.documentElement.classList.add('theme-anim'); document.body.classList.add('theme-anim'); document.body.classList.toggle('light', !!light); clearTimeout(__at); __at=setTimeout(function(){document.documentElement.classList.remove('theme-anim'); document.body.classList.remove('theme-anim');},950); }
+  function readLS(){ try { return localStorage.getItem('suite-theme')==='light'; } catch(e){ return false; } }
+  applyTheme(readLS());
+  document.addEventListener('DOMContentLoaded', function(){ applyTheme(readLS()); });
+  window.addEventListener('message', function(ev){
+    if(ev.data && ev.data.type==='suite-theme'){ if(!ev.data.noToggle) applyTheme(ev.data.light); try{ render(); }catch(e){} }
+  });
+})();
+</script>
+
+<script>
+/* ── Import danych ze Spectral Analyzer (ostatnia/maks. dana → primaries R/G/B lub punkt bieli W) ── */
+(function(){
+  var lastTs = null;
+  function setv(id,v){ var el=document.getElementById(id); if(el && v!=null && v!==''){ el.value=v; el.classList.add('changed'); } }
+  function importGamut(p){
+    if(!p || p.x==null || p.y==null) return;
+    var ch=(p.channel||'').toUpperCase();
+    if(ch==='R'){ setv('rx',p.x); setv('ry',p.y); try{ applyCustomGamut(); }catch(e){} }
+    else if(ch==='G'){ setv('gx',p.x); setv('gy',p.y); try{ applyCustomGamut(); }catch(e){} }
+    else if(ch==='B'){ setv('bx',p.x); setv('by',p.y); try{ applyCustomGamut(); }catch(e){} }
+    else if(ch==='W'){ setv('wpx',p.x); setv('wpy',p.y); try{ onWPxyChange(); }catch(e){} }
+  }
+  function consume(p){ if(p && p.target==='gamutScope' && p.ts!==lastTs){ lastTs=p.ts; importGamut(p); } }
+  function fromLS(){ try{ return JSON.parse(localStorage.getItem('spectral_incoming')||'null'); }catch(e){ return null; } }
+  window.addEventListener('message', function(ev){
+    if(ev.data && ev.data.type==='spectral-incoming') consume(ev.data.payload || fromLS());
+  });
+  consume(fromLS());
+})();
+</script>
+</body>
+</html>

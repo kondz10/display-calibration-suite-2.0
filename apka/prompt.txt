@@ -1,0 +1,307 @@
+# Zadanie: uporządkowanie aplikacji, menu, nawigacji, raportów i przepływu danych
+
+Przeanalizuj najpierw strukturę projektu: routing, komponenty menu, widoki aplikacji, dane urządzenia, moduły raportów, Chromatic Data Analyzer, Spectral Analyzer, TI3 / Argyll Profiler oraz sposób przechowywania danych pomiarowych.
+
+Nie wykonuj dużego refaktoru całej aplikacji. Wprowadzaj tylko zmiany potrzebne do realizacji poniższych punktów. Zachowaj obecny styl wizualny interfejsu.
+
+---
+
+## 1. Zmiana nazwy „Menu główne”
+
+Obecną nazwę:
+
+**Menu główne**
+
+zmień na:
+
+**Menu aplikacji**
+
+Zmień tę nazwę konsekwentnie w nagłówkach, przyciskach, opisach i miejscach nawigacyjnych.
+
+---
+
+## 2. Poprawa listy „Typ matrycy” w danych urządzenia
+
+W sekcji danych urządzenia popraw pole wyboru **Typ matrycy**.
+
+Lista ma zawierać wyłącznie:
+
+- OLED
+- WOLED
+- QD-LED
+- Edge-Lit
+- Back-lit
+- Mini LED
+
+Usuń wszystkie inne obecne typy matrycy.
+
+Sprawdź, czy zapis i odczyt danych urządzenia nadal działa poprawnie.
+
+---
+
+## 3. Uproszczenie Menu aplikacji
+
+W Menu aplikacji usuń sekcję znajdującą się pod obszarem **Rozpocznij pracę**.
+
+Usuń z widoku:
+
+- „Jak działa aplikacja”
+- wszystkie kafelki/opisy/okna znajdujące się poniżej tej sekcji
+
+Nie usuwaj funkcji aplikacji. Usuń tylko zbędną sekcję informacyjną z ekranu menu.
+
+---
+
+## 4. Nawigacja: przycisk „Powrót” w każdym widoku
+
+Dodaj możliwość wyjścia z każdego okna/modułu za pomocą przycisku:
+
+**Powrót**
+
+Wymagania:
+
+- każdy ekran podrzędny ma mieć widoczny przycisk „Powrót”,
+- przycisk ma cofać użytkownika do poprzedniego widoku,
+- jeżeli poprzedni widok nie istnieje, użytkownik ma wrócić do **Menu aplikacji**,
+- funkcja cofania ma działać spójnie we wszystkich modułach.
+
+Szczególnie popraw moduł **Wzorce testowe**:
+
+- po wejściu w „Spektroradiometr” musi być możliwość powrotu do okna wyboru,
+- po wejściu w „Miernik luminancji” musi być możliwość powrotu do okna wyboru,
+- z okna wyboru musi być możliwość powrotu do Menu aplikacji.
+
+Sprawdź analogicznie pozostałe moduły:
+
+- Chromatic Data Analyzer
+- Spectral Analyzer
+- Gamma Analyzer
+- Gamut Scope
+- Color Calculator
+- Calibration Preview
+- TI3 / Argyll Profiler
+- Raporty
+- DOCX Generator
+- Eksport danych
+- PDF Merger
+- inne istniejące widoki aplikacji
+
+---
+
+## 5. Rozbicie modułów TI3 / Argyll Profiler oraz Spectral Analyzer
+
+Obecnie **Chromatic Data Analyzer** jest rozbity na pojedyncze części aplikacji.
+
+Na podobnej zasadzie rozbij również:
+
+- TI3 / Argyll Profiler
+- Spectral Analyzer
+
+Wymagania:
+
+- większe funkcje mają być osobnymi widokami/kaflami/modułami,
+- nie usuwaj obecnych funkcji,
+- uporządkuj je modułowo,
+- w przypadku Spectral Analyzer utwórz 4 osobne okna/moduły zgodnie z obecnymi funkcjami programu,
+- nazwy modułów dobierz na podstawie istniejących funkcji,
+- nie wymyślaj sztucznie nowych funkcji,
+- każdy nowy moduł ma mieć przycisk „Powrót”.
+
+---
+
+## 6. Moduł Raporty: dodanie DOCX Generator, Eksport danych i PDF Merger
+
+W aplikacji **Raporty** dodaj trzy osobne podmoduły/aplikacje:
+
+---
+
+### A. DOCX Generator
+
+Dodaj osobny moduł/kafel:
+
+**DOCX Generator**
+
+Funkcja:
+
+- generowanie raportu w formacie `.docx`,
+- korzystanie z danych dostępnych w aplikacji,
+- przygotowanie struktury pod raport techniczny,
+- wykorzystanie zsynchronizowanych danych pomiarowych z Chromatic Data Analyzer,
+- możliwość dalszej rozbudowy generatora o kolejne sekcje raportu.
+
+Wymagania:
+
+- moduł ma być dostępny jako pierwsza aplikacja w sekcji Raporty,
+- ma mieć spójny wygląd z resztą aplikacji,
+- ma posiadać przycisk „Powrót”.
+
+---
+
+### B. Eksport danych
+
+Dodaj osobny moduł/kafel:
+
+**Eksport danych**
+
+Wymagania:
+
+- obecnie eksport danych znajduje się w Chromatic Data Analyzer,
+- przenieś lub skopiuj tę funkcję do modułu Raporty,
+- głównym miejscem eksportu danych ma być sekcja Raporty,
+- funkcja może nadal pozostać dostępna również w Chromatic Data Analyzer, jeżeli jest to logiczne,
+- eksport danych ma korzystać ze zsynchronizowanych danych pomiarowych,
+- dane wklejane/importowane w Chromatic Data Analyzer muszą być dostępne również tutaj.
+
+Moduł ma być dostępny jako druga aplikacja w sekcji Raporty.
+
+Wymagania dodatkowe:
+
+- zachowaj spójny wygląd z pozostałymi modułami Raportów,
+- dodaj przycisk „Powrót”,
+- nie duplikuj niezależnego stanu danych, jeśli istnieje wspólny store/context/state manager.
+
+---
+
+### C. PDF Merger
+
+Dodaj osobny moduł/kafel:
+
+**PDF Merger**
+
+Funkcja:
+
+- łączenie kilku plików PDF w jeden dokument,
+- możliwość dodania wielu plików PDF,
+- możliwość zmiany kolejności plików przed połączeniem,
+- możliwość usunięcia wybranego pliku z listy,
+- wygenerowanie jednego scalonego pliku PDF,
+- możliwość pobrania gotowego pliku PDF.
+
+Moduł ma być dostępny jako trzecia aplikacja w sekcji Raporty.
+
+Wymagania:
+
+- zachowaj spójny wygląd z pozostałymi modułami Raportów,
+- dodaj przycisk „Powrót”,
+- PDF Merger jest modułem narzędziowym i nie musi korzystać z danych pomiarowych,
+- PDF Merger powinien być częścią sekcji Raporty, ale nie musi synchronizować danych z Chromatic Data Analyzer.
+
+---
+
+## 7. Synchronizacja danych z Chromatic Data Analyzer
+
+Dane wklejane lub importowane w **Chromatic Data Analyzer** muszą być dostępne również w:
+
+- Raporty
+- DOCX Generator
+- Eksport danych
+
+Wymagania:
+
+- dane mają być synchronizowane,
+- nie twórz niezależnych, niespójnych kopii danych,
+- wykorzystaj istniejący globalny store/context/state manager, jeżeli taki istnieje,
+- jeżeli nie istnieje, zaimplementuj prosty wspólny mechanizm przechowywania danych między modułami,
+- DOCX Generator i Eksport danych mają korzystać z tych samych danych, które są używane w Chromatic Data Analyzer.
+
+PDF Merger nie musi korzystać z danych pomiarowych.
+
+---
+
+## 8. Spectral Analyzer: przekazywanie danych do innych aplikacji
+
+W każdym z 4 nowych modułów **Spectral Analyzer** dodaj opcję:
+
+**Przekaż dane do...**
+
+Po kliknięciu użytkownik ma móc wybrać aplikację docelową:
+
+- Chromatic Data Analyzer
+- Gamma Analyzer
+- TI3 / Argyll Profiler
+- Gamut Scope
+- Color Calculator
+- Calibration Preview
+
+Wymagania:
+
+- dane mają zostać zapisane w taki sposób, aby aplikacja docelowa mogła ich użyć bez ponownego ręcznego wklejania,
+- dla aplikacji wymagających pojedynczej wartości/barwy użyj ostatniej wartości odpowiadającej nasyceniu 255,
+- czyli maksymalnej wartości dla danej barwy,
+- przekazywanie danych do Gamut Scope, Color Calculator i Calibration Preview musi być zgodne z wymaganiami tych modułów,
+- jeżeli dane nie pasują do aplikacji docelowej, pokaż czytelny komunikat błędu,
+- aplikacja nie może się wysypywać przy niepoprawnych danych.
+
+---
+
+## 9. Spójność danych między aplikacjami
+
+Uporządkuj przepływ danych pomiarowych tak, aby spójnie działały dane z:
+
+- Chromatic Data Analyzer
+- Spectral Analyzer
+- Raporty
+- DOCX Generator
+- Eksport danych
+- Gamut Scope
+- Color Calculator
+- Calibration Preview
+- Gamma Analyzer
+- TI3 / Argyll Profiler
+
+Wspólny mechanizm danych powinien umożliwiać przekazywanie wyników między modułami bez ręcznego kopiowania.
+
+PDF Merger jest osobnym narzędziem w module Raporty i nie wymaga synchronizacji danych pomiarowych.
+
+---
+
+## 10. Kontrola jakości po zmianach
+
+Po zakończeniu zmian sprawdź:
+
+- czy aplikacja się uruchamia,
+- czy „Menu główne” zostało zmienione na „Menu aplikacji”,
+- czy usunięto sekcję „Jak działa aplikacja” spod „Rozpocznij pracę”,
+- czy lista typów matrycy zawiera tylko:
+  - OLED
+  - WOLED
+  - QD-LED
+  - Edge-Lit
+  - Back-lit
+  - Mini LED
+- czy z każdego modułu można wrócić przyciskiem „Powrót”,
+- czy Wzorce testowe mają poprawne cofanie do wyboru i do Menu aplikacji,
+- czy TI3 / Argyll Profiler został rozbity na moduły,
+- czy Spectral Analyzer został rozbity na 4 moduły,
+- czy Raporty mają trzy nowe moduły:
+  - DOCX Generator
+  - Eksport danych
+  - PDF Merger
+- czy DOCX Generator jest widoczny w Raportach,
+- czy Eksport danych jest widoczny w Raportach,
+- czy PDF Merger jest widoczny w Raportach,
+- czy dane z Chromatic Data Analyzer są dostępne w Raportach,
+- czy DOCX Generator korzysta z danych z Chromatic Data Analyzer,
+- czy Eksport danych korzysta z danych z Chromatic Data Analyzer,
+- czy PDF Merger pozwala dodać kilka plików PDF,
+- czy PDF Merger pozwala zmienić kolejność plików,
+- czy PDF Merger pozwala usunąć plik z listy,
+- czy PDF Merger generuje jeden scalony plik PDF,
+- czy Spectral Analyzer potrafi przekazać dane do wskazanych aplikacji,
+- czy nie zostały przypadkowo usunięte istniejące funkcje.
+
+---
+
+## 11. Raport końcowy
+
+Na końcu wypisz krótko:
+
+- jakie pliki zostały zmienione,
+- jakie komponenty dodano,
+- jakie moduły przebudowano,
+- jak działa nowa nawigacja,
+- jak działa synchronizacja danych,
+- jak działa DOCX Generator,
+- jak działa Eksport danych,
+- jak działa PDF Merger,
+- co wymaga jeszcze ręcznego testu.

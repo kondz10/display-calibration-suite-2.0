@@ -1,0 +1,2572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Halo Analysis · LMK2000</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #080808;
+  --surface: #0f0f0f;
+  --surface2: #141414;
+  --border:  #1e1e1e;
+  --accent:  #8b15ba;
+  --accent2: #6e10a0;
+  --accent3: #33ff33;
+  --warn:    #ff9100;
+  --danger:  #ff2244;
+  --text:    #e0e0e0;
+  --muted:   #555555;
+  --text2:   #777777;
+  --text3:   #3a3a3a;
+  --mono: 'Share Tech Mono', monospace;
+  --sans: 'Rajdhani', sans-serif;
+  --canvas-bg: #000000;
+  --r: 10px;
+}
+body.light {
+  --bg:      #f4f4f7;
+  --surface: #ffffff;
+  --surface2: #eef0f3;
+  --border:  #d6d8de;
+  --accent:  #8b15ba;
+  --accent2: #6e10a0;
+  --accent3: #1a9e1a;
+  --warn:    #d97500;
+  --danger:  #d11030;
+  --text:    #1a1a1c;
+  --muted:   #8c8c94;
+  --text2:   #62626a;
+  --text3:   #b4b4bc;
+  --canvas-bg: #dcdce2;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; scrollbar-width: none; }
+::-webkit-scrollbar { display: none; }
+html { height: 100%; }
+
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── HEADER ── */
+header {
+  flex-shrink: 0;
+  padding: 10px 20px 0;
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 2;
+  background: var(--bg);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 10px;
+}
+
+.logo-icon {
+  width: 44px; height: 44px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 7px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px; flex-shrink: 0;
+}
+.logo-icon span { border-radius: 2px; display: block; }
+.lr { background: #ff3333; } .lg { background: #33ff33; }
+.lb { background: #3333ff; } .lw { background: #ffffff; }
+
+.header-text h1 {
+  font-family: var(--mono); font-size: 22px;
+  letter-spacing: 5px; color: var(--accent); text-transform: uppercase;
+}
+.header-sub {
+  font-family: var(--sans); font-size: 13px;
+  color: var(--muted); letter-spacing: 2px; margin-top: 6px;
+}
+
+.header-meta {
+  margin-left: auto; display: flex; align-items: center;
+  gap: 16px; font-size: 13px; color: var(--muted); letter-spacing: 1px;
+}
+
+#filename-label {
+  color: var(--accent); font-size: 13px;
+  max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* File button */
+.file-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px; background: transparent;
+  border: 1px solid var(--accent); border-radius: var(--r);
+  color: var(--accent); font-family: var(--mono); font-size: 13px;
+  letter-spacing: 3px; text-transform: uppercase; cursor: pointer;
+  transition: background .15s, color .15s; position: relative; overflow: hidden;
+}
+.file-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--accent); transform: translateX(-100%); transition: transform .15s; z-index: 0;
+}
+.file-btn:hover::before { transform: translateX(0); }
+.file-btn:hover { color: #fff; }
+.file-btn span { position: relative; z-index: 1; }
+#file-input { display: none; }
+
+/* Progress */
+#load-progress {
+  display: none; align-items: center; gap: 10px;
+}
+.progress-track {
+  width: 120px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden;
+}
+.progress-bar {
+  height: 100%; width: 0%; background: var(--accent); border-radius: 2px; transition: width .2s;
+}
+#progress-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; min-width: 80px; }
+
+/* ── MAIN LAYOUT ── */
+main {
+  flex: 1; display: flex; overflow: hidden; position: relative; z-index: 1;
+}
+
+/* ── CANVAS AREA ── */
+.canvas-area {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+}
+
+/* ── TOOLBAR ── */
+.toolbar {
+  flex-shrink: 0; height: 44px;
+  display: flex; align-items: center; gap: 8px; padding: 0 14px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+
+.toolbar-label {
+  font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
+  margin-right: 2px; flex-shrink: 0;
+}
+
+.tool-btn {
+  padding: 6px 12px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--muted); font-family: var(--mono);
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; transition: color .15s, border-color .15s, background .15s;
+  white-space: nowrap;
+}
+.tool-btn:hover { color: var(--text2); border-color: #333; }
+.tool-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(139,21,186,0.08); }
+.tool-btn.clear:hover { color: var(--danger); border-color: var(--danger); }
+#btn-auto:hover { color: var(--warn); border-color: var(--warn); }
+#btn-auto:disabled { opacity: 0.5; cursor: default; }
+
+.toolbar-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+
+/* ── CANVAS CONTAINER ── */
+.canvas-container {
+  flex: 1; position: relative; overflow: hidden; background: var(--canvas-bg);
+}
+
+#display-canvas { position: absolute; top: 0; left: 0; }
+#overlay-canvas { position: absolute; top: 0; left: 0; cursor: default; }
+
+/* ── DROP ZONE ── */
+#drop-zone {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; cursor: pointer; z-index: 2;
+  background: var(--canvas-bg);
+}
+#drop-zone.hidden { display: none; }
+#drop-zone.drag-over { background: rgba(139,21,186,0.06); }
+
+.drop-icon-box {
+  width: 72px; height: 72px; border: 2px dashed var(--border);
+  border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  color: var(--text3); font-family: var(--mono); font-size: 20px; letter-spacing: 2px;
+  transition: border-color .15s, color .15s;
+}
+#drop-zone:hover .drop-icon-box,
+#drop-zone.drag-over .drop-icon-box { border-color: var(--accent); color: var(--accent); }
+.drop-title { font-size: 13px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+.drop-sub { font-size: 11px; letter-spacing: 1.5px; color: var(--text3); }
+
+/* ── CURSOR STATUS BAR ── */
+.cursor-bar {
+  flex-shrink: 0; height: 28px;
+  display: flex; align-items: center; gap: 16px; padding: 0 14px;
+  background: var(--surface); border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); letter-spacing: 1px;
+}
+.cursor-bar .val { color: var(--text); }
+#mode-hint { margin-left: auto; color: var(--accent); font-size: 10px; letter-spacing: 2px; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 390px; flex-shrink: 0;
+  background: var(--surface); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+
+.section {
+  padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 11px; letter-spacing: 3px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 12px;
+}
+
+/* ── PROFILE CANVAS ── */
+#profile-canvas {
+  width: 100%; height: 220px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); display: block;
+}
+
+/* ── RING PROFILE CANVAS ── */
+#ring-profile-canvas {
+  width: 100%; height: 180px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); display: block;
+}
+
+/* ── METRICS ── */
+.metric-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 8px; gap: 8px;
+}
+.metric-label {
+  font-size: 10px; letter-spacing: 2px; color: var(--muted);
+  text-transform: uppercase; white-space: nowrap;
+}
+.metric-val { font-size: 14px; color: var(--text); text-align: right; }
+.metric-val.accent  { color: var(--accent3); }
+.metric-val.warn    { color: var(--warn); }
+.metric-val.em      { color: var(--accent); }
+.metric-val.dim     { color: var(--muted); font-size: 12px; }
+
+.metric-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0 10px; }
+
+/* ── EMPTY STATE ── */
+.empty-hint {
+  font-size: 12px; color: var(--muted); letter-spacing: 1.5px;
+  line-height: 1.9; text-align: center; padding: 12px 0;
+}
+
+/* ── INSTRUCTIONS ── */
+.instr-row {
+  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;
+}
+.instr-num {
+  flex-shrink: 0; width: 22px; height: 22px;
+  border: 1px solid var(--border); border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--text3); letter-spacing: 0;
+  font-family: var(--mono);
+}
+.instr-text {
+  font-size: 12px; color: var(--muted); letter-spacing: 1px; line-height: 1.7;
+  font-family: var(--sans);
+}
+.instr-text b { color: var(--text2); }
+
+/* ── EXPORT SECTION ── */
+.export-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.export-label {
+  font-size: 10px; letter-spacing: 2px; color: var(--muted);
+  text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
+}
+.export-step-input {
+  width: 60px; padding: 5px 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text); font-family: var(--mono);
+  font-size: 12px; text-align: center;
+  transition: border-color .15s;
+}
+.export-step-input:focus { outline: none; border-color: var(--accent); }
+.export-unit { font-size: 11px; color: var(--muted); }
+
+.export-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; width: 100%;
+  background: transparent; border: 1px solid var(--accent3);
+  border-radius: var(--r); color: var(--accent3);
+  font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+  text-transform: uppercase; cursor: pointer;
+  transition: background .15s, color .15s; justify-content: center;
+  margin-top: 4px;
+}
+.export-btn:hover { background: rgba(51,255,51,0.10); }
+.export-btn:disabled { opacity: 0.35; cursor: default; }
+.export-btn:disabled:hover { background: transparent; }
+
+.export-preview {
+  font-size: 10px; color: var(--muted); letter-spacing: 1px;
+  margin-top: 8px; line-height: 1.7; font-family: var(--mono);
+}
+.export-preview span { color: var(--text2); }
+
+/* ── CIRCLE PICK OVERLAY ── */
+#circle-pick-hint {
+  display: none;
+  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+  background: rgba(10,10,10,0.88); border: 1px solid var(--warn);
+  border-radius: var(--r); padding: 8px 18px;
+  font-size: 11px; letter-spacing: 2px; color: var(--warn);
+  text-transform: uppercase; pointer-events: none; z-index: 10;
+  white-space: nowrap;
+}
+#circle-pick-hint.visible { display: block; }
+
+/* ── ROI / TEST FIELD PICK OVERLAY ── */
+#roi-pick-hint {
+  display: none;
+  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+  background: rgba(10,10,10,0.88); border: 1px solid var(--accent3);
+  border-radius: var(--r); padding: 8px 18px;
+  font-size: 11px; letter-spacing: 2px; color: var(--accent3);
+  text-transform: uppercase; pointer-events: none; z-index: 10;
+  white-space: nowrap;
+}
+#roi-pick-hint.visible { display: block; }
+
+/* ── SECTION HEAD + EXPAND BUTTON ── */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin-bottom: 12px;
+}
+.section-head .section-title { margin-bottom: 0; }
+.expand-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; background: transparent;
+  border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--muted); font-family: var(--mono); font-size: 9px;
+  letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s; white-space: nowrap;
+}
+.expand-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(139,21,186,0.08); }
+#profile-canvas, #ring-profile-canvas { cursor: zoom-in; }
+
+/* ── FULLSCREEN OVERLAY ── */
+#fullscreen-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg); flex-direction: column;
+}
+#fullscreen-overlay.visible { display: flex; }
+#fullscreen-overlay::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.fs-bar {
+  flex-shrink: 0; display: flex; align-items: center; gap: 14px;
+  padding: 12px 18px; border-bottom: 1px solid var(--border);
+  background: var(--surface); position: relative; z-index: 1;
+}
+.fs-tabs { display: flex; gap: 8px; }
+.fs-tab {
+  padding: 8px 16px; background: transparent;
+  border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--muted); font-family: var(--mono); font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s; white-space: nowrap;
+}
+.fs-tab:hover { color: var(--text2); border-color: #333; }
+.fs-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(139,21,186,0.10); }
+.fs-title {
+  margin-left: auto; font-family: var(--sans); font-size: 13px; color: var(--muted);
+  letter-spacing: 1.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fs-close {
+  flex-shrink: 0; width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--muted); font-size: 18px; cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.fs-close:hover { color: var(--danger); border-color: var(--danger); }
+.fs-controls {
+  flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 18px;
+  padding: 10px 18px; border-bottom: 1px solid var(--border);
+  background: var(--surface); position: relative; z-index: 1;
+}
+.fs-ctl { display: flex; align-items: center; gap: 9px; }
+.fs-ctl .lab {
+  font-size: 9px; letter-spacing: 1.5px; color: var(--muted);
+  text-transform: uppercase; white-space: nowrap;
+}
+.fs-ctl input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 130px; height: 3px; border-radius: 2px;
+  background: var(--border); outline: none; cursor: pointer;
+}
+.fs-ctl input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface); cursor: pointer;
+}
+.fs-ctl input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface); cursor: pointer;
+}
+.fs-ctl .out {
+  font-family: var(--mono); font-size: 11px; color: var(--text2);
+  min-width: 46px; text-align: right;
+}
+.fs-ctl-btn {
+  padding: 5px 11px; background: transparent;
+  border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--muted); font-family: var(--mono); font-size: 9px;
+  letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s; white-space: nowrap;
+}
+.fs-ctl-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(139,21,186,0.08); }
+.fs-ctl-sep { width: 1px; height: 26px; background: var(--border); }
+#fs-range-group { gap: 18px; }
+#fs-range-group .range-title {
+  font-size: 9px; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; white-space: nowrap;
+}
+
+.fs-canvas-wrap {
+  flex: 1; overflow: auto; padding: 16px 18px; min-height: 0;
+  position: relative; z-index: 1;
+}
+.fs-chart { display: block; }
+.fs-chart + .fs-chart { margin-top: 12px; }
+.fs-chart-label {
+  font-size: 10px; letter-spacing: 2px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.fs-chart canvas {
+  display: block;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r);
+}
+.fs-data {
+  flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 12px 18px 16px; border-top: 1px solid var(--border);
+  background: var(--surface); position: relative; z-index: 1;
+}
+.fs-chip {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--r);
+  background: var(--surface2); min-width: 86px;
+}
+.fs-chip .k { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+.fs-chip .v { font-size: 16px; color: var(--text); }
+.fs-chip .v.accent { color: var(--accent3); }
+.fs-chip .v.warn   { color: var(--warn); }
+.fs-chip .v.em     { color: var(--accent); }
+.fs-data .empty-hint { padding: 4px 0; text-align: left; }
+
+/* ── THEME ANIM ── */
+html.theme-anim,
+body.theme-anim,
+body.theme-anim *:not(.ts-thumb):not(.ts-track) {
+  transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease !important;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo-icon">
+      <span class="lr"></span><span class="lg"></span>
+      <span class="lb"></span><span class="lw"></span>
+    </div>
+    <div class="header-text">
+      <h1>Halo Analysis</h1>
+      <p class="header-sub">Luminance Profile · Halo Detection · LMK2000 HDF5</p>
+    </div>
+    <div class="header-meta">
+      <div id="load-progress">
+        <span id="progress-label">LOADING</span>
+        <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+      </div>
+      <span id="filename-label">No file loaded</span>
+      <button class="file-btn" onclick="document.getElementById('file-input').click()">
+        <span>⊕ Load .h5</span>
+      </button>
+      <input type="file" id="file-input" accept=".h5">
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ── IMAGE CANVAS AREA ── -->
+  <div class="canvas-area">
+    <div class="toolbar">
+      <span class="toolbar-label">Tool</span>
+      <button class="tool-btn" id="btn-line" onclick="App.toggleLineMode()">▸ Draw Line</button>
+      <button class="tool-btn clear" id="btn-clear" onclick="App.clearLine()">⊘ Clear</button>
+      <button class="tool-btn" id="btn-auto" onclick="App.autoDetect()">⊛ Auto Detect</button>
+      <div class="toolbar-sep"></div>
+      <span class="toolbar-label">Field</span>
+      <button class="tool-btn" id="btn-roi" onclick="App.toggleRoiPick()">▭ Test Field</button>
+      <button class="tool-btn clear" id="btn-roi-clear" onclick="App.clearRoi()" title="Usuń pole testowe">⊘</button>
+      <div class="toolbar-sep"></div>
+      <span class="toolbar-label">View</span>
+      <button class="tool-btn active" data-mode="falsecolor" onclick="App.setDisplayMode('falsecolor')">False Color</button>
+      <button class="tool-btn" data-mode="grayscale" onclick="App.setDisplayMode('grayscale')">Grayscale</button>
+    </div>
+    <div class="canvas-container" id="canvas-container">
+      <canvas id="display-canvas"></canvas>
+      <canvas id="overlay-canvas"></canvas>
+      <div id="circle-pick-hint">Narysuj okrąg wokół centrum halo — przeciągnij i puść</div>
+      <div id="roi-pick-hint">Narysuj prostokąt wokół ekranu testowego — przeciągnij i puść</div>
+      <div id="drop-zone">
+        <div class="drop-icon-box">H₅</div>
+        <div class="drop-title">Drop HDF5 File Here</div>
+        <div class="drop-sub">or use the Load button · LMK2000 .h5 files</div>
+      </div>
+    </div>
+    <div class="cursor-bar">
+      <span>X:</span><span class="val" id="cursor-x">—</span>
+      <span>Y:</span><span class="val" id="cursor-y">—</span>
+      <span>L:</span><span class="val" id="cursor-l">—</span>
+      <span id="mode-hint"></span>
+    </div>
+  </div>
+
+  <!-- ── ANALYSIS SIDEBAR ── -->
+  <div class="sidebar">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Luminance Profile</div>
+        <button class="expand-btn" onclick="App.openFullscreen('line')" title="Powiększ na cały ekran">⛶ Pełny ekran</button>
+      </div>
+      <canvas id="profile-canvas" onclick="App.openFullscreen('line')" title="Kliknij, aby powiększyć"></canvas>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Halo Metrics</div>
+      <div id="metrics-panel">
+        <div class="empty-hint">Draw a line across a bright<br>edge to detect the halo.</div>
+      </div>
+    </div>
+
+    <div class="section" id="export-section">
+      <div class="section-title">Export Profile Data</div>
+      <div class="export-row">
+        <span class="export-label">Step</span>
+        <input type="number" id="export-step" class="export-step-input" value="1" min="1" max="100" title="Co ile pikseli próbkować">
+        <span class="export-unit">px</span>
+      </div>
+      <div class="export-preview" id="export-preview">Narysuj linię, aby zobaczyć podgląd.</div>
+      <button class="export-btn" id="btn-export" disabled onclick="App.exportToClipboard()">
+        ⊕ Kopiuj do schowka (Excel)
+      </button>
+    </div>
+
+    <div class="section" id="ring-profile-section">
+      <div class="section-head">
+        <div class="section-title">Ring Profile · Obwód Halo</div>
+        <button class="expand-btn" onclick="App.openFullscreen('ring')" title="Powiększ na cały ekran">⛶ Pełny ekran</button>
+      </div>
+      <canvas id="ring-profile-canvas" onclick="App.openFullscreen('ring')" title="Kliknij, aby powiększyć"></canvas>
+    </div>
+
+    <div class="section" id="ring-export-section">
+      <div class="section-title">Export Ring Data</div>
+      <div class="export-row">
+        <span class="export-label">Step</span>
+        <input type="number" id="ring-export-step" class="export-step-input" value="1" min="1" max="100" title="Co ile stopni próbkować">
+        <span class="export-unit">°</span>
+      </div>
+      <div class="export-preview" id="ring-export-preview">Wykonaj analizę halo, aby zobaczyć podgląd.</div>
+      <button class="export-btn" id="btn-ring-export" disabled onclick="App.exportRingToClipboard()" style="border-color:var(--warn);color:var(--warn);">
+        ⊕ Kopiuj dane pierścienia (Excel)
+      </button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">How To Use</div>
+      <div class="instr-row">
+        <div class="instr-num">1</div>
+        <div class="instr-text">Load an LMK2000 <b>.h5</b> file via the button above or drag &amp; drop anywhere.</div>
+      </div>
+      <div class="instr-row">
+        <div class="instr-num">2</div>
+        <div class="instr-text">Click <b>Draw Line</b>, then drag across the halo — from dark background through the bright edge and back to dark.</div>
+      </div>
+      <div class="instr-row">
+        <div class="instr-num">3</div>
+        <div class="instr-text">The luminance profile plots automatically. The <span style="color:var(--warn)">orange</span> shaded zones are the detected halo regions. The <span style="color:var(--accent)">purple</span> marker is the peak.</div>
+      </div>
+      <div class="instr-row">
+        <div class="instr-num">⊛</div>
+        <div class="instr-text">Kliknij <b>Auto Detect</b>, aby program sam znalazł najlepszy profil halo — skanuje od centrum w 8 kierunkach i wybiera linię z najsilniejszym efektem.</div>
+      </div>
+      <div class="instr-row">
+        <div class="instr-num">⊙</div>
+        <div class="instr-text">Scroll to zoom · Drag to pan · Double-click to reset view.</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ── FULLSCREEN CHART OVERLAY ── -->
+<div id="fullscreen-overlay">
+  <div class="fs-bar">
+    <div class="fs-tabs">
+      <button class="fs-tab" data-fs="line" onclick="App.setFullscreenTab('line')">Profil linii</button>
+      <button class="fs-tab" data-fs="ring" onclick="App.setFullscreenTab('ring')">Profil pierścienia · Auto</button>
+      <button class="fs-tab" data-fs="both" onclick="App.setFullscreenTab('both')">Oba</button>
+    </div>
+    <div class="fs-title" id="fs-title"></div>
+    <button class="fs-close" onclick="App.closeFullscreen()" title="Zamknij (Esc)">✕</button>
+  </div>
+  <div class="fs-controls">
+    <div class="fs-ctl">
+      <span class="lab">Skala pionowa (cd/m²)</span>
+      <input type="range" id="fs-yscale" min="1" max="10" step="0.1" value="1" oninput="App.setFsScale('y', this.value)">
+      <span class="out" id="fs-yscale-out">1.0×</span>
+    </div>
+    <div class="fs-ctl">
+      <span class="lab">Szerokość (piksele)</span>
+      <input type="range" id="fs-xscale" min="1" max="24" step="0.5" value="1" oninput="App.setFsScale('x', this.value)">
+      <span class="out" id="fs-xscale-out">1.0×</span>
+    </div>
+    <button class="fs-ctl-btn" onclick="App.resetFsScale()">Reset skali</button>
+    <div class="fs-ctl-sep" id="fs-range-sep"></div>
+    <div class="fs-ctl" id="fs-range-group">
+      <span class="range-title">Zakres pierścienia</span>
+      <div class="fs-ctl">
+        <span class="lab">Początek</span>
+        <input type="range" id="fs-range-start" min="0" max="100" step="1" value="0" oninput="App.setRingRange('start', this.value)">
+        <span class="out" id="fs-range-start-out">0</span>
+      </div>
+      <div class="fs-ctl">
+        <span class="lab">Koniec</span>
+        <input type="range" id="fs-range-end" min="0" max="100" step="1" value="100" oninput="App.setRingRange('end', this.value)">
+        <span class="out" id="fs-range-end-out">100</span>
+      </div>
+      <button class="fs-ctl-btn" onclick="App.resetRingRange()">Auto</button>
+    </div>
+  </div>
+  <div class="fs-canvas-wrap" id="fs-canvas-wrap">
+    <div class="fs-chart" id="fs-chart-a">
+      <div class="fs-chart-label" id="fs-label-a"></div>
+      <canvas id="fs-canvas-a"></canvas>
+    </div>
+    <div class="fs-chart" id="fs-chart-b" style="display:none">
+      <div class="fs-chart-label" id="fs-label-b"></div>
+      <canvas id="fs-canvas-b"></canvas>
+    </div>
+  </div>
+  <div class="fs-data" id="fs-data"></div>
+</div>
+
+<!-- h5wasm CDN (same version as False Color Viewer) -->
+<script src="https://cdn.jsdelivr.net/npm/h5wasm@0.7.5/dist/iife/h5wasm.js"></script>
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════
+// COLORMAPS  (LMK-style + greyscale, identical to False Color Viewer)
+// ═══════════════════════════════════════════════════════
+const COLORMAPS = {
+  lmk: (() => {
+    const stops = [
+      [0,    [0,0,0]],
+      [0.1,  [75,0,130]],
+      [0.2,  [0,0,255]],
+      [0.35, [0,200,255]],
+      [0.5,  [0,255,0]],
+      [0.65, [255,255,0]],
+      [0.8,  [255,100,0]],
+      [0.9,  [255,0,0]],
+      [1.0,  [255,255,255]],
+    ];
+    const lut = new Uint8Array(256*3);
+    for (let i = 0; i < 256; i++) {
+      const t = i/255;
+      let lo = stops[0], hi = stops[stops.length-1];
+      for (let j = 0; j < stops.length-1; j++) {
+        if (t >= stops[j][0] && t <= stops[j+1][0]) { lo=stops[j]; hi=stops[j+1]; break; }
+      }
+      const f = (hi[0]-lo[0]) > 0 ? (t-lo[0])/(hi[0]-lo[0]) : 0;
+      lut[i*3]   = Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*f);
+      lut[i*3+1] = Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*f);
+      lut[i*3+2] = Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*f);
+    }
+    return lut;
+  })(),
+};
+
+// ═══════════════════════════════════════════════════════
+// HDF5 READER  (same extraction logic as False Color Viewer)
+// ═══════════════════════════════════════════════════════
+class HDF5Reader {
+  constructor() { this.file = null; }
+
+  async loadFile(file, onProgress) {
+    onProgress({stage:'Reading', pct:10});
+    const buf = await file.arrayBuffer();
+    onProgress({stage:'Parsing HDF5', pct:30});
+    await h5wasm.ready;
+    const H5File = h5wasm.File;
+    if (typeof H5File !== 'function') throw new Error('h5wasm not loaded correctly');
+    // Sanitise filename for emscripten FS (mirror False Color Viewer behaviour)
+    const fname = '/' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    h5wasm.FS.writeFile(fname, new Uint8Array(buf));
+    onProgress({stage:'Reading datasets', pct:55});
+    this.file = new H5File(fname, 'r');
+    onProgress({stage:'Extracting luminance', pct:75});
+    const lum = this._readLuminance();
+    if (!lum) throw new Error(
+      'No luminance data found. Tried Plane/_CapturePic.pf/Content and Plane/ColorPic.rgbf/Content.'
+    );
+    onProgress({stage:'Done', pct:100});
+    return lum;
+  }
+
+  _readLuminance() {
+    if (!this.file) return null;
+
+    // ── Strategy 1: scalar float32 luminance (Plane/_CapturePic.pf/Content) ──
+    try {
+      const ds = this.file.get('Plane/_CapturePic.pf/Content');
+      if (ds) {
+        const shape = ds.shape;
+        const h = shape[0], w = shape[1];
+        const raw = ds.value;
+        let data;
+        if (raw instanceof Float32Array) {
+          data = raw;
+        } else if (ArrayBuffer.isView(raw)) {
+          data = new Float32Array(raw.buffer, raw.byteOffset || 0, h * w);
+        } else {
+          data = new Float32Array(raw);
+        }
+        console.log('[HaloAnalysis] Luminance from _CapturePic.pf', w, 'x', h);
+        return { data, width: w, height: h };
+      }
+    } catch(e) {
+      console.warn('[HaloAnalysis] _CapturePic.pf unavailable:', e.message);
+    }
+
+    // ── Strategy 2: ColorPic.rgbf — b channel = luminance in cd/m² ──
+    // Structured dtype [('r','<f4'),('g','<f4'),('b','<f4')]: 12 bytes/pixel, b at offset +8
+    try {
+      const ds = this.file.get('Plane/ColorPic.rgbf/Content');
+      if (!ds) return null;
+      const shape = ds.shape;
+      const h = shape[0], w = shape[1];
+      const raw = ds.value;
+      const lumData = new Float32Array(h * w);
+
+      if (raw && raw.buffer) {
+        // h5wasm returns compound dtype as a Uint8Array of raw bytes
+        const view = new DataView(raw.buffer, raw.byteOffset || 0);
+        const stride = 12; // r(4) + g(4) + b(4) bytes
+        for (let i = 0; i < h * w; i++)
+          lumData[i] = view.getFloat32(i * stride + 8, true); // little-endian b channel
+      } else if (Array.isArray(raw) || (raw && typeof raw[0] === 'object')) {
+        for (let i = 0; i < h * w; i++)
+          lumData[i] = raw[i] ? (raw[i].b || raw[i][2] || 0) : 0;
+      } else {
+        // Flat interleaved fallback
+        for (let i = 0; i < h * w; i++)
+          lumData[i] = raw[i * 3 + 2] || 0;
+      }
+
+      console.log('[HaloAnalysis] Luminance from ColorPic.rgbf channel b', w, 'x', h);
+      return { data: lumData, width: w, height: h };
+    } catch(e) {
+      console.error('[HaloAnalysis] ColorPic.rgbf read error:', e);
+    }
+
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDERER  (false-color + grayscale, identical pattern to False Color Viewer)
+// ═══════════════════════════════════════════════════════
+class Renderer {
+  constructor() {
+    this.luminance = null; this.width = 0; this.height = 0;
+    this.minL = 0; this.maxL = 1; this.scaleMode = 'log'; this.colormap = 'lmk';
+  }
+
+  setData({data, width, height}) {
+    this.luminance = data; this.width = width; this.height = height;
+    this.autoRange();
+  }
+
+  autoRange() {
+    if (!this.luminance) return;
+    let mn = Infinity, mx = -Infinity;
+    for (let i = 0; i < this.luminance.length; i++) {
+      const v = this.luminance[i];
+      if (isFinite(v)) { if (v < mn) mn = v; if (v > mx) mx = v; }
+    }
+    this.minL = mn; this.maxL = mx;
+  }
+
+  _norm(v) {
+    if (this.scaleMode === 'log') {
+      const lv  = Math.log10(Math.max(v, 1e-10));
+      const lmn = Math.log10(Math.max(this.minL, 1e-10));
+      const lmx = Math.log10(Math.max(this.maxL, 1e-10));
+      if (lmx <= lmn) return 0;
+      return Math.max(0, Math.min(1, (lv-lmn)/(lmx-lmn)));
+    }
+    if (this.maxL <= this.minL) return 0;
+    return Math.max(0, Math.min(1, (v-this.minL)/(this.maxL-this.minL)));
+  }
+
+  render(canvas) {
+    if (!this.luminance) return;
+    const W = this.width, H = this.height;
+    canvas.width = W; canvas.height = H;
+    const ctx  = canvas.getContext('2d');
+    const img  = ctx.createImageData(W, H);
+    const px   = img.data;
+    const lut  = COLORMAPS[this.colormap] || COLORMAPS.lmk;
+    const lum  = this.luminance;
+    for (let i = 0; i < W*H; i++) {
+      const idx = Math.min(255, Math.floor(this._norm(lum[i])*255));
+      const p = i*4;
+      px[p]   = lut[idx*3];
+      px[p+1] = lut[idx*3+1];
+      px[p+2] = lut[idx*3+2];
+      px[p+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  renderGrayscale(canvas) {
+    if (!this.luminance) return;
+    const W = this.width, H = this.height;
+    canvas.width = W; canvas.height = H;
+    const ctx  = canvas.getContext('2d');
+    const img  = ctx.createImageData(W, H);
+    const px   = img.data;
+    const lum  = this.luminance;
+    for (let i = 0; i < W*H; i++) {
+      const v = Math.round(this._norm(lum[i])*255);
+      const p = i*4;
+      px[p] = px[p+1] = px[p+2] = v; px[p+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  getLuminanceAt(x, y) {
+    x = Math.round(x); y = Math.round(y);
+    if (!this.luminance || x<0||y<0||x>=this.width||y>=this.height) return null;
+    return this.luminance[y*this.width+x];
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// VIEWER  (pan / zoom — identical to False Color Viewer)
+// ═══════════════════════════════════════════════════════
+class Viewer {
+  constructor(dc, oc, onHover, onInteract) {
+    this.dc = dc; this.oc = oc;
+    this.onHover = onHover; this.onInteract = onInteract;
+    this.srcCanvas = null; this.imgW = 0; this.imgH = 0;
+    this.tx = 0; this.ty = 0; this.scale = 1;
+    this._dragging = false; this._lastX = 0; this._lastY = 0;
+    this._cursorMode = 'default';
+    this._bindEvents();
+  }
+
+  setImage(src, w, h) {
+    this.srcCanvas = src; this.imgW = w; this.imgH = h;
+    this._fit(); this.render();
+  }
+
+  _fit() {
+    const cw = this.dc.width, ch = this.dc.height;
+    if (!cw||!ch||!this.imgW||!this.imgH) return;
+    const sx = cw/this.imgW, sy = ch/this.imgH;
+    this.scale = Math.min(sx, sy) * 0.95;
+    this.tx = (cw - this.imgW*this.scale)/2;
+    this.ty = (ch - this.imgH*this.scale)/2;
+  }
+
+  resize(w, h) {
+    this.dc.width = w; this.dc.height = h;
+    this.oc.width = w; this.oc.height = h;
+    if (this.srcCanvas) { this._fit(); this.render(); }
+  }
+
+  render() {
+    if (!this.srcCanvas) return;
+    const ctx = this.dc.getContext('2d');
+    ctx.clearRect(0,0,this.dc.width,this.dc.height);
+    ctx.save();
+    ctx.translate(this.tx, this.ty);
+    ctx.scale(this.scale, this.scale);
+    ctx.imageSmoothingEnabled = this.scale < 1;
+    ctx.drawImage(this.srcCanvas, 0, 0);
+    ctx.restore();
+  }
+
+  renderOverlay(drawFn) {
+    const ctx = this.oc.getContext('2d');
+    ctx.clearRect(0,0,this.oc.width,this.oc.height);
+    ctx.save();
+    ctx.translate(this.tx, this.ty);
+    ctx.scale(this.scale, this.scale);
+    drawFn(ctx, {tx:this.tx, ty:this.ty, scale:this.scale});
+    ctx.restore();
+  }
+
+  _toImg(cx, cy) {
+    return { x:(cx-this.tx)/this.scale, y:(cy-this.ty)/this.scale };
+  }
+
+  setCursor(c) { this._cursorMode = c; this.oc.style.cursor = c; }
+
+  _bindEvents() {
+    this.oc.addEventListener('wheel', e => {
+      e.preventDefault();
+      const rect = this.oc.getBoundingClientRect();
+      const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+      const f = e.deltaY < 0 ? 1.15 : 1/1.15;
+      const ns = Math.max(0.05, Math.min(50, this.scale*f));
+      this.tx = mx - (mx-this.tx)*(ns/this.scale);
+      this.ty = my - (my-this.ty)*(ns/this.scale);
+      this.scale = ns; this.render();
+      if (window.App) window.App._rerenderOverlay();
+    }, {passive:false});
+
+    this.oc.addEventListener('mousedown', e => {
+      const rect = this.oc.getBoundingClientRect();
+      const cx = e.clientX-rect.left, cy = e.clientY-rect.top;
+      const ip = this._toImg(cx, cy);
+      const consumed = this.onInteract(e, ip, 'down');
+      if (!consumed) {
+        this._dragging = true; this._lastX = cx; this._lastY = cy;
+        this.oc.style.cursor = 'grabbing';
+      }
+    });
+
+    this.oc.addEventListener('mousemove', e => {
+      const rect = this.oc.getBoundingClientRect();
+      const cx = e.clientX-rect.left, cy = e.clientY-rect.top;
+      const ip = this._toImg(cx, cy);
+      this.onHover(ip.x, ip.y);
+      this.onInteract(e, ip, 'move');
+      if (this._dragging) {
+        this.tx += cx-this._lastX; this.ty += cy-this._lastY;
+        this._lastX = cx; this._lastY = cy;
+        this.render();
+        if (window.App) window.App._rerenderOverlay();
+      }
+    });
+
+    this.oc.addEventListener('mouseup', e => {
+      const rect = this.oc.getBoundingClientRect();
+      const cx = e.clientX-rect.left, cy = e.clientY-rect.top;
+      const ip = this._toImg(cx, cy);
+      this._dragging = false;
+      this.oc.style.cursor = this._cursorMode;
+      this.onInteract(e, ip, 'up');
+    });
+
+    this.oc.addEventListener('mouseleave', () => {
+      this._dragging = false;
+      this.onHover(null, null);
+    });
+
+    this.oc.addEventListener('dblclick', () => {
+      this._fit(); this.render();
+      if (window.App) window.App._rerenderOverlay();
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// LINE SAMPLING  (Bresenham's algorithm)
+// ═══════════════════════════════════════════════════════
+function sampleLine(x0, y0, x1, y1, renderer) {
+  const samples = [];
+  x0 = Math.round(x0); y0 = Math.round(y0);
+  x1 = Math.round(x1); y1 = Math.round(y1);
+  const adx = Math.abs(x1-x0), ady = Math.abs(y1-y0);
+  const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let err = adx - ady, x = x0, y = y0;
+  for (;;) {
+    const lum = renderer.getLuminanceAt(x, y);
+    samples.push({ x, y, lum: lum !== null ? lum : 0, valid: lum !== null });
+    if (x === x1 && y === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -ady) { err -= ady; x += sx; }
+    if (e2 <  adx) { err += adx; y += sy; }
+  }
+  return samples;
+}
+
+// ═══════════════════════════════════════════════════════
+// CIRCLE SAMPLING  (samples luminance along a circle arc)
+// cx, cy, r — image-pixel coordinates and radius
+// stepDeg   — angular step in degrees (default 1°)
+// Returns array of { angle, x, y, lum }
+// ═══════════════════════════════════════════════════════
+function sampleCircle(cx, cy, r, renderer, stepDeg = 1) {
+  const samples = [];
+  const steps = Math.round(360 / stepDeg);
+  for (let i = 0; i < steps; i++) {
+    const angle = (i * stepDeg * Math.PI) / 180;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    const lum = renderer.getLuminanceAt(Math.round(x), Math.round(y));
+    samples.push({ angle: i * stepDeg, x, y, lum: lum !== null ? lum : 0, valid: lum !== null });
+  }
+  return samples;
+}
+//
+// Scanning outward from the peak in each direction, the goal is to find
+// where the halo's "decay edge" ends and the true background plateau
+// begins, then CUT the profile right there (leftStab / rightStab mark
+// the cut point, not just "the widest point we could find"):
+//
+//   • A sudden big jump in luminance (e.g. 310 → 50) marks the decay
+//     edge — informational only (`leftDropFound` / `rightDropFound`).
+//   • Every WIN-sample window outward is checked for flatness (its
+//     min/max spread vs. a threshold that scales with the local level,
+//     so a 40-50 cd/m² background needs far less absolute tolerance
+//     than the 300+ cd/m² peak).
+//   • A flat window only counts as the real background plateau if its
+//     level is also close to a rough background estimate taken from the
+//     far edges of the whole sampled line — this rejects a flat-ish
+//     SHOULDER on the peak's own slope (e.g. a saturated flat-topped
+//     peak) that would otherwise look like "no change" but isn't
+//     actually background.
+//   • Slow, steady drift (49, 48, 47 … one step at a time, no single
+//     big jump) is still walked through and eventually cut once it
+//     truly flattens — no big drop is required to detect the cut.
+// ═══════════════════════════════════════════════════════
+function detectHalo(samples) {
+  const n = samples.length;
+  if (n < 10) return null;
+
+  // Find global luminance peak
+  let peakIdx = 0, peakVal = -Infinity;
+  for (let i = 0; i < n; i++) {
+    if (samples[i].lum > peakVal) { peakVal = samples[i].lum; peakIdx = i; }
+  }
+  if (peakVal < 1e-9) return null; // no meaningful signal
+
+  const WIN = 5;                      // window size used to confirm a true plateau
+  const DROP_FACTOR = 0.15;           // a single step ≥ 15% of peak counts as "a decay edge" (informational)
+  const dropThreshold = peakVal * DROP_FACTOR;
+  // Plateau test: total change across a WIN-sample window must be tiny —
+  // this is what separates a real flat background (≈0 net change) from a
+  // slow-but-steady decay ramp (49,48,47… keeps drifting, never flattens).
+  // The threshold scales with the LOCAL level in that window, not the
+  // global peak — a background sitting at 40-50 cd/m² needs a much
+  // smaller absolute tolerance than the 300+ cd/m² peak itself.
+  const PLATEAU_REL = 0.04;           // 4% of local level
+  const PLATEAU_MIN = Math.max(peakVal * 0.002, 1e-6); // floor for near-zero levels
+
+  // Rough background estimate from the far end(s) of the profile.
+  // For a half-ray (peak at index 0), only the far end is background —
+  // the near end (index 0) is the bright centre and must NOT be included.
+  const EDGE_N = Math.max(1, Math.min(8, Math.floor(n * 0.08)));
+  const peakNearStart = peakIdx < n * 0.15; // peak is near the start → half-ray
+  let edgeSum = 0, edgeCnt = 0;
+  if (!peakNearStart) {
+    for (let i = 0; i < EDGE_N; i++) { edgeSum += samples[i].lum; edgeCnt++; }
+  }
+  for (let i = n - EDGE_N; i < n; i++) { edgeSum += samples[i].lum; edgeCnt++; }
+  const roughBg = edgeCnt > 0 ? edgeSum / edgeCnt : 0;
+  // A plateau candidate must sit close to this rough background level —
+  // i.e. most of the way down from the peak towards roughBg — not just
+  // "somewhat lower than the peak".
+  const NEAR_BG_FRAC = 0.35; // candidate must be within 35% of (peak-bg) range from bg
+
+  // Walk outward from the peak, checking every WIN-sample window for a
+  // true plateau (near-zero spread). The walk doesn't stop at the peak's
+  // immediate neighbours — those are still part of the halo's own falling
+  // edge — but as soon as ANY window outward is flat AND close to the
+  // rough background level, that's the cut point. This also naturally
+  // lands after a sudden decay edge once values settle, and still works
+  // for halos that decay gradually with no single big jump.
+  function scanOutward(step) {
+    let i = peakIdx;
+    let dropSeen = false;
+    let dropIdx = -1; // index where the first big drop starts
+    let cutIdx = peakIdx; // fallback: never flattens → keep full halo extent
+    const nearBgCeiling = roughBg + Math.max(0, peakVal - roughBg) * NEAR_BG_FRAC;
+
+    while (true) {
+      const next = i + step;
+      if (next < 0 || next >= n) { cutIdx = i; break; }
+
+      if (Math.abs(samples[next].lum - samples[i].lum) >= dropThreshold) {
+        if (!dropSeen) dropIdx = i; // record first drop position
+        dropSeen = true;
+      }
+
+      // Check the WIN-sample window starting at `next` for flatness.
+      const winEnd = next + step * (WIN - 1);
+      if (winEnd >= 0 && winEnd < n) {
+        let lo = samples[next].lum, hi = samples[next].lum, sum = samples[next].lum;
+        for (let k = 1; k < WIN; k++) {
+          const v = samples[next + step * k].lum;
+          if (v < lo) lo = v;
+          if (v > hi) hi = v;
+          sum += v;
+        }
+        const totalSpread = hi - lo;
+        const localLevel  = sum / WIN;
+        const plateauThreshold = Math.max(localLevel * PLATEAU_REL, PLATEAU_MIN);
+
+        if (totalSpread < plateauThreshold && localLevel <= nearBgCeiling) {
+          // Flat for WIN samples in a row, and close to the background
+          // level → background plateau reached. Cut right before this
+          // stable run begins.
+          cutIdx = i;
+          break;
+        }
+      }
+
+      i = next;
+      if (i <= 0 || i >= n - 1) { cutIdx = i; break; }
+    }
+
+    // Clamp into valid range, keep on the correct side of the peak
+    if (step < 0) cutIdx = Math.min(peakIdx, Math.max(0, cutIdx));
+    else          cutIdx = Math.max(peakIdx, Math.min(n - 1, cutIdx));
+    return { cutIdx, dropSeen, dropIdx };
+  }
+
+  const left  = scanOutward(-1);
+  const right = scanOutward(1);
+
+  const leftStab  = left.cutIdx;
+  const rightStab = right.cutIdx;
+
+  // Background luminance: average of the plateau region beyond the cut
+  // points (the part of the profile we just excluded from the halo).
+  const BG_N = 15;
+  let bgSum = 0, bgCnt = 0;
+  for (let i = Math.max(0, leftStab - BG_N); i < leftStab; i++)      { bgSum += samples[i].lum; bgCnt++; }
+  for (let i = rightStab + 1; i < Math.min(n, rightStab + 1 + BG_N); i++) { bgSum += samples[i].lum; bgCnt++; }
+  // Fallback if cut points sit at the very ends (no plateau room found)
+  if (bgCnt === 0) {
+    for (let i = 0; i < Math.min(BG_N, n); i++)     { bgSum += samples[i].lum; bgCnt++; }
+    for (let i = Math.max(0, n - BG_N); i < n; i++) { bgSum += samples[i].lum; bgCnt++; }
+  }
+  const bgLum = bgCnt > 0 ? bgSum / bgCnt : 0;
+
+  const leftWidth  = Math.max(0, peakIdx - leftStab);
+  const rightWidth = Math.max(0, rightStab - peakIdx);
+
+  return {
+    peakIdx, peakVal,
+    leftStab, rightStab,
+    leftDropIdx: left.dropIdx,   // index where halo decay starts (left side)
+    rightDropIdx: right.dropIdx, // index where halo decay starts (right side)
+    bgLum,
+    leftWidth, rightWidth,
+    totalWidth: leftWidth + rightWidth,
+    ratio: bgLum > 1e-9 ? peakVal / bgLum : Infinity,
+    leftDropFound: left.dropSeen,
+    rightDropFound: right.dropSeen,
+    peakNearStart, // true → this is effectively a half-ray scan (peak sits at/near the start of the line); only the right-hand side is real halo data
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTO HALO SCAN
+// Scans outward from image centre in 8 directions, evaluates
+// each candidate profile, picks the one with the strongest
+// halo (widest totalWidth) and returns {x0,y0,x1,y1}.
+// ═══════════════════════════════════════════════════════
+function autoScanForHalo(renderer, customCx, customCy) {
+  const W = renderer.width, H = renderer.height;
+  if (!W || !H) return null;
+
+  const cx = (customCx !== undefined) ? Math.round(customCx) : Math.round(W / 2);
+  const cy = (customCy !== undefined) ? Math.round(customCy) : Math.round(H / 2);
+
+  // Helper: extend a ray from (cx,cy) in direction (dx,dy) to image edge
+  function rayToEdge(dx, dy) {
+    let t = Infinity;
+    if (dx > 0) t = Math.min(t, (W - 1 - cx) / dx);
+    if (dx < 0) t = Math.min(t, -cx / dx);
+    if (dy > 0) t = Math.min(t, (H - 1 - cy) / dy);
+    if (dy < 0) t = Math.min(t, -cy / dy);
+    return { ex: Math.round(cx + dx * t), ey: Math.round(cy + dy * t) };
+  }
+
+  // 8 half-rays: each starts at centre, goes to ONE edge only
+  const dirs8 = [
+    [1, 0], [-1, 0], [0, 1], [0, -1],
+    [1, 1], [-1, -1], [1, -1], [-1, 1],
+  ];
+  const halfRays = dirs8.map(([dx, dy]) => {
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const ndx = dx / len, ndy = dy / len;
+    const e = rayToEdge(ndx, ndy);
+    return [cx, cy, e.ex, e.ey];  // centre → edge (one direction only)
+  });
+
+  let best = null, bestScore = -1;
+
+  for (const [x0, y0, x1, y1] of halfRays) {
+    const samples = sampleLine(x0, y0, x1, y1, renderer);
+    if (samples.length < 20) continue;
+    const halo = detectHalo(samples);
+    if (!halo) continue;
+
+    const score = halo.totalWidth * Math.log1p(halo.ratio);
+    if (score > bestScore) {
+      bestScore = score;
+      best = { x0, y0, x1, y1, samples, halo };
+    }
+  }
+
+  return best;
+}
+
+// ═══════════════════════════════════════════════════════
+// PROFILE GRAPH  (pure canvas 2D — no external libs)
+// ═══════════════════════════════════════════════════════
+function drawProfileGraph(canvas, samples, halo, opts) {
+  const W = canvas.offsetWidth  || 358;
+  const H = canvas.offsetHeight || 220;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const ctx = canvas.getContext('2d');
+  const cs  = getComputedStyle(document.body);
+  const C_BG     = cs.getPropertyValue('--surface2').trim() || '#141414';
+  const C_BORDER = cs.getPropertyValue('--border').trim()   || '#1e1e1e';
+  const C_MUTED  = cs.getPropertyValue('--muted').trim()    || '#555';
+  const C_TEXT   = cs.getPropertyValue('--text').trim()     || '#e0e0e0';
+  const C_LINE   = document.body.classList.contains('light') ? '#1a9e1a' : '#33ff33';
+  const C_ACCENT = '#8b15ba';
+  const C_WARN   = cs.getPropertyValue('--warn').trim()     || '#ff9100';
+
+  ctx.fillStyle = C_BG;
+  ctx.fillRect(0, 0, W, H);
+
+  if (!samples || samples.length < 2) {
+    ctx.fillStyle = C_MUTED;
+    ctx.font = '11px "Share Tech Mono",monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('No profile data — draw a line on the image', W/2, H/2);
+    return;
+  }
+
+  const PAD_L = 64, PAD_R = 14, PAD_T = 14, PAD_B = 32;
+  const cW = W - PAD_L - PAD_R;
+  const cH = H - PAD_T - PAD_B;
+
+  // Y range
+  let yMin = Infinity, yMax = -Infinity;
+  for (const s of samples) { if (s.lum < yMin) yMin = s.lum; if (s.lum > yMax) yMax = s.lum; }
+  const yrng = yMax - yMin || 1;
+  yMin -= yrng * 0.06;
+  yMax += yrng * 0.06;
+
+  const xS = i => PAD_L + (i / (samples.length - 1)) * cW;
+  const yS = v => PAD_T + (1 - (v - yMin) / (yMax - yMin)) * cH;
+
+  // ── Grid ──
+  const NGRIDY = 5, NGRIDX = Math.min(8, samples.length - 1);
+  ctx.font = '10px "Share Tech Mono",monospace';
+  ctx.strokeStyle = C_BORDER; ctx.lineWidth = 1;
+
+  for (let g = 0; g <= NGRIDY; g++) {
+    const v  = yMin + (yMax - yMin) * g / NGRIDY;
+    const py = yS(v);
+    ctx.beginPath(); ctx.moveTo(PAD_L, py); ctx.lineTo(W - PAD_R, py); ctx.stroke();
+    ctx.fillStyle = C_MUTED; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(lumFmt(v), PAD_L - 5, py);
+  }
+  for (let g = 0; g <= NGRIDX; g++) {
+    const i  = Math.round(g / NGRIDX * (samples.length - 1));
+    const px = xS(i);
+    ctx.beginPath(); ctx.moveTo(px, PAD_T); ctx.lineTo(px, H - PAD_B); ctx.stroke();
+    ctx.fillStyle = C_MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(i.toString(), px, H - PAD_B + 5);
+  }
+
+  // Axis labels
+  ctx.save();
+  ctx.translate(10, PAD_T + cH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = C_MUTED; ctx.font = '10px "Share Tech Mono",monospace';
+  ctx.fillText('cd/m²', 0, 0);
+  ctx.restore();
+  ctx.fillStyle = C_MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('pixel', W/2, H - 1);
+
+  // ── Halo shading & markers ──
+  if (halo) {
+    const pxL1 = xS(halo.leftStab),  pxL2 = xS(halo.peakIdx);
+    const pxR1 = xS(halo.peakIdx),   pxR2 = xS(halo.rightStab);
+
+    // Shaded halo zones
+    ctx.fillStyle = 'rgba(255,145,0,0.11)';
+    ctx.fillRect(pxL1, PAD_T, pxL2 - pxL1, cH);
+    ctx.fillRect(pxR1, PAD_T, pxR2 - pxR1, cH);
+
+    // Stabilisation boundary lines (dashed)
+    ctx.strokeStyle = 'rgba(255,145,0,0.55)'; ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(pxL1, PAD_T); ctx.lineTo(pxL1, PAD_T + cH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pxR2, PAD_T); ctx.lineTo(pxR2, PAD_T + cH); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Peak vertical line
+    ctx.strokeStyle = 'rgba(139,21,186,0.75)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(pxL2, PAD_T); ctx.lineTo(pxL2, PAD_T + cH); ctx.stroke();
+
+    // Background level (dashed horizontal)
+    const pyBg = yS(halo.bgLum);
+    if (pyBg >= PAD_T && pyBg <= PAD_T + cH) {
+      ctx.strokeStyle = 'rgba(100,100,100,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(PAD_L, pyBg); ctx.lineTo(W - PAD_R, pyBg); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = C_MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.font = '9px "Share Tech Mono",monospace';
+      ctx.fillText('bg', W - PAD_R + 1, pyBg);
+    }
+  }
+
+  // ── Ring range selection band (manual limit) ──
+  if (opts && opts.selRange && samples.length > 1) {
+    let a = Math.min(opts.selRange[0], opts.selRange[1]);
+    let b = Math.max(opts.selRange[0], opts.selRange[1]);
+    a = Math.max(0, Math.min(samples.length - 1, a));
+    b = Math.max(0, Math.min(samples.length - 1, b));
+    const xa = xS(a), xb = xS(b);
+    ctx.fillStyle = 'rgba(139,21,186,0.16)';
+    ctx.fillRect(xa, PAD_T, Math.max(1, xb - xa), cH);
+    ctx.strokeStyle = 'rgba(139,21,186,0.85)'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
+    ctx.beginPath(); ctx.moveTo(xa, PAD_T); ctx.lineTo(xa, PAD_T + cH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xb, PAD_T); ctx.lineTo(xb, PAD_T + cH); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#8b15ba'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.font = '10px "Share Tech Mono",monospace';
+    ctx.fillText('PIERŚCIEŃ', xa + 4, PAD_T + 3);
+  }
+
+  // ── Profile line ──
+  ctx.strokeStyle = C_LINE; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.setLineDash([]);
+  ctx.beginPath();
+  for (let i = 0; i < samples.length; i++) {
+    const px = xS(i), py = yS(samples[i].lum);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // ── Dot markers ──
+  if (halo) {
+    const drawDot = (idx, color, r) => {
+      ctx.beginPath(); ctx.arc(xS(idx), yS(samples[idx].lum), r, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = C_BG; ctx.lineWidth = 1.5; ctx.stroke();
+    };
+    drawDot(halo.leftStab,  C_WARN,   4);
+    drawDot(halo.rightStab, C_WARN,   4);
+    drawDot(halo.peakIdx,   C_ACCENT, 5);
+  }
+
+  // Chart border
+  ctx.strokeStyle = C_BORDER; ctx.lineWidth = 1;
+  ctx.strokeRect(PAD_L, PAD_T, cW, cH);
+}
+
+// ═══════════════════════════════════════════════════════
+// RING PROFILE GRAPH  (luminance vs angle around halo ring)
+// ═══════════════════════════════════════════════════════
+function drawRingProfileGraph(canvas, ringSamples, ringRadius) {
+  const W = canvas.offsetWidth  || 358;
+  const H = canvas.offsetHeight || 180;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const ctx = canvas.getContext('2d');
+  const cs  = getComputedStyle(document.body);
+  const C_BG     = cs.getPropertyValue('--surface2').trim() || '#141414';
+  const C_BORDER = cs.getPropertyValue('--border').trim()   || '#1e1e1e';
+  const C_MUTED  = cs.getPropertyValue('--muted').trim()    || '#555';
+  const C_WARN   = '#ff9100';
+
+  ctx.fillStyle = C_BG;
+  ctx.fillRect(0, 0, W, H);
+
+  if (!ringSamples || ringSamples.length < 4) {
+    ctx.fillStyle = C_MUTED;
+    ctx.font = '11px "Share Tech Mono",monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Brak danych pierścienia — wykonaj analizę halo', W/2, H/2);
+    return;
+  }
+
+  const PAD_L = 64, PAD_R = 14, PAD_T = 14, PAD_B = 32;
+  const cW = W - PAD_L - PAD_R;
+  const cH = H - PAD_T - PAD_B;
+
+  let yMin = Infinity, yMax = -Infinity;
+  for (const s of ringSamples) { if (s.lum < yMin) yMin = s.lum; if (s.lum > yMax) yMax = s.lum; }
+  const yrng = yMax - yMin || 1;
+  yMin -= yrng * 0.06;
+  yMax += yrng * 0.06;
+
+  const n  = ringSamples.length;
+  const xS = i => PAD_L + (i / (n - 1)) * cW;
+  const yS = v => PAD_T + (1 - (v - yMin) / (yMax - yMin)) * cH;
+
+  // Grid
+  ctx.font = '10px "Share Tech Mono",monospace';
+  ctx.strokeStyle = C_BORDER; ctx.lineWidth = 1;
+  const NGRIDY = 4;
+  for (let g = 0; g <= NGRIDY; g++) {
+    const v = yMin + (yMax - yMin) * g / NGRIDY;
+    const py = yS(v);
+    ctx.beginPath(); ctx.moveTo(PAD_L, py); ctx.lineTo(W - PAD_R, py); ctx.stroke();
+    ctx.fillStyle = C_MUTED; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(lumFmt(v), PAD_L - 5, py);
+  }
+  for (let deg = 0; deg <= 360; deg += 90) {
+    const idx = Math.round(deg / 360 * (n - 1));
+    const px = xS(Math.min(idx, n - 1));
+    ctx.strokeStyle = C_BORDER;
+    ctx.beginPath(); ctx.moveTo(px, PAD_T); ctx.lineTo(px, H - PAD_B); ctx.stroke();
+    ctx.fillStyle = C_MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(deg + '°', px, H - PAD_B + 5);
+  }
+
+  ctx.save();
+  ctx.translate(10, PAD_T + cH/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = C_MUTED; ctx.font = '10px "Share Tech Mono",monospace';
+  ctx.fillText('cd/m²', 0, 0);
+  ctx.restore();
+  ctx.fillStyle = C_MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('kąt [°]', W/2, H - 1);
+
+  // Profile line
+  ctx.strokeStyle = C_WARN; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.setLineDash([]);
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const px = xS(i), py = yS(ringSamples[i].lum);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Mean line
+  const mean = ringSamples.reduce((s, r) => s + r.lum, 0) / n;
+  const pyMean = yS(mean);
+  if (pyMean >= PAD_T && pyMean <= PAD_T + cH) {
+    ctx.strokeStyle = 'rgba(255,145,0,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(PAD_L, pyMean); ctx.lineTo(W - PAD_R, pyMean); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = C_MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.font = '9px "Share Tech Mono",monospace';
+    ctx.fillText('avg', W - PAD_R + 1, pyMean);
+  }
+
+  if (ringRadius != null) {
+    ctx.fillStyle = C_MUTED; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.font = '9px "Share Tech Mono",monospace';
+    ctx.fillText(`r=${Math.round(ringRadius)}px`, W - PAD_R, PAD_T + 2);
+  }
+
+  ctx.strokeStyle = C_BORDER; ctx.lineWidth = 1; ctx.setLineDash([]);
+  ctx.strokeRect(PAD_L, PAD_T, cW, cH);
+}
+
+function lumFmt(v) {
+  if (!isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a === 0)    return '0';
+  if (a < 0.001)  return v.toExponential(1);
+  if (a < 0.1)    return v.toFixed(3);
+  if (a < 10)     return v.toFixed(2);
+  if (a < 100)    return v.toFixed(1);
+  if (a < 1000)   return v.toFixed(0);
+  if (a < 10000)  return (v/1000).toFixed(1) + 'k';
+  return (v/1000).toFixed(0) + 'k';
+}
+
+// ═══════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════
+class HaloApp {
+  constructor() {
+    this.reader   = new HDF5Reader();
+    this.renderer = new Renderer();
+    this.viewer   = null;
+    this.srcCanvas = document.createElement('canvas');
+
+    this._lineMode    = false;
+    this._lineDrawing = false;
+    this._lineStart   = null;
+    this._lineEnd     = null;
+    this._samples     = null;
+    this._halo        = null;
+    this._displayMode = 'falsecolor';
+    this.loaded       = false;
+
+    // Fullscreen chart overlay state
+    this._fsOpen = false;
+    this._fsTab  = 'line';
+    this._fsXScale = 1;
+    this._fsYScale = 1;
+
+    // Manual ring range (limit ring to a sub-range of the drawn line)
+    this._ringManual = false;
+    this._ringRange  = null;   // [startIdx, endIdx] into this._samples
+
+    // Ring profile state
+    this._ringSamples = null;
+    this._ringRadius  = null;
+    this._ringInner   = null;
+    this._ringOuter   = null;
+
+    // Circle-pick mode (for Auto Detect centre selection)
+    this._circlePickMode   = false;
+    this._circleDrawing    = false;
+    this._circleCenter     = null;  // {x, y} in image coords
+    this._circleRadius     = 0;     // in image pixels
+    this._circleStartImg   = null;
+
+    // ROI / test-field pick mode (confines analysis to a marked rectangle)
+    this._roiRect          = null;  // {x0,y0,x1,y1} in image coords, or null = whole image
+    this._roiPickMode      = false;
+    this._roiDrawing       = false;
+    this._roiStartImg      = null;
+    this._roiRectBeforePick = null;
+
+    this._setup();
+  }
+
+  _setup() {
+    const dc = document.getElementById('display-canvas');
+    const oc = document.getElementById('overlay-canvas');
+    this.viewer = new Viewer(dc, oc, this._onHover.bind(this), this._onInteract.bind(this));
+
+    this._resize();
+    window.addEventListener('resize', () => this._resize());
+
+    // File input
+    document.getElementById('file-input').addEventListener('change', e => {
+      const f = e.target.files?.[0]; if (f) this.loadFile(f);
+    });
+
+    // Drop zone click
+    const dz = document.getElementById('drop-zone');
+    dz.addEventListener('click', () => document.getElementById('file-input').click());
+    dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('drag-over');
+      const f = e.dataTransfer?.files?.[0]; if (f) this.loadFile(f);
+    });
+
+    // Global drag/drop fallback
+    window.addEventListener('dragover', e => e.preventDefault());
+    window.addEventListener('drop', e => {
+      e.preventDefault();
+      const f = e.dataTransfer?.files?.[0]; if (f) this.loadFile(f);
+    });
+
+    // Export step input — live preview update
+    document.getElementById('export-step').addEventListener('input', () => this._updateExportPreview());
+    document.getElementById('ring-export-step').addEventListener('input', () => this._updateRingExportPreview());
+
+    // Fullscreen overlay: Esc to close, click on backdrop to close
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && this._fsOpen) this.closeFullscreen();
+    });
+    const ov = document.getElementById('fullscreen-overlay');
+    ov.addEventListener('click', e => { if (e.target === ov) this.closeFullscreen(); });
+
+    // Initial empty profile graph
+    this._redrawProfile();
+
+    // Theme from suite
+    try {
+      const light = localStorage.getItem('suite-theme') === 'light';
+      document.body.classList.toggle('light', light);
+    } catch(e) {}
+    window.addEventListener('message', ev => {
+      if (!ev.data || ev.data.type !== 'suite-theme') return;
+      if (!ev.data.noToggle) document.body.classList.toggle('light', !!ev.data.light);
+      this._redrawProfile();
+    });
+  }
+
+  _resize() {
+    const cc = document.getElementById('canvas-container');
+    const w = cc.clientWidth, h = cc.clientHeight;
+    if (w > 0 && h > 0) this.viewer.resize(w, h);
+    this._redrawProfile();
+  }
+
+  async loadFile(file) {
+    document.getElementById('filename-label').textContent = file.name;
+    const pEl = document.getElementById('load-progress');
+    const pb  = document.getElementById('progress-bar');
+    pEl.style.display = 'flex';
+
+    try {
+      const lumData = await this.reader.loadFile(file, ({stage, pct}) => {
+        pb.style.width = pct + '%';
+        document.getElementById('progress-label').textContent = stage.toUpperCase();
+      });
+      this.renderer.setData(lumData);
+      this._renderCurrent();
+      document.getElementById('drop-zone').classList.add('hidden');
+      this.loaded = true;
+      this.clearLine();
+    } catch(err) {
+      console.error('[HaloAnalysis] Load error:', err);
+      alert('Failed to load file: ' + err.message);
+    } finally {
+      pEl.style.display = 'none';
+      pb.style.width = '0%';
+    }
+  }
+
+  _renderCurrent() {
+    if (this._displayMode === 'grayscale') this.renderer.renderGrayscale(this.srcCanvas);
+    else                                    this.renderer.render(this.srcCanvas);
+    this.viewer.setImage(this.srcCanvas, this.renderer.width, this.renderer.height);
+    this._rerenderOverlay();
+  }
+
+  setDisplayMode(mode) {
+    this._displayMode = mode;
+    document.querySelectorAll('[data-mode]').forEach(b =>
+      b.classList.toggle('active', b.dataset.mode === mode)
+    );
+    if (this.loaded) this._renderCurrent();
+  }
+
+  toggleLineMode() {
+    this._lineMode = !this._lineMode;
+    document.getElementById('btn-line').classList.toggle('active', this._lineMode);
+    this.viewer.setCursor(this._lineMode ? 'crosshair' : 'default');
+    document.getElementById('mode-hint').textContent =
+      this._lineMode ? 'LINE MODE  ·  drag across the halo' : '';
+  }
+
+  autoDetect() {
+    if (!this.loaded) { alert('Najpierw wczytaj plik .h5'); return; }
+
+    // Step 1: enter circle-pick mode so user draws a circle to select centre
+    this._startCirclePick();
+  }
+
+  _startCirclePick() {
+    // Disable line mode if active
+    if (this._lineMode) this.toggleLineMode();
+
+    this._circlePickMode = true;
+    this._circleDrawing  = false;
+    this._circleCenter   = null;
+    this._circleRadius   = 0;
+
+    this.viewer.setCursor('crosshair');
+    document.getElementById('mode-hint').textContent = 'WYBIERZ CENTRUM  ·  narysuj okrąg wokół źródła halo';
+    document.getElementById('circle-pick-hint').classList.add('visible');
+
+    const btn = document.getElementById('btn-auto');
+    btn.textContent = '✕ Anuluj';
+    btn.style.color = 'var(--danger)';
+    btn.style.borderColor = 'var(--danger)';
+    btn.onclick = () => this._cancelCirclePick();
+  }
+
+  _cancelCirclePick() {
+    this._circlePickMode = false;
+    this._circleDrawing  = false;
+    this._circleCenter   = null;
+    this._circleRadius   = 0;
+
+    this.viewer.setCursor('default');
+    document.getElementById('mode-hint').textContent = '';
+    document.getElementById('circle-pick-hint').classList.remove('visible');
+
+    const btn = document.getElementById('btn-auto');
+    btn.textContent = '⊛ Auto Detect';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    btn.disabled = false;
+    btn.onclick = () => this.autoDetect();
+
+    this._rerenderOverlay();
+  }
+
+  _runAutoDetectWithCenter(cx, cy) {
+    const btn = document.getElementById('btn-auto');
+    btn.textContent = '⊛ Scanning…';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    btn.disabled = true;
+    btn.onclick = () => this.autoDetect();
+
+    document.getElementById('circle-pick-hint').classList.remove('visible');
+    document.getElementById('mode-hint').textContent = '';
+    this._circlePickMode = false;
+    this._circleDrawing  = false;
+    this.viewer.setCursor('default');
+
+    setTimeout(() => {
+      try {
+        const result = autoScanForHalo(this.renderer, cx, cy);
+        if (!result) {
+          alert('Nie wykryto efektu halo — upewnij się, że obraz zawiera jasny obszar.');
+          this._circleCenter = null; this._circleRadius = 0;
+          this._rerenderOverlay();
+          btn.textContent = '⊛ Auto Detect';
+          btn.disabled = false;
+          return;
+        }
+
+        // Apply detected line
+        this._lineMode    = false;
+        this._lineDrawing = false;
+        document.getElementById('btn-line').classList.remove('active');
+
+        this._lineStart = { x: result.x0, y: result.y0 };
+        this._lineEnd   = { x: result.x1, y: result.y1 };
+        this._samples   = result.samples;
+        this._halo      = result.halo;
+
+        this._ringManual = false;
+        this._ringRange  = null;
+        this._rerenderOverlay();
+        this._redrawProfile();
+        this._computeRing();
+        this._redrawRingProfile();
+        this._updateMetrics();
+        this._updateExportPreview();
+
+        btn.textContent = '✓ Wykryto!';
+        btn.style.color = 'var(--accent3)';
+        btn.style.borderColor = 'var(--accent3)';
+        setTimeout(() => {
+          btn.textContent = '⊛ Auto Detect';
+          btn.style.color = '';
+          btn.style.borderColor = '';
+          btn.disabled = false;
+        }, 1800);
+      } catch(e) {
+        console.error('[AutoDetect]', e);
+        btn.textContent = '⊛ Auto Detect';
+        btn.style.color = '';
+        btn.style.borderColor = '';
+        btn.disabled = false;
+        this._circleCenter = null; this._circleRadius = 0;
+        this._rerenderOverlay();
+      }
+    }, 30);
+  }
+
+  clearLine() {
+    this._lineDrawing = false;
+    this._lineStart = this._lineEnd = null;
+    this._samples = null; this._halo = null;
+    this._circleCenter = null; this._circleRadius = 0;
+    this._ringSamples = null; this._ringRadius = null;
+    this._ringInner = null; this._ringOuter = null;
+    this._ringManual = false; this._ringRange = null;
+    this._rerenderOverlay();
+    this._redrawProfile();
+    this._redrawRingProfile();
+    document.getElementById('metrics-panel').innerHTML =
+      '<div class="empty-hint">Draw a line across a bright<br>edge to detect the halo.</div>';
+    this._updateExportPreview();
+  }
+
+  // ── Cursor info ──
+  _onHover(imgX, imgY) {
+    const xEl = document.getElementById('cursor-x');
+    const yEl = document.getElementById('cursor-y');
+    const lEl = document.getElementById('cursor-l');
+    if (imgX === null) { xEl.textContent='—'; yEl.textContent='—'; lEl.textContent='—'; return; }
+    xEl.textContent = Math.floor(imgX);
+    yEl.textContent = Math.floor(imgY);
+    const l = this.renderer.getLuminanceAt(imgX, imgY);
+    lEl.textContent = l !== null ? l.toFixed(4) + ' cd/m²' : '—';
+  }
+
+  // ── Circle-pick interaction ──
+  _onInteractCircle(e, imgPos, phase) {
+    if (!this._circlePickMode) return false;
+    const {x, y} = imgPos;
+
+    if (phase === 'down') {
+      this._circleDrawing  = true;
+      this._circleStartImg = {x, y};
+      this._circleCenter   = {x, y};
+      this._circleRadius   = 0;
+      this._rerenderOverlay();
+      return true;
+    }
+
+    if (phase === 'move' && this._circleDrawing) {
+      const dx = x - this._circleStartImg.x;
+      const dy = y - this._circleStartImg.y;
+      // Centre = midpoint between start and current drag point
+      this._circleCenter = {
+        x: this._circleStartImg.x + dx / 2,
+        y: this._circleStartImg.y + dy / 2,
+      };
+      this._circleRadius = Math.sqrt(dx*dx + dy*dy) / 2;
+      this._rerenderOverlay();
+      return true;
+    }
+
+    if (phase === 'up' && this._circleDrawing) {
+      this._circleDrawing = false;
+      const dx = x - this._circleStartImg.x;
+      const dy = y - this._circleStartImg.y;
+      this._circleCenter = {
+        x: this._circleStartImg.x + dx / 2,
+        y: this._circleStartImg.y + dy / 2,
+      };
+      this._circleRadius = Math.sqrt(dx*dx + dy*dy) / 2;
+
+      if (this._circleRadius < 3) {
+        // Too small — treat as click → use click point as center directly
+        this._circleCenter = {x, y};
+        this._circleRadius = 0;
+      }
+
+      const cc = this._circleCenter;
+      this._runAutoDetectWithCenter(cc.x, cc.y);
+      return true;
+    }
+
+    return false;
+  }
+
+  // ── Line drawing interaction ──
+  _onInteract(e, imgPos, phase) {
+    // Circle-pick takes priority
+    if (this._circlePickMode) return this._onInteractCircle(e, imgPos, phase);
+
+    if (!this._lineMode) return false;
+    const {x, y} = imgPos;
+
+    if (phase === 'down') {
+      this._lineDrawing = true;
+      this._lineStart = {x, y};
+      this._lineEnd   = {x, y};
+      this._samples = null; this._halo = null;
+      this._rerenderOverlay();
+      return true;
+    }
+
+    if (phase === 'move' && this._lineDrawing) {
+      this._lineEnd = {x, y};
+      this._rerenderOverlay();
+      return true;
+    }
+
+    if (phase === 'up' && this._lineDrawing) {
+      this._lineDrawing = false;
+      this._lineEnd = {x, y};
+      this._commitLine();
+      return true;
+    }
+
+    return false;
+  }
+
+  _commitLine() {
+    if (!this._lineStart || !this._lineEnd || !this.loaded) return;
+    this._samples = sampleLine(
+      this._lineStart.x, this._lineStart.y,
+      this._lineEnd.x,   this._lineEnd.y,
+      this.renderer
+    );
+    this._halo = this._samples.length >= 10 ? detectHalo(this._samples) : null;
+    this._ringManual = false;
+    this._ringRange  = null;
+    this._rerenderOverlay();
+    this._redrawProfile();
+    this._computeRing();
+    this._redrawRingProfile();
+    this._updateMetrics();
+    this._updateExportPreview();
+  }
+
+  // ── Overlay drawing ──
+  _rerenderOverlay() {
+    this.viewer.renderOverlay((ctx, {scale: sc}) => {
+
+      // ── Circle-pick overlay ──
+      if (this._circleCenter && (this._circlePickMode || this._circleRadius > 0)) {
+        const cc = this._circleCenter;
+        const r  = this._circleRadius;
+
+        // Animated dashed circle
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,145,0,0.90)';
+        ctx.lineWidth   = Math.max(0.5, 2 / sc);
+        ctx.setLineDash([8/sc, 4/sc]);
+        ctx.beginPath();
+        ctx.arc(cc.x, cc.y, Math.max(r, 2/sc), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Centre crosshair
+        const CH = 10 / sc;
+        ctx.strokeStyle = 'rgba(255,145,0,0.70)';
+        ctx.lineWidth   = Math.max(0.3, 1 / sc);
+        ctx.beginPath();
+        ctx.moveTo(cc.x - CH, cc.y); ctx.lineTo(cc.x + CH, cc.y);
+        ctx.moveTo(cc.x, cc.y - CH); ctx.lineTo(cc.x, cc.y + CH);
+        ctx.stroke();
+
+        // Centre dot
+        ctx.beginPath(); ctx.arc(cc.x, cc.y, 3/sc, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,145,0,0.95)'; ctx.fill();
+
+        // Label
+        if (r > 6/sc) {
+          const fSize = Math.max(9, Math.min(13, 11 / sc));
+          ctx.font = `${fSize}px "Share Tech Mono",monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillStyle = 'rgba(255,180,60,0.9)';
+          ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3/sc;
+          ctx.fillText('CENTRUM', cc.x, cc.y - r - 4/sc);
+          ctx.shadowBlur = 0;
+        }
+        ctx.restore();
+      }
+
+      const s0 = this._lineStart;
+      const s1 = this._lineEnd;
+      if (!s0 || !s1) return;
+
+      // ── Drawn line ──
+      ctx.strokeStyle = 'rgba(255,255,90,0.90)';
+      ctx.lineWidth   = Math.max(0.5, 1.5 / sc);
+      ctx.setLineDash(this._lineDrawing ? [7/sc, 3/sc] : []);
+      ctx.beginPath();
+      ctx.moveTo(s0.x, s0.y);
+      ctx.lineTo(s1.x, s1.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Endpoint dots
+      const dotR = 4 / sc;
+      ctx.fillStyle = 'rgba(255,255,90,1)';
+      ctx.beginPath(); ctx.arc(s0.x, s0.y, dotR, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s1.x, s1.y, dotR, 0, Math.PI*2); ctx.fill();
+
+      // ── Halo ring on image (only when line is committed) ──
+      if (!this._lineDrawing && this._halo && this._samples && this._ringOuter) {
+        const h   = this._halo;
+        const pPt = this._samples[h.peakIdx];
+
+        const ringCx = this._circleCenter ? this._circleCenter.x : pPt.x;
+        const ringCy = this._circleCenter ? this._circleCenter.y : pPt.y;
+
+        const rOuter = this._ringOuter;
+        const rInner = this._ringInner;
+
+        if (rOuter > 2 / sc) {
+          ctx.save();
+
+          // Filled ring (donut)
+          ctx.beginPath();
+          ctx.arc(ringCx, ringCy, rOuter, 0, Math.PI * 2, false);
+          ctx.arc(ringCx, ringCy, Math.max(rInner, 1/sc), 0, Math.PI * 2, true);
+          ctx.fillStyle = 'rgba(255,145,0,0.18)';
+          ctx.fill();
+
+          // Outer border
+          ctx.beginPath();
+          ctx.arc(ringCx, ringCy, rOuter, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,145,0,0.90)';
+          ctx.lineWidth   = Math.max(0.5, 2 / sc);
+          ctx.setLineDash([]);
+          ctx.stroke();
+
+          // Inner border (drop edge)
+          if (rInner > 2 / sc) {
+            ctx.beginPath();
+            ctx.arc(ringCx, ringCy, rInner, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,145,0,0.50)';
+            ctx.lineWidth   = Math.max(0.3, 1 / sc);
+            ctx.setLineDash([4/sc, 3/sc]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+
+          // Centre dot
+          ctx.beginPath();
+          ctx.arc(ringCx, ringCy, 5/sc, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(139,21,186,0.95)'; ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1/sc; ctx.stroke();
+
+          // Label
+          const fSize = Math.max(9, Math.min(13, 11 / sc));
+          ctx.font = `${fSize}px "Share Tech Mono",monospace`;
+          ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+          ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4 / sc;
+          ctx.fillStyle = 'rgba(255,180,60,1)';
+          ctx.fillText(
+            `HALO  ⌀${Math.round(rOuter)}px  ${lumFmt(h.peakVal)} cd/m²`,
+            ringCx, ringCy - rOuter - 4/sc
+          );
+          ctx.shadowBlur = 0;
+          ctx.restore();
+        }
+
+        // ── Ring sampling line (midpoint circle) ──
+        if (this._ringRadius && this._ringRadius > 2 / sc) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(ringCx, ringCy, this._ringRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,200,60,0.70)';
+          ctx.lineWidth   = Math.max(0.4, 1 / sc);
+          ctx.setLineDash([3/sc, 3/sc]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+      }
+
+    });
+  }
+
+  // ── Ring profile ──
+  _computeRing() {
+    if (!this._halo || !this._samples || !this._circleCenter || !this.loaded) {
+      this._ringSamples = null;
+      this._ringRadius  = null;
+      return;
+    }
+    const h  = this._halo;
+    const cx = this._circleCenter.x;
+    const cy = this._circleCenter.y;
+
+    const distPx = (a, b) => Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2);
+    const centre = {x: cx, y: cy};
+
+    // ── Manual range: limit the ring strictly to a sub-range of the line ──
+    // The two selected sample indices define the inner/outer radius directly
+    // (their distance from the picked centre), so the ring band covers only
+    // the marked zone (e.g. the narrow halo decay edge) instead of the whole
+    // bright disc.
+    if (this._ringManual && this._ringRange) {
+      const len = this._samples.length;
+      let a = Math.max(0, Math.min(len - 1, Math.min(this._ringRange[0], this._ringRange[1])));
+      let b = Math.max(0, Math.min(len - 1, Math.max(this._ringRange[0], this._ringRange[1])));
+      let rin  = distPx(centre, this._samples[a]);
+      let rout = distPx(centre, this._samples[b]);
+      if (rout < rin) { const t = rin; rin = rout; rout = t; }
+      const minR = this._circleRadius || 0;
+      if (minR > 0 && rin < minR) { const w = Math.max(rout - rin, 0); rin = minR; rout = minR + w; }
+      this._ringInner  = rin;
+      this._ringOuter  = rout;
+      this._ringRadius = (rin + rout) / 2;
+      this._ringSamples = sampleCircle(cx, cy, this._ringRadius, this.renderer, 1);
+      return;
+    }
+
+    // For a half-ray, the peak sits at/near the start of the line — only
+    // the right side is real halo data; the "left" side is just the
+    // clamped start point near the bright centre and must be ignored
+    // (averaging it in would silently halve the computed radius).
+    // For a full chord through the centre, average both sides.
+    const halfRay = h.peakNearStart || h.leftWidth === 0;
+
+    const rStabPt = this._samples[h.rightStab];
+    const rDropPt = (h.rightDropIdx >= 0) ? this._samples[h.rightDropIdx] : null;
+
+    let rOuter, rInner;
+
+    if (halfRay) {
+      // Only right side meaningful
+      rOuter = distPx(centre, rStabPt);
+      rInner = rDropPt ? distPx(centre, rDropPt) : rOuter * 0.5;
+      console.log('[Ring] halfRay | peakIdx=', h.peakIdx, 'rightDropIdx=', h.rightDropIdx, 'rightStab=', h.rightStab,
+        '| rInner=', rInner.toFixed(1), 'rOuter=', rOuter.toFixed(1),
+        '| dropLum=', rDropPt ? this._samples[h.rightDropIdx].lum.toFixed(2) : 'n/a',
+        'stabLum=', this._samples[h.rightStab].lum.toFixed(2),
+        '| totalSamples=', this._samples.length);
+    } else {
+      const lStabPt = this._samples[h.leftStab];
+      const lDropPt = (h.leftDropIdx >= 0) ? this._samples[h.leftDropIdx] : null;
+      const outerL  = distPx(centre, lStabPt);
+      const outerR  = distPx(centre, rStabPt);
+      const innerL  = lDropPt ? distPx(centre, lDropPt) : outerL * 0.5;
+      const innerR  = rDropPt ? distPx(centre, rDropPt) : outerR * 0.5;
+      rOuter = (outerL + outerR) / 2;
+      rInner = (innerL + innerR) / 2;
+    }
+
+    // Hard floor: the ring may never draw inside the circle marked at the
+    // start (the CENTRUM circle defines the boundary of the central spot,
+    // so the halo can only exist outside of it). If the detected band falls
+    // (partly or fully) inside that circle, shift the whole band outward —
+    // preserving its detected width — rather than collapsing it to zero.
+    const minR = this._circleRadius || 0;
+    if (minR > 0 && rInner < minR) {
+      const width = Math.max(rOuter - rInner, 0);
+      rInner = minR;
+      rOuter = minR + width;
+    }
+
+    // Sampling line at midpoint of the halo zone (between drop edge and stabilisation)
+    this._ringRadius  = (rInner + rOuter) / 2;
+    this._ringInner   = rInner;
+    this._ringOuter   = rOuter;
+    this._ringSamples = sampleCircle(cx, cy, this._ringRadius, this.renderer, 1);
+  }
+
+  _redrawRingProfile() {
+    const canvas = document.getElementById('ring-profile-canvas');
+    drawRingProfileGraph(canvas, this._ringSamples, this._ringRadius);
+    this._updateRingExportPreview();
+    if (this._fsOpen) this._drawFullscreen();
+  }
+
+  _updateRingExportPreview() {
+    const previewEl = document.getElementById('ring-export-preview');
+    const btnEl     = document.getElementById('btn-ring-export');
+    if (!this._ringSamples || this._ringSamples.length === 0) {
+      previewEl.innerHTML = 'Wykonaj analizę halo, aby zobaczyć podgląd.';
+      btnEl.disabled = true;
+      return;
+    }
+    const step  = this._getRingExportStep();
+    const total = Math.ceil(this._ringSamples.length / step);
+    previewEl.innerHTML =
+      `Obwód: <span>${this._ringSamples.length} próbek (360°)</span> · ` +
+      `Krok: <span>${step}°</span> · Wiersze: <span>${total}</span><br>` +
+      `Kolumny: Kąt (°), X, Y, Luminance (cd/m²)`;
+    btnEl.disabled = false;
+  }
+
+  _getRingExportStep() {
+    const v = parseInt(document.getElementById('ring-export-step').value, 10);
+    return (isFinite(v) && v >= 1) ? v : 1;
+  }
+
+  exportRingToClipboard() {
+    if (!this._ringSamples || this._ringSamples.length === 0) return;
+    const step = this._getRingExportStep();
+    const rows = [['Angle (°)', 'X', 'Y', 'Luminance (cd/m²)']];
+    for (let i = 0; i < this._ringSamples.length; i += step) {
+      const s = this._ringSamples[i];
+      rows.push([s.angle.toFixed(1), s.x.toFixed(1), s.y.toFixed(1), s.lum.toFixed(6)]);
+    }
+    const tsv = rows.map(r => r.join('\t')).join('\r\n');
+    navigator.clipboard.writeText(tsv).then(() => {
+      const btn = document.getElementById('btn-ring-export');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Skopiowano!';
+      btn.style.color = 'var(--accent3)';
+      setTimeout(() => { btn.textContent = orig; btn.style.color = 'var(--warn)'; }, 1800);
+    }).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = tsv; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    });
+  }
+
+  // ── Profile graph ──
+  _redrawProfile() {
+    const canvas = document.getElementById('profile-canvas');
+    const selRange = (this._ringComputable && this._ringComputable() && this._ringManual)
+      ? this._ringRange : null;
+    drawProfileGraph(canvas, this._samples, this._halo, { selRange });
+    if (this._fsOpen) this._drawFullscreen();
+  }
+
+  // ── Export to clipboard ──
+  _getExportStep() {
+    const v = parseInt(document.getElementById('export-step').value, 10);
+    return (isFinite(v) && v >= 1) ? v : 1;
+  }
+
+  _buildExportRows(step) {
+    if (!this._samples || this._samples.length === 0) return [];
+    const rows = [['Index', 'Pixel', 'X', 'Y', 'Luminance (cd/m²)']];
+    let rowIdx = 0;
+    for (let i = 0; i < this._samples.length; i += step) {
+      const s = this._samples[i];
+      rows.push([rowIdx++, i, s.x.toFixed(1), s.y.toFixed(1), s.lum.toFixed(6)]);
+    }
+    return rows;
+  }
+
+  _updateExportPreview() {
+    const previewEl = document.getElementById('export-preview');
+    const btnEl     = document.getElementById('btn-export');
+    if (!this._samples || this._samples.length === 0) {
+      previewEl.innerHTML = 'Narysuj linię, aby zobaczyć podgląd.';
+      btnEl.disabled = true;
+      return;
+    }
+    const step = this._getExportStep();
+    const total = Math.ceil(this._samples.length / step);
+    const len   = this._samples.length;
+    previewEl.innerHTML =
+      `Długość linii: <span>${len} px</span> · ` +
+      `Krok: <span>${step} px</span> · ` +
+      `Wiersze: <span>${total}</span><br>` +
+      `Kolumny: Index, Pixel, X, Y, Luminance (cd/m²)`;
+    btnEl.disabled = false;
+  }
+
+  exportToClipboard() {
+    if (!this._samples || this._samples.length === 0) return;
+    const step = this._getExportStep();
+    const rows = this._buildExportRows(step);
+    const tsv  = rows.map(r => r.join('\t')).join('\r\n');
+    navigator.clipboard.writeText(tsv).then(() => {
+      const btn = document.getElementById('btn-export');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Skopiowano!';
+      btn.style.color = 'var(--accent3)';
+      setTimeout(() => { btn.textContent = orig; }, 1800);
+    }).catch(() => {
+      // fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = tsv;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    });
+  }
+
+  // ── Metrics panel ──
+  _updateMetrics() {
+    const panel = document.getElementById('metrics-panel');
+    if (!this._halo) {
+      const reason = !this._samples || this._samples.length < 10
+        ? 'Line too short — draw a longer line.'
+        : 'No stable background found — ensure the line crosses into a dark region.';
+      panel.innerHTML = `<div class="empty-hint">${reason}</div>`;
+      return;
+    }
+    const h = this._halo;
+    const rStr = isFinite(h.ratio) ? h.ratio.toFixed(1) + ' : 1' : '∞';
+    panel.innerHTML = `
+      <div class="metric-row">
+        <span class="metric-label">Peak Luminance</span>
+        <span class="metric-val em">${h.peakVal.toFixed(3)} cd/m²</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">Background Lum.</span>
+        <span class="metric-val">${h.bgLum.toFixed(3)} cd/m²</span>
+      </div>
+      <hr class="metric-divider">
+      <div class="metric-row">
+        <span class="metric-label">Halo Width · Left</span>
+        <span class="metric-val warn">${h.leftWidth} px</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">Halo Width · Right</span>
+        <span class="metric-val warn">${h.rightWidth} px</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">Total Halo Width</span>
+        <span class="metric-val accent">${h.totalWidth} px</span>
+      </div>
+      <hr class="metric-divider">
+      <div class="metric-row">
+        <span class="metric-label">Decay Edge · Left</span>
+        <span class="metric-val ${h.leftDropFound ? '' : 'dim'}">${h.leftDropFound ? 'detected' : 'gradual'}</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">Decay Edge · Right</span>
+        <span class="metric-val ${h.rightDropFound ? '' : 'dim'}">${h.rightDropFound ? 'detected' : 'gradual'}</span>
+      </div>
+      <hr class="metric-divider">
+      <div class="metric-row">
+        <span class="metric-label">Peak / Background</span>
+        <span class="metric-val em">${rStr}</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">Profile Length</span>
+        <span class="metric-val dim">${this._samples.length} px sampled</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">Peak Position</span>
+        <span class="metric-val dim">
+          ${this._samples[h.peakIdx].x}, ${this._samples[h.peakIdx].y}
+        </span>
+      </div>
+    `;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // FULLSCREEN CHART VIEW
+  // ═══════════════════════════════════════════════════════
+  openFullscreen(which) {
+    this._fsOpen = true;
+    this._fsTab  = which || this._fsTab || 'line';
+    document.getElementById('fullscreen-overlay').classList.add('visible');
+    this._syncFullscreenTabs();
+    // wait one frame so the overlay has layout dimensions before drawing
+    requestAnimationFrame(() => this._drawFullscreen());
+  }
+
+  closeFullscreen() {
+    this._fsOpen = false;
+    document.getElementById('fullscreen-overlay').classList.remove('visible');
+  }
+
+  setFullscreenTab(which) {
+    this._fsTab = which;
+    this._syncFullscreenTabs();
+    requestAnimationFrame(() => this._drawFullscreen());
+  }
+
+  _syncFullscreenTabs() {
+    document.querySelectorAll('.fs-tab').forEach(b =>
+      b.classList.toggle('active', b.dataset.fs === this._fsTab));
+    const titles = {
+      line: 'Profil luminancji wzdłuż narysowanej linii',
+      ring: 'Profil luminancji na obwodzie halo (tryb automatyczny)',
+      both: 'Profil linii + obwód halo',
+    };
+    document.getElementById('fs-title').textContent = titles[this._fsTab] || '';
+  }
+
+  _drawFullscreen() {
+    if (!this._fsOpen) return;
+    const tab    = this._fsTab;
+    const chartA = document.getElementById('fs-chart-a');
+    const chartB = document.getElementById('fs-chart-b');
+    const labA   = document.getElementById('fs-label-a');
+    const labB   = document.getElementById('fs-label-b');
+
+    if (tab === 'both') {
+      chartA.style.display = '';
+      chartB.style.display = '';
+      labA.textContent = 'Profil linii · luminancja [cd/m²] vs piksel';
+      labB.textContent = 'Obwód halo · luminancja [cd/m²] vs kąt [°]';
+    } else {
+      chartA.style.display = '';
+      chartB.style.display = 'none';
+      labA.textContent = (tab === 'line')
+        ? 'Profil linii · luminancja [cd/m²] vs piksel'
+        : 'Obwód halo · luminancja [cd/m²] vs kąt [°]';
+    }
+
+    // Ring-range controls: only meaningful when a ring can be computed and a
+    // line profile is on screen (line / both tabs).
+    this._syncFsControls();
+
+    // second frame: display toggles & control row have applied, sizes are stable
+    requestAnimationFrame(() => {
+      const wrap = document.getElementById('fs-canvas-wrap');
+      const canA = document.getElementById('fs-canvas-a');
+      const canB = document.getElementById('fs-canvas-b');
+
+      // Base size that exactly fits the viewport at scale 1× (no scrollbars),
+      // then multiplied by the user's scale factors so the chart can grow
+      // arbitrarily wide / tall and the wrapper scrolls.
+      const padX   = 36, padY = 32, gap = 12, labelH = 22;
+      const nCharts = (tab === 'both') ? 2 : 1;
+      const baseW   = Math.max(240, wrap.clientWidth  - padX);
+      const baseH   = Math.max(160, (wrap.clientHeight - padY - (nCharts === 2 ? gap : 0)) / nCharts - labelH);
+      const cW = Math.round(baseW * this._fsXScale);
+      const cH = Math.round(baseH * this._fsYScale);
+
+      const sizeCanvas = (cv) => { cv.style.width = cW + 'px'; cv.style.height = cH + 'px'; };
+
+      const selRange = this._ringComputable() ? this._ringRange : null;
+
+      if (tab === 'line') {
+        sizeCanvas(canA);
+        drawProfileGraph(canA, this._samples, this._halo, { selRange });
+      } else if (tab === 'ring') {
+        sizeCanvas(canA);
+        drawRingProfileGraph(canA, this._ringSamples, this._ringRadius);
+      } else {
+        sizeCanvas(canA); sizeCanvas(canB);
+        drawProfileGraph(canA, this._samples, this._halo, { selRange });
+        drawRingProfileGraph(canB, this._ringSamples, this._ringRadius);
+      }
+      this._updateFullscreenData();
+    });
+  }
+
+  _ringComputable() {
+    return !!(this._samples && this._samples.length > 1 && this._circleCenter && this._halo);
+  }
+
+  _detectedRingIndices() {
+    const h = this._halo, len = this._samples ? this._samples.length : 0;
+    if (!h || len < 2) return [0, Math.max(0, len - 1)];
+    let inner = (h.rightDropIdx != null && h.rightDropIdx >= 0) ? h.rightDropIdx : h.peakIdx;
+    let outer = h.rightStab;
+    if (!(outer > inner)) { inner = Math.min(h.peakIdx, h.leftStab); outer = Math.max(h.rightStab, h.peakIdx); }
+    inner = Math.max(0, Math.min(len - 1, inner));
+    outer = Math.max(0, Math.min(len - 1, outer));
+    if (outer < inner) { const t = inner; inner = outer; outer = t; }
+    return [inner, outer];
+  }
+
+  _syncFsControls() {
+    const showRange = this._ringComputable() && (this._fsTab === 'line' || this._fsTab === 'both');
+    document.getElementById('fs-range-group').style.display = showRange ? '' : 'none';
+    document.getElementById('fs-range-sep').style.display   = showRange ? '' : 'none';
+
+    // keep scale read-outs in sync
+    document.getElementById('fs-yscale-out').textContent = Number(this._fsYScale).toFixed(1) + '×';
+    document.getElementById('fs-xscale-out').textContent = Number(this._fsXScale).toFixed(1) + '×';
+    document.getElementById('fs-yscale').value = this._fsYScale;
+    document.getElementById('fs-xscale').value = this._fsXScale;
+
+    if (!showRange) return;
+
+    const len = this._samples.length;
+    // When not in manual mode, mirror the auto-detected band so the sliders
+    // show where the analysis currently sits.
+    if (!this._ringManual || !this._ringRange) this._ringRange = this._detectedRingIndices();
+
+    const sEl = document.getElementById('fs-range-start');
+    const eEl = document.getElementById('fs-range-end');
+    sEl.min = 0; sEl.max = len - 1;
+    eEl.min = 0; eEl.max = len - 1;
+    sEl.value = this._ringRange[0];
+    eEl.value = this._ringRange[1];
+    document.getElementById('fs-range-start-out').textContent = this._ringRange[0];
+    document.getElementById('fs-range-end-out').textContent   = this._ringRange[1];
+  }
+
+  setFsScale(axis, val) {
+    val = parseFloat(val) || 1;
+    if (axis === 'y') this._fsYScale = val;
+    else              this._fsXScale = val;
+    document.getElementById('fs-' + axis + 'scale-out').textContent = val.toFixed(1) + '×';
+    if (this._fsOpen) this._drawFullscreen();
+  }
+
+  resetFsScale() {
+    this._fsXScale = 1; this._fsYScale = 1;
+    document.getElementById('fs-xscale').value = 1;
+    document.getElementById('fs-yscale').value = 1;
+    document.getElementById('fs-xscale-out').textContent = '1.0×';
+    document.getElementById('fs-yscale-out').textContent = '1.0×';
+    if (this._fsOpen) this._drawFullscreen();
+  }
+
+  setRingRange(which, val) {
+    if (!this._ringComputable()) return;
+    const len = this._samples.length;
+    if (!this._ringRange) this._ringRange = this._detectedRingIndices();
+    let [s, e] = this._ringRange;
+    const v = Math.max(0, Math.min(len - 1, parseInt(val, 10) || 0));
+    if (which === 'start') s = v; else e = v;
+    this._ringManual = true;
+    this._ringRange  = [s, e];
+    this._computeRing();
+    this._rerenderOverlay();
+    this._redrawRingProfile();
+    this._redrawProfile();   // refresh the highlighted band on the line chart
+    this._updateMetrics();
+  }
+
+  resetRingRange() {
+    this._ringManual = false;
+    this._ringRange  = this._detectedRingIndices();
+    this._computeRing();
+    this._rerenderOverlay();
+    this._redrawRingProfile();
+    this._redrawProfile();
+    this._updateMetrics();
+  }
+
+  _updateFullscreenData() {
+    const el  = document.getElementById('fs-data');
+    const tab = this._fsTab;
+    let html = '';
+    if (tab === 'line' || tab === 'both') html += this._lineChips();
+    if (tab === 'ring' || tab === 'both') html += this._ringChips();
+    el.innerHTML = html ||
+      '<div class="empty-hint">Brak danych — narysuj linię lub użyj Auto Detect.</div>';
+  }
+
+  _chip(k, v, cls) {
+    return `<div class="fs-chip"><span class="k">${k}</span><span class="v ${cls || ''}">${v}</span></div>`;
+  }
+
+  _lineChips() {
+    const h = this._halo;
+    if (!h || !this._samples) {
+      return '<div class="empty-hint">Profil linii: narysuj linię na obrazie.</div>';
+    }
+    const rStr = isFinite(h.ratio) ? h.ratio.toFixed(1) + ' : 1' : '∞';
+    return (
+      this._chip('Peak Luminance', h.peakVal.toFixed(3) + ' cd/m²', 'em') +
+      this._chip('Tło (bg)',       h.bgLum.toFixed(3)  + ' cd/m²') +
+      this._chip('Halo · L',       h.leftWidth  + ' px', 'warn') +
+      this._chip('Halo · R',       h.rightWidth + ' px', 'warn') +
+      this._chip('Halo total',     h.totalWidth + ' px', 'accent') +
+      this._chip('Peak / Tło',     rStr, 'em') +
+      this._chip('Próbek',         this._samples.length + ' px')
+    );
+  }
+
+  _ringChips() {
+    const rs = this._ringSamples;
+    if (!rs || rs.length === 0) {
+      return '<div class="empty-hint">Profil pierścienia: użyj Auto Detect.</div>';
+    }
+    let mn = Infinity, mx = -Infinity, sum = 0;
+    for (const s of rs) { if (s.lum < mn) mn = s.lum; if (s.lum > mx) mx = s.lum; sum += s.lum; }
+    const avg = sum / rs.length;
+    const uni = mx > 0 ? (mn / mx * 100) : 0;
+    return (
+      this._chip('Obwód · próbki', rs.length + ' (360°)') +
+      (this._ringRadius != null ? this._chip('Promień', Math.round(this._ringRadius) + ' px') : '') +
+      this._chip('Min',          mn.toFixed(3)  + ' cd/m²') +
+      this._chip('Średnia',      avg.toFixed(3) + ' cd/m²', 'warn') +
+      this._chip('Max',          mx.toFixed(3)  + ' cd/m²') +
+      this._chip('Jednorodność', uni.toFixed(1) + ' %', 'accent')
+    );
+  }
+}
+
+// ── Boot ──
+window.App = new HaloApp();
+</script>
+</body>
+</html>

@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIE Colour Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #080808;
+    --surface: #0f0f0f;
+    --border:  #1e1e1e;
+    --accent:  #8b15ba;
+    --text:    #e0e0e0;
+    --muted:   #555555;
+    --mono:    'Share Tech Mono', monospace;
+    --sans:    'Rajdhani', sans-serif;
+    --radius:  10px;
+    /* legacy aliases used by JS-generated content */
+    --surface2:    #141414;
+    --border-light:#2a2a2a;
+    --text-dim:    #888888;
+    --text-muted:  #555555;
+    --input-bg:    #0a0a0a;
+    --input-border:#1e1e1e;
+    --input-focus: #8b15ba;
+    --row-hover:   rgba(139,21,186,0.05);
+    --accent2:     #8b15ba;
+  }
+
+ *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: none; }
+::-webkit-scrollbar { display: none; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 36px 24px 60px;
+    position: relative;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 7px;
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 3px;
+  }
+  .logo-icon span {
+    border-radius: 2px;
+    display: block;
+  }
+  .logo-icon .r { background: #ff3333; }
+  .logo-icon .g { background: #33ff33; }
+  .logo-icon .b { background: #3333ff; }
+  .logo-icon .w { background: #ffffff; }
+
+  .logo-text { flex: 1; }
+  .logo-text h1 {
+    font-family: var(--mono);
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .logo-text p {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 5px;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+
+  .logo-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.8;
+    letter-spacing: 1px;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── CONTROLS PANEL ── */
+  .controls {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .control-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    min-width: 90px;
+    text-align: right;
+  }
+
+  select {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 8px 12px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.18s;
+    flex: 1;
+    min-width: 160px;
+    max-width: 340px;
+    text-transform: uppercase;
+  }
+  select:focus { border-color: var(--accent); }
+  select option { background: #111; }
+
+  .rgb-model-info {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  /* Scale checkboxes */
+  .scale-group { display: flex; gap: 20px; }
+  .scale-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .scale-item input[type=checkbox] {
+    accent-color: var(--accent);
+    width: 14px; height: 14px;
+    cursor: pointer;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    gap: 20px;
+  }
+
+  /* ── CALCULATOR TABLE ── */
+  .calc-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead tr {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th {
+    padding: 12px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-align: center;
+  }
+  thead th:first-child {
+    text-align: left;
+    padding-left: 18px;
+    width: 155px;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.18s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--row-hover); }
+
+  tbody td {
+    padding: 9px 6px;
+    text-align: center;
+    vertical-align: middle;
+    width: 140px;
+  }
+  tbody td:first-child {
+    padding-left: 18px;
+    width: 155px;
+  }
+  tbody td:last-child { padding-right: 10px; }
+
+  /* Row button */
+  .row-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    padding: 7px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  .row-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+  }
+  .row-btn:hover {
+    border-color: var(--border-light);
+    color: var(--text);
+    background: var(--surface2);
+  }
+  .row-btn:hover::after { transform: scaleX(0.5); }
+  .row-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(139,21,186,0.06);
+    text-shadow: 0 0 18px rgba(139,21,186,0.6);
+  }
+  .row-btn.active::after { transform: scaleX(1); }
+
+  /* Inputs */
+  .val-input {
+    width: 100%;
+    min-width: 90px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 7px 10px;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.18s;
+  }
+  .val-input:focus { border-color: var(--accent); }
+  .val-input::placeholder { color: var(--muted); }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    justify-content: space-between;
+  }
+
+  .clear-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .clear-btn:hover {
+    border-color: #c0533a;
+    color: #e07060;
+    background: rgba(192,83,58,0.08);
+  }
+
+  .stale-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    flex: 1;
+    text-align: right;
+    display: none;
+    text-transform: uppercase;
+  }
+  .stale-note.visible { display: block; }
+
+  /* ── SWATCH PANEL ── */
+  .swatch-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .swatch-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .swatch {
+    width: 120px;
+    height: 120px;
+    border-radius: var(--radius);
+    background: #333;
+    border: 1px solid var(--border);
+    transition: background 0.3s;
+  }
+
+  .hex-display {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    text-align: center;
+    width: 100%;
+    text-transform: uppercase;
+  }
+
+  /* ── WATERMARK ── */
+  .watermark {
+    position: fixed;
+    bottom: 10px;
+    right: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    opacity: 0.45;
+    pointer-events: none;
+    text-transform: uppercase;
+    z-index: 9999;
+  }
+
+  /* ── PDF EXPORT BTN ── */
+  .pdf-export-btn {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 9999;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 7px 16px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    transition: all 0.18s;
+  }
+  .pdf-export-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(139,21,186,0.06);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .layout { grid-template-columns: 1fr; }
+    .swatch-panel { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .swatch { width: 80px; height: 80px; }
+    .val-input { font-size: 11px; }
+  }
+
+html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="logo-icon">
+      <span class="r"></span>
+      <span class="g"></span>
+      <span class="b"></span>
+      <span class="w"></span>
+    </div>
+    <div class="logo-text">
+      <h1>Colour Calculator</h1>
+      <p>Chromatyczność · CIE 1931</p>
+    </div>
+    <div class="logo-badge">
+      CIE 15:2004<br>
+      IEC 61966-2.1
+    </div>
+  </header>
+
+  <!-- CONTROLS -->
+  <div class="section-label">Parametry konwersji</div>
+  <div style="margin-bottom: 24px;">
+    <div class="controls">
+      <div class="control-row">
+        <span class="control-label">Ref. White</span>
+        <select id="refWhite">
+          <option value="A">A (2856K)</option>
+          <option value="B">B (4874K)</option>
+          <option value="C">C (6774K)</option>
+          <option value="D50">D50 (5003K)</option>
+          <option value="D55">D55 (5503K)</option>
+          <option value="D65" selected>D65 (6504K)</option>
+          <option value="D75">D75 (7504K)</option>
+          <option value="E">E (Equal Energy)</option>
+          <option value="F2">F2 (Cool White Fluorescent)</option>
+          <option value="F7">F7 (Broadband Fluorescent)</option>
+          <option value="F11">F11 (Narrow Triband Fluorescent)</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <span class="control-label">RGB Model</span>
+        <select id="rgbModel">
+          <option value="sRGB" selected>sRGB (IEC 61966-2.1)</option>
+          <option value="AdobeRGB">Adobe RGB (1998)</option>
+          <option value="AppleRGB">Apple RGB</option>
+          <option value="BestRGB">Best RGB</option>
+          <option value="BetaRGB">Beta RGB</option>
+          <option value="BruceRGB">Bruce RGB</option>
+          <option value="CIERGB">CIE RGB</option>
+          <option value="ColorMatchRGB">ColorMatch RGB</option>
+          <option value="DonRGB4">Don RGB 4</option>
+          <option value="ECIRRGB">ECI RGB</option>
+          <option value="EktaSpacePS5">Ekta Space PS5</option>
+          <option value="NTSCRGB">NTSC RGB</option>
+          <option value="PALSECAMRGB">PAL/SECAM RGB</option>
+          <option value="ProPhotoRGB">ProPhoto RGB</option>
+          <option value="SMPTECRGB">SMPTE-C RGB</option>
+          <option value="WideGamutRGB">Wide Gamut RGB</option>
+        </select>
+        <span class="rgb-model-info" id="rgbModelWhite">D65</span>
+      </div>
+      <div class="control-row">
+        <span class="control-label">Adaptation</span>
+        <select id="adaptation">
+          <option value="Bradford" selected>Bradford</option>
+          <option value="vonKries">Von Kries</option>
+          <option value="XYZScaling">XYZ Scaling</option>
+          <option value="None">None</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <span class="control-label">Gamma</span>
+        <select id="gamma">
+          <option value="native" selected>Native (model default)</option>
+          <option value="1.0">1.0 (Linear)</option>
+          <option value="1.8">1.8</option>
+          <option value="2.2">2.2</option>
+          <option value="sRGB">sRGB</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <span class="control-label">Scale</span>
+        <div class="scale-group">
+          <label class="scale-item">
+            <input type="checkbox" id="scaleXYZ"> XYZ 0–100
+          </label>
+          <label class="scale-item">
+            <input type="checkbox" id="scaleRGB"> RGB 0–255
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR TABLE + SWATCH -->
+  <div class="section-label">Konwersja przestrzeni barw</div>
+  <div class="layout">
+    <div>
+      <div class="calc-table-wrap">
+        <table id="calcTable">
+          <thead>
+            <tr>
+              <th>Color Space</th>
+              <th>Component 1</th>
+              <th>Component 2</th>
+              <th>Component 3</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- rows injected by JS -->
+          </tbody>
+        </table>
+        <div class="bottom-bar">
+          <button class="clear-btn" id="clearBtn">Clear</button>
+          <span class="stale-note" id="staleNote">⚠ Ustawienia zmienione — kliknij przycisk wiersza.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="swatch-panel">
+      <span class="swatch-label">Preview</span>
+      <div class="swatch" id="colorSwatch"></div>
+      <div class="hex-display" id="hexDisplay">#808080</div>
+      <span class="swatch-label" id="rgbDisplay" style="font-size:10px;">RGB: 128, 128, 128</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="watermark">by kondz10</div>
+
+<button class="pdf-export-btn" onclick="exportToPDF()">
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3 5l3 3 3-3M1 10h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+  Eksportuj PDF
+</button>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// REFERENCE WHITES (XYZ, D65 ref)
+// ═══════════════════════════════════════════════════════════════
+const REF_WHITES = {
+  A:    [1.09850, 1.00000, 0.35585],
+  B:    [0.99072, 1.00000, 0.85223],
+  C:    [0.98074, 1.00000, 1.18232],
+  D50:  [0.96422, 1.00000, 0.82521],
+  D55:  [0.95682, 1.00000, 0.92149],
+  D65:  [0.95047, 1.00000, 1.08883],
+  D75:  [0.94972, 1.00000, 1.22638],
+  E:    [1.00000, 1.00000, 1.00000],
+  F2:   [0.99186, 1.00000, 0.67393],
+  F7:   [0.95041, 1.00000, 1.08747],
+  F11:  [1.00962, 1.00000, 0.64350],
+};
+
+// ═══════════════════════════════════════════════════════════════
+// RGB WORKING SPACES: [Xr,Yr,Zr, Xg,Yg,Zg, Xb,Yb,Zb, refWhite, gamma]
+// Primaries in xyY; we store full M_RGB→XYZ
+// ═══════════════════════════════════════════════════════════════
+const RGB_MODELS = {
+  sRGB:         { white: 'D65', gamma: 'sRGB',
+    M: [[0.4124564,0.3575761,0.1804375],[0.2126729,0.7151522,0.0721750],[0.0193339,0.1191920,0.9503041]] },
+  AdobeRGB:     { white: 'D65', gamma: 2.2,
+    M: [[0.5767309,0.1855540,0.1881852],[0.2973769,0.6273491,0.0752741],[0.0270343,0.0706872,0.9911085]] },
+  AppleRGB:     { white: 'D65', gamma: 1.8,
+    M: [[0.4497288,0.3162486,0.1844926],[0.2446525,0.6720283,0.0833192],[0.0251848,0.1411824,0.9224628]] },
+  BestRGB:      { white: 'D50', gamma: 2.2,
+    M: [[0.6326696,0.2045558,0.1269946],[0.2284569,0.7373523,0.0341908],[0.0000000,0.0095142,0.8156958]] },
+  BetaRGB:      { white: 'D50', gamma: 2.2,
+    M: [[0.6712537,0.1745834,0.1183829],[0.3032726,0.6637861,0.0329413],[0.0000000,0.0407010,0.7845090]] },
+  BruceRGB:     { white: 'D65', gamma: 2.2,
+    M: [[0.4674162,0.2944512,0.1886026],[0.2410115,0.6835475,0.0754410],[0.0219101,0.0736128,0.9933071]] },
+  CIERGB:       { white: 'E',   gamma: 2.2,
+    M: [[0.4887180,0.3106803,0.2006017],[0.1762044,0.8129847,0.0108109],[0.0000000,0.0102048,0.9897952]] },
+  ColorMatchRGB:{ white: 'D50', gamma: 1.8,
+    M: [[0.5093439,0.3209071,0.1339691],[0.2748840,0.6581315,0.0669845],[0.0242545,0.1087821,0.6921735]] },
+  DonRGB4:      { white: 'D50', gamma: 2.2,
+    M: [[0.6457711,0.1933511,0.1250978],[0.2783496,0.6879702,0.0336802],[0.0037113,0.0179861,0.8035125]] },
+  ECIRRGB:      { white: 'D50', gamma: 'L*',
+    M: [[0.6502043,0.1780774,0.1359384],[0.3202499,0.6020711,0.0776791],[0.0000000,0.0678390,0.7573710]] },
+  EktaSpacePS5: { white: 'D50', gamma: 2.2,
+    M: [[0.5938914,0.2729801,0.0973485],[0.2606888,0.7349649,0.0043463],[0.0000000,0.0419969,0.7832131]] },
+  NTSCRGB:      { white: 'C',   gamma: 2.2,
+    M: [[0.6068909,0.1735011,0.2003480],[0.2989164,0.5865990,0.1144845],[0.0000000,0.0660957,1.1162243]] },
+  PALSECAMRGB:  { white: 'D65', gamma: 2.2,
+    M: [[0.4306190,0.3415419,0.1783091],[0.2220379,0.7066384,0.0713236],[0.0201853,0.1295504,0.9390944]] },
+  ProPhotoRGB:  { white: 'D50', gamma: 1.8,
+    M: [[0.7976749,0.1351917,0.0313534],[0.2880402,0.7118741,0.0000857],[0.0000000,0.0000000,0.8252100]] },
+  SMPTECRGB:    { white: 'D65', gamma: 2.2,
+    M: [[0.3935891,0.3652497,0.1916313],[0.2124132,0.7010437,0.0865432],[0.0187423,0.1119313,0.9581915]] },
+  WideGamutRGB: { white: 'D50', gamma: 2.2,
+    M: [[0.7161046,0.1009296,0.1471858],[0.2581874,0.7249378,0.0168748],[0.0000000,0.0517813,0.7734287]] },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// MATRIX HELPERS
+// ═══════════════════════════════════════════════════════════════
+function matMul3(M, v) {
+  return [
+    M[0][0]*v[0] + M[0][1]*v[1] + M[0][2]*v[2],
+    M[1][0]*v[0] + M[1][1]*v[1] + M[1][2]*v[2],
+    M[2][0]*v[0] + M[2][1]*v[1] + M[2][2]*v[2],
+  ];
+}
+
+function inv3(m) {
+  const det = m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
+             -m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
+             +m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+  const inv = 1/det;
+  return [
+    [(m[1][1]*m[2][2]-m[1][2]*m[2][1])*inv, (m[0][2]*m[2][1]-m[0][1]*m[2][2])*inv, (m[0][1]*m[1][2]-m[0][2]*m[1][1])*inv],
+    [(m[1][2]*m[2][0]-m[1][0]*m[2][2])*inv, (m[0][0]*m[2][2]-m[0][2]*m[2][0])*inv, (m[0][2]*m[1][0]-m[0][0]*m[1][2])*inv],
+    [(m[1][0]*m[2][1]-m[1][1]*m[2][0])*inv, (m[0][1]*m[2][0]-m[0][0]*m[2][1])*inv, (m[0][0]*m[1][1]-m[0][1]*m[1][0])*inv],
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHROMATIC ADAPTATION (Bradford, von Kries, XYZ Scaling)
+// ═══════════════════════════════════════════════════════════════
+const MA_Bradford = [
+  [ 0.8951,  0.2664, -0.1614],
+  [-0.7502,  1.7135,  0.0367],
+  [ 0.0389, -0.0685,  1.0296],
+];
+const MA_vonKries = [
+  [ 0.40024,  0.70760, -0.08081],
+  [-0.22630,  1.16532,  0.04570],
+  [ 0.00000,  0.00000,  0.91822],
+];
+const MA_XYZ = [[1,0,0],[0,1,0],[0,0,1]];
+
+function getChromaticAdaptationMatrix(ws, wd, method) {
+  const MA = method === 'Bradford' ? MA_Bradford : method === 'vonKries' ? MA_vonKries : MA_XYZ;
+  const MAi = inv3(MA);
+  const cs = matMul3(MA, ws);
+  const cd = matMul3(MA, wd);
+  const scale = [[cd[0]/cs[0],0,0],[0,cd[1]/cs[1],0],[0,0,cd[2]/cs[2]]];
+  // M = MAi * scale * MA
+  const t = [
+    [scale[0][0]*MA[0][0] + scale[0][1]*MA[1][0] + scale[0][2]*MA[2][0],
+     scale[0][0]*MA[0][1] + scale[0][1]*MA[1][1] + scale[0][2]*MA[2][1],
+     scale[0][0]*MA[0][2] + scale[0][1]*MA[1][2] + scale[0][2]*MA[2][2]],
+    [scale[1][0]*MA[0][0] + scale[1][1]*MA[1][0] + scale[1][2]*MA[2][0],
+     scale[1][0]*MA[0][1] + scale[1][1]*MA[1][1] + scale[1][2]*MA[2][1],
+     scale[1][0]*MA[0][2] + scale[1][1]*MA[1][2] + scale[1][2]*MA[2][2]],
+    [scale[2][0]*MA[0][0] + scale[2][1]*MA[1][0] + scale[2][2]*MA[2][0],
+     scale[2][0]*MA[0][1] + scale[2][1]*MA[1][1] + scale[2][2]*MA[2][1],
+     scale[2][0]*MA[0][2] + scale[2][1]*MA[1][2] + scale[2][2]*MA[2][2]],
+  ];
+  return [
+    [MAi[0][0]*t[0][0]+MAi[0][1]*t[1][0]+MAi[0][2]*t[2][0],
+     MAi[0][0]*t[0][1]+MAi[0][1]*t[1][1]+MAi[0][2]*t[2][1],
+     MAi[0][0]*t[0][2]+MAi[0][1]*t[1][2]+MAi[0][2]*t[2][2]],
+    [MAi[1][0]*t[0][0]+MAi[1][1]*t[1][0]+MAi[1][2]*t[2][0],
+     MAi[1][0]*t[0][1]+MAi[1][1]*t[1][1]+MAi[1][2]*t[2][1],
+     MAi[1][0]*t[0][2]+MAi[1][1]*t[1][2]+MAi[1][2]*t[2][2]],
+    [MAi[2][0]*t[0][0]+MAi[2][1]*t[1][0]+MAi[2][2]*t[2][0],
+     MAi[2][0]*t[0][1]+MAi[2][1]*t[1][1]+MAi[2][2]*t[2][1],
+     MAi[2][0]*t[0][2]+MAi[2][1]*t[1][2]+MAi[2][2]*t[2][2]],
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GAMMA COMPANDING
+// ═══════════════════════════════════════════════════════════════
+function linearToGamma(v, gamma) {
+  // keep out-of-gamut values stable
+  if (v < 0) return 0;
+
+  if (gamma === 'sRGB') {
+    return v <= 0.0031308
+      ? 12.92 * v
+      : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+  } else if (gamma === 'L*') {
+    return v <= 0.008856
+      ? 9.033 * v
+      : 1.16 * Math.pow(v, 1 / 3) - 0.16;
+  }
+
+  return Math.pow(v, 1 / gamma);
+}
+
+function clamp01(v) {
+  return Math.min(1, Math.max(0, v));
+}
+
+function gammaToLinear(v, gamma) {
+  if (gamma === 'sRGB') {
+    return v <= 0.04045 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+  } else if (gamma === 'L*') {
+    return v <= 0.08 ? v/9.033 : Math.pow((v+0.16)/1.16, 3);
+  }
+  return Math.pow(Math.max(0, v), gamma);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CIE HELPER CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const e = 0.008856; // actual: 216/24389
+const k = 903.3;   // actual: 24389/27
+
+function f(t) { return t > e ? Math.cbrt(t) : (k*t + 16)/116; }
+function finv(t) { return t > 0.206897 ? t*t*t : (116*t-16)/k; }
+
+// ═══════════════════════════════════════════════════════════════
+// CONVERSION FUNCTIONS  (all using XYZ as hub, Yn=1.0)
+// ═══════════════════════════════════════════════════════════════
+function XYZ_to_xyY(X,Y,Z, Xn,Yn,Zn) {
+  const s = X+Y+Z;
+  if (s < 1e-10) return [Xn/(Xn+Yn+Zn), Yn/(Xn+Yn+Zn), Y];
+  return [X/s, Y/s, Y];
+}
+function xyY_to_XYZ(x,y,Y) {
+  if (Math.abs(y) < 1e-10) return [0,0,0];
+  return [x*Y/y, Y, (1-x-y)*Y/y];
+}
+function XYZ_to_Lab(X,Y,Z, Xn,Yn,Zn) {
+  const fx=f(X/Xn), fy=f(Y/Yn), fz=f(Z/Zn);
+  return [116*fy-16, 500*(fx-fy), 200*(fy-fz)];
+}
+function Lab_to_XYZ(L,a,b, Xn,Yn,Zn) {
+  const fy=(L+16)/116;
+  return [Xn*finv(fy+a/500), Yn*finv(fy), Zn*finv(fy-b/200)];
+}
+function Lab_to_LCH(L,a,b) {
+  const C=Math.sqrt(a*a+b*b);
+  let H=Math.atan2(b,a)*180/Math.PI;
+  if (H<0) H+=360;
+  return [L,C,H];
+}
+function LCH_to_Lab(L,C,H) {
+  const r=H*Math.PI/180;
+  return [L, C*Math.cos(r), C*Math.sin(r)];
+}
+function XYZ_to_Luv(X,Y,Z, Xn,Yn,Zn) {
+  function uv(x,y,z){ const d=x+15*y+3*z; return d<1e-10 ? [0,0] : [4*x/d, 9*y/d]; }
+  const [un,vn]=uv(Xn,Yn,Zn);
+  const [up,vp]=uv(X,Y,Z);
+  const yr=Y/Yn;
+  const L = yr>e ? 116*Math.cbrt(yr)-16 : k*yr;
+  return [L, 13*L*(up-un), 13*L*(vp-vn)];
+}
+function Luv_to_XYZ(L,u,v, Xn,Yn,Zn) {
+  const d=Xn+15*Yn+3*Zn;
+  const un=4*Xn/d, vn=9*Yn/d;
+  const Y = L>8 ? Yn*Math.pow((L+16)/116,3) : Yn*L/k;
+  if (Math.abs(L)<1e-10) return [0,0,0];
+  const up = u/(13*L) + un;
+  const vp = v/(13*L) + vn;
+  const X = Y*9*up/(4*vp);
+  const Z = Y*(12-3*up-20*vp)/(4*vp);
+  return [X,Y,Z];
+}
+
+// ─── Color Temperature ───────────────────────────────────────
+// Robertson's method XYZ→CCT and Kang 2002 CCT→xy
+const ROBERTSON = [
+  {r:0, t:1/0,    u:0.18006, v:0.26352, du:-0.24341, dv:0.87568},
+  {r:10,t:100000, u:0.18066, v:0.26589, du:-0.25479, dv:0.85832},
+  {r:20,t:50000,  u:0.18133, v:0.26846, du:-0.26876, dv:0.83734},
+  {r:30,t:33333,  u:0.18208, v:0.27119, du:-0.28539, dv:0.81340},
+  {r:40,t:25000,  u:0.18293, v:0.27407, du:-0.30470, dv:0.78672},
+  {r:50,t:20000,  u:0.18388, v:0.27709, du:-0.32675, dv:0.75738},
+  {r:60,t:16667,  u:0.18494, v:0.28021, du:-0.35156, dv:0.72522},
+  {r:70,t:14286,  u:0.18611, v:0.28342, du:-0.37915, dv:0.69007},
+  {r:80,t:12500,  u:0.18740, v:0.28668, du:-0.40955, dv:0.65183},
+  {r:90,t:11111,  u:0.18880, v:0.28997, du:-0.44278, dv:0.61040},
+  {r:100,t:10000, u:0.19032, v:0.29326, du:-0.47888, dv:0.56567},
+  {r:125,t:8000,  u:0.19462, v:0.30141, du:-0.58204, dv:0.44999},
+  {r:150,t:6667,  u:0.19962, v:0.30921, du:-0.70471, dv:0.30955},
+  {r:175,t:5714,  u:0.20525, v:0.31647, du:-0.84901, dv:0.14462},
+  {r:200,t:5000,  u:0.21142, v:0.32312, du:-1.01248, dv:-0.04231},
+  {r:225,t:4444,  u:0.21807, v:0.32909, du:-1.18864, dv:-0.24787},
+  {r:250,t:4000,  u:0.22511, v:0.33439, du:-1.36092, dv:-0.45637},
+  {r:275,t:3636,  u:0.23247, v:0.33904, du:-1.51616, dv:-0.66264},
+  {r:300,t:3333,  u:0.24010, v:0.34308, du:-1.64776, dv:-0.85691},
+  {r:325,t:3077,  u:0.24792, v:0.34655, du:-1.74860, dv:-1.02931},
+  {r:350,t:2857,  u:0.25591, v:0.34951, du:-1.82307, dv:-1.17219},
+  {r:375,t:2667,  u:0.26400, v:0.35200, du:-1.86774, dv:-1.28051},
+  {r:400,t:2500,  u:0.27218, v:0.35407, du:-1.88578, dv:-1.34957},
+  {r:425,t:2353,  u:0.28039, v:0.35577, du:-1.87544, dv:-1.37668},
+  {r:450,t:2222,  u:0.28863, v:0.35714, du:-1.83048, dv:-1.36938},
+  {r:475,t:2105,  u:0.29685, v:0.35823, du:-1.75323, dv:-1.32528},
+  {r:500,t:2000,  u:0.30505, v:0.35907, du:-1.64628, dv:-1.25252},
+  {r:525,t:1905,  u:0.31320, v:0.35968, du:-1.51520, dv:-1.15420},
+  {r:550,t:1818,  u:0.32129, v:0.36011, du:-1.36350, dv:-1.03027},
+  {r:575,t:1739,  u:0.32931, v:0.36038, du:-1.19820, dv:-0.88966},
+  {r:600,t:1667,  u:0.33724, v:0.36051, du:-1.02635, dv:-0.74244},
+];
+
+function XYZ_to_CCT(X,Y,Z) {
+  const denom = X+15*Y+3*Z;
+  if (denom < 1e-10) return null;
+  const up=4*X/denom, vp=6*Y/denom;
+  let di=0, last=null;
+  for (let i=0; i<ROBERTSON.length-1; i++) {
+    const {u,v,du,dv} = ROBERTSON[i];
+    const {u:u2,v:v2,du:du2,dv:dv2} = ROBERTSON[i+1];
+    const d1 = ((vp-v)*du-(up-u)*dv) / Math.sqrt(du*du+dv*dv);
+    const d2 = ((vp-v2)*du2-(up-u2)*dv2) / Math.sqrt(du2*du2+dv2*dv2);
+    if (last !== null && last*d1 < 0) {
+      return Math.round(1e6*ROBERTSON[i].r/(1e6*ROBERTSON[i].r/ROBERTSON[i].t +
+        (d1/(d1-last))*( 1e6*ROBERTSON[i].r/ROBERTSON[i-1].t - 1e6*ROBERTSON[i].r/ROBERTSON[i].t)));
+    }
+    last = d1;
+    if (i===0 && d1 > 0) return null;
+  }
+  return null;
+}
+
+function CCT_to_xy(T) {
+  // Extended valid range: 1667K – 25000K
+  if (T < 1667 || T > 25000) return null;
+
+  let x;
+
+  // McCamy / Hernandez-Andres approximation
+  if (T >= 1667 && T <= 4000) {
+    x =
+      -0.2661239e9 / (T*T*T) -
+      0.2343580e6 / (T*T) +
+      0.8776956e3 / T +
+      0.179910;
+  } else {
+    x =
+      -3.0258469e9 / (T*T*T) +
+      2.1070379e6 / (T*T) +
+      0.2226347e3 / T +
+      0.240390;
+  }
+
+  let y;
+
+  if (T >= 1667 && T <= 2222) {
+    y =
+      -1.1063814 * (x*x*x) -
+      1.34811020 * (x*x) +
+      2.18555832 * x -
+      0.20219683;
+  } else if (T > 2222 && T <= 4000) {
+    y =
+      -0.9549476 * (x*x*x) -
+      1.37418593 * (x*x) +
+      2.09137015 * x -
+      0.16748867;
+  } else {
+    y =
+      3.0817580 * (x*x*x) -
+      5.87338670 * (x*x) +
+      3.75112997 * x -
+      0.37001483;
+  }
+
+  return [x, y];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROW DEFINITIONS
+// ═══════════════════════════════════════════════════════════════
+const ROWS = [
+  { id:'XYZ',     label:'XYZ',        fields:['X','Y','Z'] },
+  { id:'xyY',     label:'xyY',        fields:['x','y','Y'] },
+  { id:'Lab',     label:'L*a*b*',     fields:['L*','a*','b*'] },
+  { id:'Luv',     label:'L*u*v*',     fields:['L*','u*','v*'] },
+  { id:'RGB',     label:'RGB',        fields:['R','G','B'] },
+  { id:'CCT',     label:'Color Temp', fields:['CCT (K: 2700–25000)','',''] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD TABLE
+// ═══════════════════════════════════════════════════════════════
+const tbody = document.getElementById('tableBody');
+ROWS.forEach(row => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <button class="row-btn" data-row="${row.id}">${row.label}</button>
+    </td>
+    ${row.fields.map((f,i) => `
+      <td>
+        ${f ? `<input class="val-input" data-row="${row.id}" data-idx="${i}" placeholder="${f}" type="number" step="any">` : '<span style="color:var(--text-muted);font-size:11px">—</span>'}
+      </td>
+    `).join('')}
+  `;
+  tbody.appendChild(tr);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let stale = false;
+function setStale(v) {
+  stale = v;
+  document.getElementById('staleNote').classList.toggle('visible', v);
+}
+
+function getRefWhite() { return REF_WHITES[document.getElementById('refWhite').value]; }
+function getRGBModel() {
+  const v = document.getElementById('rgbModel').value;
+  return RGB_MODELS[v] || RGB_MODELS['sRGB'];
+}
+function getAdaptation() { return document.getElementById('adaptation').value; }
+function getEffectiveGamma() {
+  const g = document.getElementById('gamma').value;
+  if (g === 'native') return getRGBModel().gamma;
+  if (g === '1.0') return 1.0;
+  if (g === '1.8') return 1.8;
+  if (g === '2.2') return 2.2;
+  return 'sRGB';
+}
+function scaleXYZ() { return document.getElementById('scaleXYZ').checked; }
+function scaleRGB() { return document.getElementById('scaleRGB').checked; }
+
+function getInput(rowId, idx) {
+  const el = document.querySelector(`[data-row="${rowId}"][data-idx="${idx}"]`);
+  if (!el) return 0;
+  const v = parseFloat(el.value);
+  return isNaN(v) ? 0 : v;
+}
+
+function setOutput(rowId, idx, value) {
+  const el = document.querySelector(`[data-row="${rowId}"][data-idx="${idx}"]`);
+  if (!el) return;
+
+  if (value === null || isNaN(value) || !isFinite(value)) {
+    el.value = '';
+    return;
+  }
+
+  // RGB scaled to 0-255 -> integer values
+  if (rowId === 'RGB' && scaleRGB()) {
+    el.value = Math.round(value);
+    return;
+  }
+
+  // XYZ or Y in xyY scaled to 0-100
+  if ((rowId === 'XYZ' || (rowId === 'xyY' && idx === 2)) && scaleXYZ()) {
+    el.value = parseFloat(value.toFixed(2));
+    return;
+  }
+
+  // Other values
+  el.value = parseFloat(value.toFixed(6));
+}
+
+function clearRow(rowId) {
+  [0,1,2].forEach(i => {
+    const el = document.querySelector(`[data-row="${rowId}"][data-idx="${i}"]`);
+    if (el) el.value = '';
+  });
+}
+
+function clearAll() {
+  ROWS.forEach(r => clearRow(r.id));
+  setStale(false);
+  updateSwatch(null);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN CONVERT
+// ═══════════════════════════════════════════════════════════════
+function convert(sourceRow) {
+  const [Xn,Yn,Zn] = getRefWhite();
+  const model = getRGBModel();
+  const adaptation = getAdaptation();
+  const gamma = getEffectiveGamma();
+  const xyzOutputScale = scaleXYZ() ? 100 : 1;
+  const rgbOutputScale = scaleRGB() ? 255 : 1;
+
+  // internal engine always works in 0..1 XYZ space
+  const xyzInputScale = scaleXYZ() ? 100 : 1;
+  const rgbInputScale = scaleRGB() ? 255 : 1;
+
+  let X, Y, Z;
+
+  // --- Step 1: source → XYZ ---
+  if (sourceRow === 'XYZ') {
+    X = getInput('XYZ',0)/xyzInputScale;
+    Y = getInput('XYZ',1)/xyzInputScale;
+    Z = getInput('XYZ',2)/xyzInputScale;
+  } else if (sourceRow === 'xyY') {
+    const x=getInput('xyY',0), y=getInput('xyY',1), Yv=getInput('xyY',2)/xyzInputScale;
+    [X,Y,Z] = xyY_to_XYZ(x, y, Yv);
+  } else if (sourceRow === 'Lab') {
+    const [L,a,b]=[getInput('Lab',0),getInput('Lab',1),getInput('Lab',2)];
+    [X,Y,Z] = Lab_to_XYZ(L,a,b, Xn,Yn,Zn);
+  } else if (sourceRow === 'Luv') {
+    const [L,u,v]=[getInput('Luv',0),getInput('Luv',1),getInput('Luv',2)];
+    [X,Y,Z] = Luv_to_XYZ(L,u,v, Xn,Yn,Zn);
+  } else if (sourceRow === 'RGB') {
+    let R=getInput('RGB',0)/rgbInputScale, G=getInput('RGB',1)/rgbInputScale, Bv=getInput('RGB',2)/rgbInputScale;
+    // linear
+    R = gammaToLinear(R, gamma);
+    G = gammaToLinear(G, gamma);
+    Bv= gammaToLinear(Bv, gamma);
+    // RGB model white
+    const ws = REF_WHITES[model.white];
+    const wd = [Xn,Yn,Zn];
+    let rgb_xyz = [
+      model.M[0][0]*R + model.M[0][1]*G + model.M[0][2]*Bv,
+      model.M[1][0]*R + model.M[1][1]*G + model.M[1][2]*Bv,
+      model.M[2][0]*R + model.M[2][1]*G + model.M[2][2]*Bv,
+    ];
+    // adapt if white differs
+    if (model.white !== document.getElementById('refWhite').value && adaptation !== 'None') {
+      const AM = getChromaticAdaptationMatrix(ws, wd, adaptation);
+      rgb_xyz = matMul3(AM, rgb_xyz);
+    }
+    [X,Y,Z] = rgb_xyz;
+  } else if (sourceRow === 'CCT') {
+    const T = getInput('CCT',0);
+    const xy = CCT_to_xy(T);
+    if (!xy) { clearAll(); return; }
+    const [xc,yc] = xy;
+    [X,Y,Z] = xyY_to_XYZ(xc, yc, 1.0);
+  }
+
+  // --- Step 2: XYZ → all ---
+  // XYZ
+  if (sourceRow !== 'XYZ') {
+    setOutput('XYZ',0, X*xyzOutputScale);
+    setOutput('XYZ',1, Y*xyzOutputScale);
+    setOutput('XYZ',2, Z*xyzOutputScale);
+  }
+
+  // xyY
+  if (sourceRow !== 'xyY') {
+    const [xo,yo,Yo] = XYZ_to_xyY(X,Y,Z, Xn,Yn,Zn);
+    setOutput('xyY',0, xo);
+    setOutput('xyY',1, yo);
+    setOutput('xyY',2, Yo*xyzOutputScale);
+  }
+
+  // Lab
+  const [L,a,b] = XYZ_to_Lab(X,Y,Z, Xn,Yn,Zn);
+  if (sourceRow !== 'Lab') {
+    setOutput('Lab',0,L); setOutput('Lab',1,a); setOutput('Lab',2,b);
+  }
+
+  
+
+  // Luv
+  const [Luv_L,u,v] = XYZ_to_Luv(X,Y,Z, Xn,Yn,Zn);
+  if (sourceRow !== 'Luv') {
+    setOutput('Luv',0,Luv_L); setOutput('Luv',1,u); setOutput('Luv',2,v);
+  }
+
+  
+
+  // RGB
+  if (sourceRow !== 'RGB') {
+    const ws = [Xn,Yn,Zn];
+    const wd = REF_WHITES[model.white];
+    let xyz = [X,Y,Z];
+    if (model.white !== document.getElementById('refWhite').value && adaptation !== 'None') {
+      const AM = getChromaticAdaptationMatrix(ws, wd, adaptation);
+      xyz = matMul3(AM, xyz);
+    }
+    const Mi = inv3(model.M);
+    let Rl = Mi[0][0]*xyz[0]+Mi[0][1]*xyz[1]+Mi[0][2]*xyz[2];
+    let Gl = Mi[1][0]*xyz[0]+Mi[1][1]*xyz[1]+Mi[1][2]*xyz[2];
+    let Bl = Mi[2][0]*xyz[0]+Mi[2][1]*xyz[1]+Mi[2][2]*xyz[2];
+    // Clamp out-of-gamut linear RGB before gamma companding
+    Rl = clamp01(Rl);
+    Gl = clamp01(Gl);
+    Bl = clamp01(Bl);
+
+    const Rc = linearToGamma(Rl, gamma);
+    const Gc = linearToGamma(Gl, gamma);
+    const Bc = linearToGamma(Bl, gamma);
+    setOutput('RGB',0, Rc*rgbOutputScale);
+    setOutput('RGB',1, Gc*rgbOutputScale);
+    setOutput('RGB',2, Bc*rgbOutputScale);
+
+    // swatch (clamp to [0,1])
+    updateSwatch([Math.max(0,Math.min(1,Rc)), Math.max(0,Math.min(1,Gc)), Math.max(0,Math.min(1,Bc))]);
+  } else {
+    // compute swatch from RGB source
+    const Rc=getInput('RGB',0)/rgbInputScale, Gc=getInput('RGB',1)/rgbInputScale, Bc=getInput('RGB',2)/rgbInputScale;
+    updateSwatch([Math.max(0,Math.min(1,Rc)), Math.max(0,Math.min(1,Gc)), Math.max(0,Math.min(1,Bc))]);
+  }
+
+  // CCT
+  if (sourceRow !== 'CCT') {
+
+    const cctInput = document.querySelector('[data-row="CCT"][data-idx="0"]');
+
+    // obliczenie chromatyczności xy
+    const sum = X + Y + Z;
+
+    if (sum > 1e-10) {
+
+      const x = X / sum;
+      const y = Y / sum;
+
+      // standardowe CCT
+      const cct = XYZ_to_CCT(X, Y, Z);
+
+      // ─────────────────────────────────────────
+      // DETEKCJA PRZYBLIŻONEGO CCT
+      // ─────────────────────────────────────────
+
+      let warning = false;
+
+      // skrajne chromatyczności
+      if (
+        x < 0.20 || x > 0.45 ||
+        y < 0.20 || y > 0.45
+      ) {
+        warning = true;
+      }
+
+      // pobierz aktualny RGB
+      const rgbR = parseFloat(document.querySelector('[data-row="RGB"][data-idx="0"]')?.value || 0);
+      const rgbG = parseFloat(document.querySelector('[data-row="RGB"][data-idx="1"]')?.value || 0);
+      const rgbB = parseFloat(document.querySelector('[data-row="RGB"][data-idx="2"]')?.value || 0);
+
+      const rgbScale = scaleRGB() ? 255 : 1;
+
+      const r = rgbR / rgbScale;
+      const g = rgbG / rgbScale;
+      const b = rgbB / rgbScale;
+
+      const maxRGB = Math.max(r, g, b);
+      const minRGB = Math.min(r, g, b);
+      const saturation = maxRGB - minRGB;
+
+      // mocno nasycone kolory = przybliżone CCT
+      if (saturation > 0.55) {
+        warning = true;
+      }
+
+      // ─────────────────────────────────────────
+
+      if (cct !== null && isFinite(cct)) {
+
+        cctInput.value = warning
+          ? `${Math.round(cct)} ⚠`
+          : `${Math.round(cct)}`;
+
+      } else {
+
+        cctInput.value = '— ⚠';
+
+      }
+
+    } else {
+
+      cctInput.value = '';
+
+    }
+  }
+
+  setStale(false);
+  // highlight active
+  document.querySelectorAll('.row-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.row-btn[data-row="${sourceRow}"]`).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SWATCH
+// ═══════════════════════════════════════════════════════════════
+function updateSwatch(rgb) {
+  const swatch = document.getElementById('colorSwatch');
+  const hexEl = document.getElementById('hexDisplay');
+  const rgbEl = document.getElementById('rgbDisplay');
+  if (!rgb) {
+    swatch.style.background = '#333';
+    hexEl.textContent = '—';
+    rgbEl.textContent = '';
+    return;
+  }
+  const [r,g,b] = rgb;
+  const ri = Math.round(r*255), gi = Math.round(g*255), bi = Math.round(b*255);
+  const hex = '#' + [ri,gi,bi].map(x=>x.toString(16).padStart(2,'0')).join('');
+  swatch.style.background = hex;
+  hexEl.textContent = hex.toUpperCase();
+  rgbEl.textContent = `RGB: ${ri}, ${gi}, ${bi}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════════════════════════
+document.querySelectorAll('.row-btn').forEach(btn => {
+  btn.addEventListener('click', () => convert(btn.dataset.row));
+});
+document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+// Settings change → mark stale
+['refWhite','rgbModel','adaptation','gamma','scaleXYZ','scaleRGB'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    setStale(true);
+    // update RGB model white label
+    const m = getRGBModel();
+    document.getElementById('rgbModelWhite').textContent = 'Ref: ' + m.white;
+  });
+});
+
+// Allow Enter on inputs
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const focused = document.activeElement;
+    if (focused && focused.dataset.row) {
+      convert(focused.dataset.row);
+    }
+  }
+});
+
+// ── Init ──
+document.getElementById('rgbModelWhite').textContent = 'Ref: ' + getRGBModel().white;
+</script>
+<script>
+function exportToPDF() {
+  const g = id => { const el = document.getElementById(id); return el ? el.textContent.trim() : '—'; };
+  
+  // Get CCT from the CCT input row
+  let cct = '—';
+  const cctInput = document.querySelector('[data-row="CCT"][data-idx="0"]');
+  if (cctInput && cctInput.value) cct = cctInput.value + ' K';
+  
+  // Get hex + rgb from swatch panel
+  const hexEl = document.getElementById('hexDisplay');
+  const hex = hexEl ? hexEl.textContent.trim() : '—';
+  const rgbEl = document.getElementById('rgbDisplay');
+  const rgb = rgbEl ? rgbEl.textContent.trim() : '—';
+
+  // Build swatch image from colorSwatch div background color
+  let chartImage = null;
+  try {
+    const swatchDiv = document.getElementById('colorSwatch');
+    const swatchColor = swatchDiv ? swatchDiv.style.background || swatchDiv.style.backgroundColor : null;
+    const hexColor = hex !== '—' ? hex : (swatchColor || '#808080');
+    // Draw on offscreen canvas
+    const cv = document.createElement('canvas');
+    cv.width = 560; cv.height = 120;
+    const ctx2d = cv.getContext('2d');
+    // Background
+    ctx2d.fillStyle = '#ffffff';
+    ctx2d.fillRect(0, 0, 560, 120);
+    // Colour swatch block
+    ctx2d.fillStyle = hexColor;
+    ctx2d.beginPath();
+    ctx2d.roundRect(12, 12, 200, 96, 8);
+    ctx2d.fill();
+    // Labels
+    ctx2d.fillStyle = '#1a1c24';
+    ctx2d.font = 'bold 22px Space Mono, monospace';
+    ctx2d.fillText(hexColor.toUpperCase(), 228, 46);
+    ctx2d.fillStyle = '#4e5668';
+    ctx2d.font = '13px Space Mono, monospace';
+    ctx2d.fillText(rgb, 228, 72);
+    if (cct !== '—') {
+      ctx2d.fillStyle = '#8b15ba';
+      ctx2d.font = 'bold 13px Space Mono, monospace';
+      ctx2d.fillText('CCT: ' + cct, 228, 96);
+    }
+    chartImage = cv.toDataURL('image/png');
+  } catch(e) {}
+
+  const payload = {
+    source: 'CC',
+    title: 'Colour Calculator',
+    data: {
+      x: g('res-x'),
+      y: g('res-y'),
+      z: g('res-z'),
+      lm: g('res-lm'),
+      cct,
+      hex,
+      rgb,
+      chartImage,
+    }
+  };
+  window.parent.postMessage({type:'LED_TOOLS_EXPORT', payload}, '*');
+}
+</script>
+
+<script>
+// Listen for trigger from parent relay
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'LED_TOOLS_TRIGGER_EXPORT') {
+    if (typeof exportToPDF === 'function') exportToPDF();
+  }
+});
+</script>
+<style>
+/* ── Suite light theme (purple accents preserved) — injected ── */
+body.light {
+  --bg: #f4f4f7;
+  --surface: #ffffff;
+  --border: #d6d8de;
+  --accent: #8b15ba;
+  --text: #1a1a1c;
+  --muted: #8c8c94;
+  --surface2: #eef0f3;
+  --accent2: #6e10a0;
+  --canvas-bg: #dcdce2;
+  --input-bg: #ffffff;
+  --input-border: #d6d8de;
+  --border-light: #c4c6ce;
+}
+</style>
+<script>
+/* Suite-wide theme listener (shell broadcasts + shared localStorage) */
+(function(){
+  var __at=null; function applyTheme(light){ if(!document.body) return; document.documentElement.classList.add('theme-anim'); document.body.classList.add('theme-anim'); document.body.classList.toggle('light', !!light); clearTimeout(__at); __at=setTimeout(function(){document.documentElement.classList.remove('theme-anim'); document.body.classList.remove('theme-anim');},950); }
+  function readLS(){ try { return localStorage.getItem('suite-theme')==='light'; } catch(e){ return false; } }
+  applyTheme(readLS());
+  document.addEventListener('DOMContentLoaded', function(){ applyTheme(readLS()); });
+  window.addEventListener('message', function(ev){
+    if(ev.data && ev.data.type==='suite-theme'){ if(!ev.data.noToggle) applyTheme(ev.data.light); }
+  });
+})();
+</script>
+
+<script>
+/* ── Import danych ze Spectral Analyzer (ostatnia/maks. dana → tabela xyY) ── */
+(function(){
+  var lastTs = null;
+  function importXYY(p){
+    if(!p || (p.x==null && p.y==null)) return;
+    var set=function(idx,v){ var el=document.querySelector('[data-row="xyY"][data-idx="'+idx+'"]'); if(el && v!=null && v!=='') el.value=v; };
+    set(0,p.x); set(1,p.y); if(p.Y!=null && p.Y!=='') set(2,p.Y);
+    try{ if(typeof convert==='function') convert('xyY'); }catch(e){}
+  }
+  function consume(p){ if(p && p.target==='colorCalculator' && p.ts!==lastTs){ lastTs=p.ts; importXYY(p); } }
+  function fromLS(){ try{ return JSON.parse(localStorage.getItem('spectral_incoming')||'null'); }catch(e){ return null; } }
+  window.addEventListener('message', function(ev){
+    if(ev.data && ev.data.type==='spectral-incoming') consume(ev.data.payload || fromLS());
+  });
+  consume(fromLS());
+})();
+</script>
+</body>
+</html>

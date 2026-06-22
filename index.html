@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Display Calibration Suite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #080808;
+      --surface: #0f0f0f;
+      --surface2: #141414;
+      --border:  #1e1e1e;
+      --accent:  #8b15ba;
+      --accent-soft: rgba(139,21,186,0.12);
+      --accent3: #33ff33;
+      --warn:    #ff9100;
+      --danger:  #ff3b3b;
+      --text:    #e0e0e0;
+      --muted:   #555555;
+      --text2:   #777777;
+      --text3:   #3a3a3a;
+      --mono: 'Share Tech Mono', monospace;
+      --sans: 'Rajdhani', sans-serif;
+      --radius: 10px;
+    }
+    body.light {
+      --bg:      #f4f4f7;
+      --surface: #ffffff;
+      --surface2: #eef0f3;
+      --border:  #d6d8de;
+      --accent:  #8b15ba;
+      --accent-soft: rgba(139,21,186,0.10);
+      --accent3: #1a9e1a;
+      --warn:    #d97500;
+      --danger:  #d12b2b;
+      --text:    #1a1a1c;
+      --muted:   #8c8c94;
+      --text2:   #62626a;
+      --text3:   #b4b4bc;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: none; }
+    ::-webkit-scrollbar { display: none; }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      overflow-x: hidden;
+    }
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* technical grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* full-window veil for the theme crossfade — sits above everything */
+    #theme-veil {
+      position: fixed; inset: 0; z-index: 100000;
+      pointer-events: none; opacity: 0; background: var(--bg);
+      will-change: opacity;
+    }
+    /* canonical theme transition (kept in sync with injected rule) */
+    html.theme-anim, body.theme-anim,
+    body.theme-anim *:not(.ts-thumb):not(.ts-track):not(.ts-stars):not(.ts-clouds) {
+      transition: background-color .9s ease, color .9s ease, border-color .9s ease,
+        outline-color .9s ease, fill .9s ease, stroke .9s ease, box-shadow .9s ease,
+        text-decoration-color .9s ease !important;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      width: 100%; background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-top {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 26px; position: relative; z-index: 1;
+      max-width: 1500px; margin: 0 auto;
+    }
+    .logo-icon {
+      width: 44px; height: 44px;
+      border: 1px solid var(--accent); border-radius: 10px;
+      padding: 7px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+      flex-shrink: 0;
+    }
+    .logo-icon span { border-radius: 2px; display: block; }
+    .lr { background: #ff3333; } .lg { background: #33ff33; }
+    .lb { background: #3333ff; } .lw { background: #ffffff; }
+    .header-text { text-align: left; }
+    .header-text h1 {
+      font-family: var(--mono); font-size: 21px; letter-spacing: 5px;
+      color: var(--accent); text-transform: uppercase;
+    }
+    .ver-tag { font-family: var(--mono); font-size: 11px; letter-spacing: 1px; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 1px 7px 2px; vertical-align: middle; margin-left: 10px; }
+    .header-sub {
+      font-size: 12px; color: var(--muted); letter-spacing: 2px; margin-top: 5px;
+    }
+    .header-spec {
+      margin-left: auto; text-align: right; font-family: var(--mono);
+      font-size: 11px; color: var(--text2); letter-spacing: 1px; line-height: 1.7;
+    }
+    .header-spec b { color: var(--accent); font-weight: 400; }
+
+    /* ── Day/night switch ── */
+    .btn-shell-theme {
+      width: 64px; height: 30px; padding: 0; border: none; background: none;
+      cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    }
+    .ts-track {
+      position: relative; display: block; width: 64px; height: 30px;
+      border-radius: 30px; overflow: hidden;
+      background: linear-gradient(160deg, #1b2950 0%, #0c1430 100%);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
+      transition: background .9s ease, box-shadow .9s ease;
+    }
+    body.light .ts-track {
+      background: linear-gradient(160deg, #5fb0ef 0%, #9fd4f5 100%);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.18), 0 0 0 1px rgba(255,255,255,.5);
+    }
+    .ts-stars { position:absolute; width:2px; height:2px; top:7px; left:12px; border-radius:50%; background:#fff; opacity:.9;
+      box-shadow: 8px 4px 0 -0.3px #fff,16px -2px 0 -0.6px #fff,4px 12px 0 -0.6px #fff,20px 9px 0 -0.3px #fff,13px 14px 0 -0.7px #fff;
+      transition: opacity .9s ease; }
+    body.light .ts-stars { opacity: 0; }
+    .ts-clouds { position:absolute; left:4px; bottom:3px; width:26px; height:12px; opacity:0;
+      background: radial-gradient(circle at 6px 8px,#fff 5px,transparent 5.5px),radial-gradient(circle at 13px 6px,#fff 6px,transparent 6.5px),radial-gradient(circle at 20px 9px,#fff 5px,transparent 5.5px);
+      transition: opacity .9s ease; }
+    body.light .ts-clouds { opacity: .92; }
+    .ts-thumb { position:absolute; top:4px; left:4px; width:22px; height:22px; border-radius:50%;
+      background: radial-gradient(circle at 35% 35%,#eef0f5 0%,#c4c8d2 70%,#aab0bd 100%);
+      box-shadow: 0 2px 4px rgba(0,0,0,.45), inset -2px -2px 3px rgba(0,0,0,.18);
+      transform: translateX(34px);
+      transition: transform .9s ease, background .9s ease, box-shadow .9s ease; }
+    .ts-thumb::before { content:''; position:absolute; border-radius:50%; width:5px; height:5px; top:5px; left:11px;
+      background:#aeb4c0; box-shadow:-6px 4px 0 -1px #aeb4c0,2px 8px 0 -1.5px #aeb4c0; opacity:1; transition:opacity .9s ease; }
+    body.light .ts-thumb { background: radial-gradient(circle at 38% 35%,#fff7cc 0%,#ffd21a 45%,#ff9d00 100%);
+      box-shadow: 0 0 6px 2px rgba(255,193,7,.75),0 0 14px 4px rgba(255,160,0,.45),inset -1px -1px 2px rgba(200,120,0,.3); transform: translateX(0); }
+    body.light .ts-thumb::before { opacity: 0; }
+    .btn-shell-theme:hover .ts-thumb { filter: brightness(1.06); }
+
+    /* ── Main / screens ── */
+    main {
+      flex: 1; position: relative; z-index: 1;
+      max-width: 1500px; width: 100%; margin: 0 auto; padding: 26px;
+    }
+    .screen { display: none; animation: fade .35s ease; }
+    .screen.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .crumb {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px; color: var(--text2);
+      flex-wrap: wrap;
+    }
+    .crumb .back {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface); color: var(--text); cursor: pointer;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px;
+      text-transform: uppercase; transition: border-color .2s, color .2s;
+    }
+    .crumb .back:hover { border-color: var(--accent); color: var(--accent); }
+    .crumb .sep { color: var(--text3); }
+    .crumb .here { color: var(--accent); flex: 1; }
+    .btn-reset-all {
+      margin-left: auto; display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border: 1px solid var(--danger); border-radius: 8px;
+      background: transparent; color: var(--danger); cursor: pointer;
+      font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px;
+      text-transform: uppercase; transition: border-color .2s, color .2s, background .2s;
+    }
+    .btn-reset-all:hover { background: rgba(220,53,69,.08); }
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 9990;
+      background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center;
+    }
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 32px 36px; max-width: 420px; width: 90%;
+      font-family: var(--mono); box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    }
+    .modal-title { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: var(--text); margin-bottom: 14px; }
+    .modal-body { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 28px; }
+    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+    .modal-btn { padding: 9px 22px; border-radius: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .modal-btn.cancel { border: 1px solid var(--border); background: transparent; color: var(--text2); }
+    .modal-btn.cancel:hover { border-color: var(--text); color: var(--text); }
+    .modal-btn.confirm { border: 1px solid var(--danger); background: var(--danger); color: #fff; }
+    .modal-btn.confirm:hover { opacity: .85; }
+
+    /* ── Setup screen ── */
+    .setup-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 26px; align-items: start; }
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 26px 28px;
+    }
+    .panel h2 {
+      font-family: var(--mono); font-size: 15px; letter-spacing: 2.5px; color: var(--accent);
+      text-transform: uppercase; display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    }
+    .panel h2 svg { width: 18px; height: 18px; }
+    .lead { font-size: 15px; line-height: 1.6; color: var(--text2); margin-bottom: 22px; }
+    .sub-label {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 2px; color: var(--text2);
+      text-transform: uppercase; margin: 22px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    .rec { display: flex; gap: 14px; padding: 11px 0; border-bottom: 1px dashed var(--border); }
+    .rec:last-child { border-bottom: none; }
+    .rec .ri {
+      width: 34px; height: 34px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 8px;
+      display: grid; place-items: center; color: var(--accent);
+    }
+    .rec .ri svg { width: 17px; height: 17px; }
+    .rec b { display: block; font-size: 14px; color: var(--text); letter-spacing: .5px; margin-bottom: 2px; }
+    .rec span { font-size: 13px; color: var(--text2); line-height: 1.45; }
+
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px;
+      color: var(--text2); text-transform: uppercase; margin-bottom: 6px;
+    }
+    .field label .req { color: var(--accent); }
+    .field input, .field select {
+      width: 100%; padding: 11px 13px; background: var(--bg); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono);
+      font-size: 13px; letter-spacing: .5px; outline: none; transition: border-color .2s;
+    }
+    .field input:focus, .field select:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--text3); }
+    .field.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field.row2 > div { margin: 0; }
+    .form-hint { font-size: 12px; color: var(--warn); min-height: 16px; margin: 4px 0 14px; letter-spacing: .5px; }
+    .devsel { display: flex; gap: 10px; }
+    .devsel-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 13px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      cursor: pointer; color: var(--text2); font-family: var(--mono); font-size: 11px;
+      letter-spacing: 1px; text-transform: uppercase; transition: border-color .2s, color .2s, background .2s;
+    }
+    .devsel-btn svg { width: 28px; height: 21px; }
+    .devsel-btn:hover { border-color: var(--accent); color: var(--text); }
+    .devsel-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+    .btn-primary {
+      width: 100%; padding: 15px; margin-top: 6px;
+      background: var(--accent-soft); color: var(--accent);
+      border: 1px solid var(--accent); border-radius: 8px; cursor: pointer;
+      font-family: var(--mono); font-size: 14px; letter-spacing: 2.5px; text-transform: uppercase;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: background .2s, box-shadow .2s;
+    }
+    .btn-primary:hover { background: var(--accent); color: #fff; box-shadow: 0 0 18px -4px var(--accent); }
+
+    .workflow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 6px; }
+    .wf { text-align: center; padding: 14px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
+    .wf .n { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: 1px; }
+    .wf .t { font-size: 12.5px; color: var(--text2); margin-top: 6px; line-height: 1.35; }
+
+    /* ── Card grid (menu categories + category tools) ── */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .card {
+      position: relative; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 30px 26px 24px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      min-height: 230px; transition: border-color .2s, box-shadow .2s, transform .2s, background .2s;
+      overflow: hidden;
+    }
+    .card::after {
+      content: ''; position: absolute; inset: 0; border-radius: var(--radius);
+      box-shadow: inset 0 0 0 1px transparent; pointer-events: none; transition: box-shadow .2s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 26px -14px var(--accent); }
+    .card .cnum {
+      position: absolute; top: 14px; left: 16px;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 1px; color: var(--text3);
+    }
+    .card .cic { height: 70px; display: grid; place-items: center; color: var(--accent); margin-bottom: 8px; }
+    .card .cic svg { width: 56px; height: 56px; }
+    .card h3 {
+      font-family: var(--mono); font-size: 16px; letter-spacing: 2.5px; color: var(--accent);
+      text-transform: uppercase; margin-bottom: 12px;
+    }
+    .card p { font-size: 13.5px; color: var(--text2); line-height: 1.5; flex: 1; }
+    .card .open {
+      margin-top: 16px; font-family: var(--mono); font-size: 12px; letter-spacing: 2px;
+      color: var(--accent); text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px;
+      opacity: .85; transition: gap .2s, opacity .2s;
+    }
+    .card:hover .open { gap: 12px; opacity: 1; }
+    .card.info { cursor: default; }
+    .card.info:hover { transform: none; border-color: var(--border); box-shadow: none; }
+    .card.info .open { display: none; }
+    .card.general { border-color: var(--accent); background: var(--accent-soft); }
+    .card.general .cnum { color: var(--accent); }
+
+    /* icon helpers */
+    .ic-img { width: 68px; height: 68px; object-fit: contain; display: block;
+      filter: drop-shadow(0 0 7px rgba(139,21,186,0.35)); }
+    .ic-rgb { width: 52px; height: 52px; border: 1px solid var(--accent); border-radius: 11px; padding: 8px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .ic-rgb span { border-radius: 3px; display: block; }
+    .ic-wheel { width: 52px; height: 52px; border-radius: 50%;
+      background: conic-gradient(#ff3b3b,#ffd21a,#33ff33,#15bcd1,#3b6bff,#b14cff,#ff3b3b);
+      -webkit-mask: radial-gradient(circle, transparent 30%, #000 31%);
+      mask: radial-gradient(circle, transparent 30%, #000 31%); position: relative; }
+
+    /* ── Status bar ── */
+    footer#statusbar {
+      position: sticky; bottom: 0; z-index: 90;
+      background: var(--bg); border-top: 1px solid var(--border);
+      font-family: var(--mono); font-size: 12px; letter-spacing: 1px; color: var(--text2);
+    }
+    .sb-inner {
+      max-width: 100%; margin: 0; padding: 13px 32px;
+      display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+    }
+    .sb-item { display: flex; align-items: center; gap: 9px; }
+    .sb-item svg { width: 15px; height: 15px; color: var(--text2); }
+    .sb-devic { display: inline-flex; align-items: center; }
+    .sb-devic svg { width: 16px; height: 16px; color: var(--accent); }
+    .sb-sep { width: 1px; height: 16px; background: var(--border); }
+    .sb-label { color: var(--text3); }
+    .sb-val { color: var(--text); }
+    .sb-val.saved { color: var(--accent3); }
+    .sb-val.cleared { color: var(--warn); }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .dot.on { background: var(--accent3); box-shadow: 0 0 8px var(--accent3); animation: pulse 1.8s ease-in-out infinite; }
+    .dot.off { background: var(--danger); box-shadow: 0 0 8px var(--danger); animation: pulse 1.8s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+    .sb-status.on { color: var(--accent3); } .sb-status.off { color: var(--danger); }
+    .sb-right { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+
+    /* ── Fullscreen tool host ── */
+    #tool-host {
+      position: fixed; inset: 0; z-index: 5000; background: var(--bg);
+      display: none; flex-direction: column;
+    }
+    body.tool-open #tool-host { display: flex; }
+    body.tool-open header, body.tool-open footer#statusbar, body.tool-open main { display: none; }
+    #tool-frames { flex: 1; position: relative; }
+    .tool-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: none; display: none; background: var(--bg); }
+    .tool-frame.active { display: block; }
+
+    /* ── Tool nav bar (back button integrated) ── */
+    #tool-nav {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; background: var(--bg);
+      border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 100;
+      transition: opacity .15s;
+    }
+    body.tool-fs #tool-nav { display: none; }
+    #btn-tool-back {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface); color: var(--text); cursor: pointer;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px;
+      text-transform: uppercase; transition: border-color .2s, color .2s; flex-shrink: 0;
+    }
+    #btn-tool-back:hover { border-color: var(--accent); color: var(--accent); }
+    #tool-nav-crumb {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px;
+      color: var(--text2); display: flex; align-items: center; gap: 8px;
+    }
+    #tool-nav-crumb .sep { color: var(--text3); }
+    #tool-nav-crumb .here { color: var(--accent); }
+
+    @media (max-width: 900px) {
+      .setup-grid { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .workflow { grid-template-columns: 1fr 1fr; }
+      .header-spec { display: none; }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+      main { padding: 18px; }
+      .header-text h1 { font-size: 17px; letter-spacing: 3px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="theme-veil" aria-hidden="true"></div>
+
+  <header>
+    <div class="header-top">
+      <div class="logo-icon"><span class="lr"></span><span class="lg"></span><span class="lb"></span><span class="lw"></span></div>
+      <div class="header-text">
+        <h1>Display Calibration Suite <span class="ver-tag">2.0</span></h1>
+        <p class="header-sub">Professional Display Measurement &amp; Profiling Tools</p>
+      </div>
+      <div class="header-spec">
+        CHANNELS: <b>R · G · B · W</b><br>
+        WORKFLOW: <b>POMIAR · ANALIZA · KALIBRACJA</b>
+      </div>
+      <button class="btn-shell-theme" id="btn-shell-theme" title="Motyw jasny/ciemny" aria-label="Przełącz motyw dzień/noc" style="margin-left:18px">
+        <span class="ts-track"><span class="ts-stars"></span><span class="ts-clouds"></span><span class="ts-thumb"></span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ── SETUP ─────────────────────────────────────────────── -->
+    <section id="screen-setup" class="screen active">
+      <div class="setup-grid">
+        <div class="panel">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12M4 5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7"/><path d="M16 5l4-2v14l-4 2"/></svg>
+            Instrukcja i przygotowanie pomiaru
+          </h2>
+          <p class="lead">Aplikacja służy do wyświetlania wzorców, analizy oraz kalibracji wyświetlaczy z wykorzystaniem spektroradiometru GL Optic Spectis lub kolorymetru. Przed rozpoczęciem uzupełnij dane urządzenia i przygotuj stanowisko pomiarowe.</p>
+
+          <div class="sub-label">Zalecenia przed pomiarem</div>
+          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div><div><b>Rozgrzej wyświetlacz</b><span>Włącz ekran na minimum 30 minut przed pomiarem.</span></div></div>
+          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg></div><div><b>Ustaw tryb obrazu</b><span>Tryb standardowy lub referencyjny, wyłącz ulepszacze obrazu.</span></div></div>
+          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></div><div><b>Ustaw jasność</b><span>Poziom 100% lub zgodny z planem pomiarowym.</span></div></div>
+          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 0 1 18 0M3 12a9 9 0 0 0 18 0"/><path d="M12 3v18"/></svg></div><div><b>Warunki otoczenia</b><span>Zadbaj o ciemne otoczenie bez odbić światła na ekranie.</span></div></div>
+          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></div><div><b>Pozycjonowanie sondy</b><span>Sonda prostopadle do ekranu, w centrum powierzchni.</span></div></div>
+        </div>
+
+        <div class="panel">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 6h6M9 18h6"/></svg>
+            Dane urządzenia
+          </h2>
+          <div class="field row2">
+            <div><label>Producent <span class="req">*</span></label><input id="f-brand" placeholder="np. LG" autocomplete="off"></div>
+            <div><label>Model <span class="req">*</span></label><input id="f-model" placeholder="np. OLED55CX6LA" autocomplete="off"></div>
+          </div>
+          <div class="field row2">
+            <div><label>Przekątna [cale] <span class="req">*</span></label><input id="f-size" type="number" min="1" step="0.1" placeholder="np. 55" autocomplete="off"></div>
+            <div><label>Typ matrycy</label>
+              <select id="f-type"><option value="OLED">OLED</option><option value="WOLED">WOLED</option><option value="QD-LED">QD-LED</option><option value="Edge-Lit">Edge-Lit</option><option value="Back-lit">Back-lit</option><option value="Mini LED">Mini LED</option></select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Rodzaj urządzenia <span class="req">*</span></label>
+            <div class="devsel" id="f-class">
+              <button type="button" class="devsel-btn" data-class="tv">
+                <svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="20" height="12" rx="1"/><path d="M8 16l1-2M16 16l-1-2M7 16h10" stroke-linecap="round"/></svg>
+                Telewizor
+              </button>
+              <button type="button" class="devsel-btn" data-class="monitor">
+                <svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="2" width="18" height="11" rx="1"/><path d="M12 13v3M8 16h8" stroke-linecap="round"/></svg>
+                Monitor
+              </button>
+              <button type="button" class="devsel-btn" data-class="laptop">
+                <svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="2" width="14" height="9" rx="1"/><path d="M2 15h20l-1.5-2.5H3.5z" stroke-linejoin="round"/></svg>
+                Laptop
+              </button>
+            </div>
+          </div>
+          <div class="field"><label>Rozdzielczość <span class="req">*</span></label>
+            <select id="f-res">
+              <option value="">— wybierz —</option>
+              <option value="1280x720">HD · 1280 × 720</option>
+              <option value="1920x1080">FHD · 1920 × 1080</option>
+              <option value="2560x1440">QHD · 2560 × 1440</option>
+              <option value="3840x2160">4K UHD · 3840 × 2160</option>
+            </select>
+          </div>
+          <div class="field"><label>Nazwa urządzenia (opcjonalnie)</label><input id="f-name" placeholder="np. LG OLED CX 55 — stanowisko 1" autocomplete="off"></div>
+          <div class="field"><label>Numer seryjny (opcjonalnie)</label><input id="f-serial" placeholder="np. 0123456789AB" autocomplete="off"></div>
+          <div class="form-hint" id="setup-hint"></div>
+          <button class="btn-primary" id="btn-start">Rozpocznij pracę
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MENU ──────────────────────────────────────────────── -->
+    <section id="screen-menu" class="screen">
+      <div class="crumb">
+        <button class="back" id="btn-to-setup">↻ Instrukcja / zmień konfigurację</button>
+        <span class="sep">/</span><span class="here">Menu aplikacji</span>
+        <button class="btn-reset-all" onclick="confirmResetAll()">⊘ Resetuj wszystkie dane</button>
+      </div>
+      <div class="grid" id="menu-grid"></div>
+    </section>
+
+    <!-- ── RESET CONFIRM MODAL ────────────────────────────────── -->
+    <div id="reset-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeResetModal()">
+      <div class="modal-box">
+        <div class="modal-title">Resetuj wszystkie dane</div>
+        <div class="modal-body">Czy na pewno chcesz usunąć wszystkie dane aplikacji?<br>Ta operacja jest nieodwracalna.</div>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" onclick="closeResetModal()">Anuluj</button>
+          <button class="modal-btn confirm" onclick="resetAllData()">Usuń wszystkie dane</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CATEGORY ──────────────────────────────────────────── -->
+    <section id="screen-category" class="screen">
+      <div class="crumb">
+        <button class="back" id="btn-cat-back">← Menu aplikacji</button>
+        <span class="sep">/</span><span class="here" id="cat-title">Kategoria</span>
+      </div>
+      <div class="grid" id="category-grid"></div>
+    </section>
+  </main>
+
+  <!-- ── STATUS BAR ──────────────────────────────────────────── -->
+  <footer id="statusbar">
+    <div class="sb-inner">
+      <div class="sb-item">
+        <span class="dot off" id="sb-dot"></span>
+        <span class="sb-label">STATUS:</span><span class="sb-status off" id="sb-status">LOCAL</span>
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">
+        <span id="sb-device-ic" class="sb-devic"></span>
+        <span class="sb-label">URZĄDZENIE:</span><span class="sb-val" id="sb-device">—</span>
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">
+        <span class="sb-label">PRZEKĄTNA:</span><span class="sb-val" id="sb-size">—</span>
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">
+        <span class="sb-label">ROZDZIELCZOŚĆ:</span><span class="sb-val" id="sb-res">—</span>
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">
+        <span class="sb-label">RODZAJ:</span><span class="sb-val" id="sb-type">—</span>
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">
+        <span class="sb-label">DANE:</span><span class="sb-val" id="sb-data-status">—</span>
+      </div>
+      <div class="sb-right">
+        <div class="sb-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+          <span class="sb-val" id="sb-date">—</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── FULLSCREEN TOOL HOST ────────────────────────────────── -->
+  <div id="tool-host" aria-hidden="true">
+    <div id="tool-nav">
+      <button id="btn-tool-back" onclick="closeTool()">← Powrót</button>
+      <div id="tool-nav-crumb">
+        <span class="sep">/</span>
+        <span class="here" id="tool-nav-title">Moduł</span>
+      </div>
+    </div>
+    <div id="tool-frames"></div>
+  </div>
+
+  <script>
+    /* ─────────────────────────── DATA ─────────────────────────── */
+    const TOOLS = {
+      displayCalibrator:  { title:'Display Calibrator',        desc:'Generator wzorców RGB: gradienty, poziomy, kontrast, APL, color checker.', src:'display calibrator/index (73).html',      icon:'rgb' },
+      dcSpectro:          { title:'Display Calibrator',        desc:'Zalecenia kalibracji → wybór wzorca: Gradient Steps, Solid Levels, Color Checker.', src:'display calibrator/index (73).html', icon:'rgb', launch:[1,2,5] },
+      dcLuminance:        { title:'Display Calibrator',        desc:'Zalecenia kalibracji → wybór wzorca: Contrast Check, APL White Fill, White Zone, Halo Test.', src:'display calibrator/index (73).html', icon:'rgb', launch:[3,4,6,7] },
+      spectralAnalyzer:   { title:'Spectral Analyzer',         desc:'Analiza widmowa i dane CIE xyY — rozbita na osobne moduły wg typu pliku.',  src:'Spectral analyzer/index (67).html',        icon:'spectrum',
+        tabs:[
+          { id:'single',   title:'Pojedynczy plik',  icon:'spectrum', desc:'Analiza widmowa jednego pliku pomiarowego.' },
+          { id:'multi',    title:'Wiele plików',      icon:'spectrum', desc:'Analiza i porównanie wielu plików jednocześnie.' },
+          { id:'mmg',      title:'Pliki MMG',         icon:'spectrum', desc:'Analiza plików formatu MMG.' },
+          { id:'mmggroup', title:'MMG grupowy',       icon:'spectrum', desc:'Grupowa analiza plików MMG z wielu sesji.' },
+        ] },
+      chromaticAnalyzer:  { title:'Chromatic Data Analyzer',   desc:'Pakiet analiz danych pomiarowych — rozbity na osobne zakładki ze wspólnym importem.', src:'Chromatic Data Analyser/index_renamed (2).html', icon:'chroma',
+        tabs:[
+          { id:'input',        title:'Dane wejściowe',  icon:'cda_input',  desc:'Import danych pomiarowych — zasila wszystkie pozostałe zakładki w tym oknie.', general:true },
+          { id:'chroma',       title:'Chromatyczność',  icon:'chroma',     desc:'Współrzędne i wykres chromatyczności zmierzonych barw.' },
+          { id:'rgbtrack',     title:'RGB Tracking',    icon:'cda_rgb',    desc:'Śledzenie balansu RGB w funkcji poziomu sygnału.' },
+          { id:'de',           title:'Błędy ΔE',        icon:'cda_de',     desc:'Różnice barwy ΔE względem wartości odniesienia.' },
+          { id:'grayscale',    title:'Grayscale',       icon:'cda_gray',   desc:'Analiza skali szarości i balansu bieli.' },
+          { id:'apl',          title:'APL Brightness',  icon:'cda_apl',    desc:'Jasność w funkcji APL (Average Picture Level).' },
+          { id:'colorchecker', title:'Colour Checker',  icon:'falsecolor', desc:'Analiza wzorca Colour Checker i odwzorowania barw.' },
+          { id:'export',       title:'Eksport',         icon:'cda_export', desc:'Eksport wyników analizy do plików.' },
+        ] },
+      colorCalculator:    { title:'Color Calculator',          desc:'Przeliczanie przestrzeni barw i współrzędnych kolorów.',                  src:'Colour Calculator/colour_calculator_v2.html', icon:'calc' },
+      gamutScope:         { title:'Gamut Scope',               desc:'Wizualizacja i porównanie gamutów na diagramie chromatyczności.',         src:'Gamut Scope/gamut_scope_v2 (4).html',      icon:'gamut' },
+      gammaAnalyzer:      { title:'Gamma Analyzer',            desc:'Pomiar i analiza krzywej gamma / EOTF.',                                 src:'Gamma analyzer/gamma_calibrator_v7.html',  icon:'gamma' },
+      falseColor:         { title:'False Color Viewer',        desc:'Mapa fałszywych kolorów luminancji (LMK2000).',                          src:'False Color Viewer/False Color Viever.html', icon:'falsecolor' },
+      haloAnalysis:       { title:'Halo Analysis',             desc:'Analiza efektu halo i profili luminancji wokół wzorców.',                 src:'Halo Analysis/halo_analysis_v7.html',      icon:'halo' },
+      calibrationPreview: { title:'Calibration Preview',       desc:'Podgląd efektów kalibracji: balans bieli, gamma, CMS.',                   src:'Calibration Preview/index.html',           icon:'preview' },
+      ti3:                { title:'TI3 · Argyll Profiler',     desc:'Generator plików TI3 i profili ICC — rozbity na osobne moduły.',           src:'TI3/ti3gen_v6.html',                       icon:'ti3',
+        tabs:[
+          { id:'0', title:'Pomiary',        icon:'ti3', desc:'Wprowadź i edytuj dane pomiarowe do profilu.' },
+          { id:'1', title:'Dane wejściowe', icon:'ti3', desc:'Konfiguracja danych wejściowych i parametrów profilu.' },
+          { id:'2', title:'Eksport TI3',    icon:'ti3', desc:'Generuj i pobierz plik TI3 dla ArgyllCMS.' },
+          { id:'3', title:'Podgląd',        icon:'ti3', desc:'Podgląd profilu i historia generowanych plików.' },
+        ] },
+      docxGenerator:      { title:'DOCX Generator',            desc:'Generowanie raportu technicznego w formacie DOCX z danych pomiarowych.',   src:'apka/docx-generator.html',                 icon:'report' },
+      eksportDanych:      { title:'Eksport danych',            desc:'Eksport danych pomiarowych z Chromatic Data Analyzer do CSV i JSON.',      src:'eksport-danych.html',                      icon:'cda_export' },
+      pdfMerger:          { title:'PDF Merger',                desc:'Scalanie wielu plików PDF w jeden dokument z możliwością zmiany kolejności.', src:'apka/pdf_merger.html',                   icon:'report' },
+    };
+
+    const CATEGORIES = [
+      { num:'01', title:'Wzorce testowe',     icon:'rgb',    desc:'Wzorce testowe podzielone wg metody pomiaru — punktowej i obrazowej.',
+        subs:[
+          { title:'Spektroradiometr',              icon:'spectro', desc:'Pomiar punktowy sondą (GL Optic Spectis) — zalecenia kalibracji i wzorce: Gradient Steps, Solid Levels, Color Checker.', tools:['dcSpectro'] },
+          { title:'Matrycowy miernik luminancji',  icon:'lmk',     desc:'Pomiar obrazowy kamerą luminancyjną (LMK2000) — zalecenia kalibracji i wzorce: Contrast Check, APL White Fill, White Zone, Halo Test.', tools:['dcLuminance'] },
+        ] },
+      { num:'02', title:'Analiza barwy',      icon:'wheel',  desc:'Chromatyczność, gamuty, temperatura barwowa, ΔE i analiza widma.',         tools:['spectralAnalyzer','chromaticAnalyzer','colorCalculator','gamutScope'] },
+      { num:'03', title:'Analiza luminancji', icon:'sun',    desc:'Jasność, kontrast, jednorodność, gamma, HDR oraz efekt halo.',            tools:['gammaAnalyzer','falseColor','haloAnalysis'] },
+      { num:'04', title:'Kalibracja',         icon:'target', desc:'Balans bieli, gamma, CMS oraz podgląd kalibracji SDR i HDR.',             tools:['calibrationPreview'] },
+      { num:'05', title:'Profile ICC',        icon:'icc',    desc:'Generowanie i weryfikacja profili ICC/ICM (TI3 · ArgyllCMS).',            tools:['ti3'] },
+      { num:'06', title:'Raporty',            icon:'report', desc:'Raporty pomiarów, eksport danych oraz scalanie dokumentów PDF.',        tools:['docxGenerator','eksportDanych','pdfMerger'] },
+    ];
+
+    /* line-art icons (stroke = currentColor / accent) */
+    function icon(name) {
+      switch (name) {
+        case 'rgb':    return '<img class="ic-img" src="assets/icons/rgb.png" alt="">';
+        case 'wheel':  return '<div class="ic-wheel"></div>';
+        case 'sun':    return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><circle cx="28" cy="20" r="8"/><path d="M28 4v5M28 31v5M12 20h5M39 20h5M16 8l3 3M37 29l3 3M40 8l-3 3M19 29l-3 3"/><rect x="6" y="44" width="44" height="6" rx="3" fill="url(#lg)" stroke="none"/><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="currentColor" stop-opacity="0.15"/><stop offset="1" stop-color="currentColor"/></linearGradient></defs></svg>';
+        case 'target': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><circle cx="28" cy="28" r="18"/><circle cx="28" cy="28" r="9"/><circle cx="28" cy="28" r="2" fill="currentColor"/><path d="M28 4v8M28 44v8M4 28h8M44 28h8"/></svg>';
+        case 'icc':    return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 6h20l10 10v34H14z"/><path d="M34 6v10h10"/><text x="28" y="38" text-anchor="middle" font-family="Share Tech Mono, monospace" font-size="11" fill="currentColor" stroke="none">ICC</text></svg>';
+        case 'report': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 6h20l10 10v34H14z"/><path d="M34 6v10h10"/><path d="M22 40v-8M28 40v-14M34 40v-6" stroke-linecap="round"/></svg>';
+        case 'spectrum': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 40c6 0 6-24 11-24s5 16 11 16 6-20 11-20 5 12 11 12" stroke-linecap="round"/><path d="M6 48h44" opacity=".4"/></svg>';
+        case 'chroma': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><path d="M28 8l18 34H10z"/><circle cx="28" cy="30" r="3" fill="currentColor"/></svg>';
+        case 'calc':   return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><rect x="12" y="6" width="32" height="44" rx="3"/><rect x="18" y="12" width="20" height="8" rx="1"/><path d="M19 30h2M27 30h2M35 30h2M19 38h2M27 38h2M35 38h2" stroke-linecap="round"/></svg>';
+        case 'gamut':  return '<img class="ic-img" src="assets/icons/gamut.png" alt="">';
+        case 'gamma':  return '<img class="ic-img" src="assets/icons/gamma.png" alt="">';
+        case 'falsecolor': return '<svg viewBox="0 0 56 56" fill="none" stroke="none"><rect x="8" y="8" width="12" height="12" fill="#3b6bff"/><rect x="22" y="8" width="12" height="12" fill="#15bcd1"/><rect x="36" y="8" width="12" height="12" fill="#33ff33"/><rect x="8" y="22" width="12" height="12" fill="#33ff33"/><rect x="22" y="22" width="12" height="12" fill="#ffd21a"/><rect x="36" y="22" width="12" height="12" fill="#ff9100"/><rect x="8" y="36" width="12" height="12" fill="#ffd21a"/><rect x="22" y="36" width="12" height="12" fill="#ff3b3b"/><rect x="36" y="36" width="12" height="12" fill="#b14cff"/></svg>';
+        case 'halo':   return '<img class="ic-img" src="assets/icons/halo.png" alt="">';
+        case 'preview':return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="10" width="44" height="28" rx="2"/><path d="M20 46h16M28 38v8"/><path d="M14 30l8-10 8 8 6-6" opacity=".6"/></svg>';
+        case 'cda_input': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><path d="M28 6v26M18 24l10 10 10-10" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 38v8a2 2 0 0 0 2 2h36a2 2 0 0 0 2-2v-8"/></svg>';
+        case 'cda_rgb': return '<svg viewBox="0 0 56 56" fill="none" stroke-width="2" fill="none"><path d="M6 18h44" stroke="#ff3b3b"/><path d="M6 28h44" stroke="#33ff33"/><path d="M6 38h44" stroke="#3b6bff"/><circle cx="18" cy="18" r="3" fill="#ff3b3b" stroke="none"/><circle cx="34" cy="28" r="3" fill="#33ff33" stroke="none"/><circle cx="26" cy="38" r="3" fill="#3b6bff" stroke="none"/></svg>';
+        case 'cda_de': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><path d="M28 10L44 44H12z"/><path d="M22 34h12" opacity=".6"/></svg>';
+        case 'cda_gray': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="18" width="40" height="20" rx="2"/><rect x="8" y="18" width="10" height="20" fill="currentColor" opacity=".15" stroke="none"/><rect x="18" y="18" width="10" height="20" fill="currentColor" opacity=".4" stroke="none"/><rect x="28" y="18" width="10" height="20" fill="currentColor" opacity=".7" stroke="none"/><rect x="38" y="18" width="10" height="20" fill="currentColor" stroke="none"/></svg>';
+        case 'cda_apl': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><circle cx="28" cy="28" r="10"/><path d="M28 6v6M28 44v6M6 28h6M44 28h6M13 13l4 4M39 39l4 4M43 13l-4 4M17 39l-4 4"/></svg>';
+        case 'cda_export': return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><path d="M28 34V8M18 18l10-10 10 10" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 34v12a2 2 0 0 0 2 2h36a2 2 0 0 0 2-2V34"/></svg>';
+        case 'spectro':return '<img class="ic-img" src="assets/icons/spectro.png" alt="">';
+        case 'lmk':    return '<img class="ic-img" src="assets/icons/lmk.png" alt="">';
+        case 'ti3':    return '<img class="ic-img" src="assets/icons/ti3.png" alt="">';
+        default:       return '<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="10" width="36" height="36" rx="4"/></svg>';
+      }
+    }
+
+    /* ─────────────────────────── RENDER ───────────────────────── */
+    function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    function renderMenu() {
+      document.getElementById('menu-grid').innerHTML = CATEGORIES.map((c, i) => `
+        <div class="card" data-cat="${i}">
+          <span class="cnum">${c.num}</span>
+          <div class="cic">${icon(c.icon)}</div>
+          <h3>${esc(c.title)}</h3>
+          <p>${esc(c.desc)}</p>
+          <span class="open">Otwórz →</span>
+        </div>`).join('');
+      document.querySelectorAll('#menu-grid .card').forEach(el =>
+        el.addEventListener('click', () => openCategory(+el.dataset.cat)));
+    }
+
+    /* Build a card grid for the category screen.
+       items: {kind:'sub',i,j,...} | {kind:'tool',tid} | {kind:'tooltab',tid,tab} */
+    function renderCategoryGrid(items) {
+      document.getElementById('category-grid').innerHTML = items.map(it => {
+        if (it.kind === 'sub') {
+          return `<div class="card" data-sub="${it.i}:${it.j}">
+            <div class="cic">${icon(it.icon)}</div>
+            <h3>${esc(it.title)}</h3>
+            <p>${esc(it.desc)}</p>
+            <span class="open">Wybierz →</span>
+          </div>`;
+        }
+        if (it.kind === 'tooltab') {
+          const tb = it.tab;
+          return `<div class="card ${tb.general ? 'general' : ''}" data-tool="${it.tid}" data-tab="${tb.id}">
+            <div class="cic">${icon(tb.icon)}</div>
+            <h3>${esc(tb.title)}</h3>
+            <p>${esc(tb.desc)}</p>
+            <span class="open">${tb.general ? 'Importuj dane →' : 'Otwórz zakładkę →'}</span>
+          </div>`;
+        }
+        const t = TOOLS[it.tid];
+        const multi = !!t.tabs;
+        return `<div class="card ${t.info ? 'info' : ''}" data-tool="${it.tid}" ${multi ? 'data-multi="1"' : ''}>
+          <div class="cic">${icon(t.icon)}</div>
+          <h3>${esc(t.title)}</h3>
+          <p>${esc(t.desc)}</p>
+          ${t.info ? '' : `<span class="open">${multi ? 'Rozwiń zakładki →' : 'Otwórz moduł →'}</span>`}
+        </div>`;
+      }).join('');
+      document.querySelectorAll('#category-grid .card[data-sub]').forEach(el => {
+        const [i, j] = el.dataset.sub.split(':').map(Number);
+        el.addEventListener('click', () => openSub(i, j));
+      });
+      document.querySelectorAll('#category-grid .card[data-tool]:not(.info)').forEach(el => {
+        if (el.dataset.multi)     el.addEventListener('click', () => openMultiTool(el.dataset.tool));
+        else if (el.dataset.tab)  el.addEventListener('click', () => openTool(el.dataset.tool, el.dataset.tab));
+        else                      el.addEventListener('click', () => openTool(el.dataset.tool));
+      });
+    }
+
+    // Back action + breadcrumb for the (shared) category screen.
+    let catBack = () => showScreen('menu');
+    let catReopen = () => showScreen('menu');   // re-render the level that holds the tools
+    function setCatCrumb(backLabel, backFn, hereText) {
+      document.getElementById('btn-cat-back').textContent = backLabel;
+      catBack = backFn;
+      document.getElementById('cat-title').textContent = hereText;
+    }
+
+    function openCategory(i) {
+      const c = CATEGORIES[i];
+      catReopen = () => openCategory(i);
+      setCatCrumb('← Menu aplikacji', () => showScreen('menu'), c.num + ' · ' + c.title);
+      if (c.subs) {
+        renderCategoryGrid(c.subs.map((s, j) => ({ kind:'sub', i, j, icon:s.icon, title:s.title, desc:s.desc })));
+      } else {
+        renderCategoryGrid(c.tools.map(tid => ({ kind:'tool', tid })));
+      }
+      showScreen('category');
+    }
+
+    function openSub(i, j) {
+      const c = CATEGORIES[i], s = c.subs[j];
+      catReopen = () => openSub(i, j);
+      setCatCrumb('← ' + c.title, () => openCategory(i), c.num + ' · ' + c.title + '  ›  ' + s.title);
+      renderCategoryGrid(s.tools.map(tid => ({ kind:'tool', tid })));
+      showScreen('category');
+    }
+
+    // A tool that expands into its own internal tabs (e.g. Chromatic Data Analyser).
+    // All tabs share ONE window, so importing on the general tab feeds the rest.
+    function openMultiTool(tid) {
+      const t = TOOLS[tid];
+      const parentHere = document.getElementById('cat-title').textContent;
+      const parentTitle = parentHere.split('·').pop().split('›').pop().trim();
+      const reopen = catReopen;
+      setCatCrumb('← ' + parentTitle, reopen, parentHere + '  ›  ' + t.title);
+      renderCategoryGrid(t.tabs.map(tb => ({ kind:'tooltab', tid, tab:tb })));
+      showScreen('category');
+    }
+
+    /* ─────────────────────── NAVIGATION ───────────────────────── */
+    let currentScreen = 'setup';
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + id));
+      currentScreen = id;
+      window.scrollTo(0, 0);
+    }
+
+    /* lazy-loaded tool iframes, cached by id so state (and imported data) persists */
+    const frameCache = {};
+    const TAB_MSG_TYPE = {
+      spectralAnalyzer: 'spectral-tab',
+      ti3:              'ti3-tab',
+    };
+    function sendTab(f) {
+      const tab = f.dataset.tab;
+      if (!tab) return;
+      const type = TAB_MSG_TYPE[f.dataset.tid] || 'cda-tab';
+      try { f.contentWindow.postMessage({ type, tab }, '*'); } catch(e) {}
+    }
+    function sendLaunch(f) {
+      if (!f.dataset.launch) return;
+      const d = loadDevice();
+      const msg = { type: 'dc-launch', allow: JSON.parse(f.dataset.launch),
+                    opts: { device: d.deviceType || '', resW: d.resW || 0, resH: d.resH || 0 } };
+      try { f.contentWindow.postMessage(msg, '*'); } catch(e) {}
+    }
+    function openTool(tid, tabId) {
+      const t = TOOLS[tid];
+      if (!t || t.info) return;
+      let f = frameCache[tid];
+      if (!f) {
+        f = document.createElement('iframe');
+        f.className = 'tool-frame';
+        f.src = t.src;
+        f.setAttribute('allowfullscreen', '');
+        f.setAttribute('allow', 'fullscreen');
+        f.addEventListener('load', () => { applyThemeToFrame(f); sendTab(f); sendLaunch(f); });
+        document.getElementById('tool-frames').appendChild(f);
+        frameCache[tid] = f;
+      }
+      f.dataset.tid = tid;
+      if (tabId) f.dataset.tab = tabId; else delete f.dataset.tab;
+      if (t.launch) f.dataset.launch = JSON.stringify(t.launch);
+      document.querySelectorAll('.tool-frame').forEach(x => x.classList.remove('active'));
+      f.classList.add('active');
+      applyThemeToFrame(f);
+      sendTab(f);                       // cached frame already loaded → switch now
+      sendLaunch(f);
+      document.body.classList.add('tool-open');
+      document.getElementById('tool-host').setAttribute('aria-hidden', 'false');
+      const tabLabel = tabId && t.tabs ? (t.tabs.find(tb => tb.id === tabId) || {}).title : null;
+      document.getElementById('tool-nav-title').textContent = tabLabel || t.title;
+    }
+    function closeTool() {
+      document.body.classList.remove('tool-open', 'tool-fs');
+      document.getElementById('tool-host').setAttribute('aria-hidden', 'true');
+    }
+
+    /* ── Shell message listener (shellFS from measurement overlays, spectral-to-cda forwarding) ── */
+    window.addEventListener('message', function(ev) {
+      if (!ev.data) return;
+      if (ev.data.type === 'shellFS') {
+        document.body.classList.toggle('tool-fs', !!ev.data.on);
+      }
+      // Forward Spectral Analyzer → CDA data transfer to the CDA iframe
+      if (ev.data.type === 'spectral-to-cda') {
+        const cdaFrame = frameCache['chromaticAnalyzer'];
+        if (cdaFrame) {
+          try { cdaFrame.contentWindow.postMessage(ev.data, '*'); } catch(e) {}
+        }
+      }
+      // Forward generic Spectral export to every open tool (each target picks up its own)
+      if (ev.data.type === 'spectral-incoming') {
+        document.querySelectorAll('.tool-frame').forEach(fr => {
+          try { fr.contentWindow.postMessage(ev.data, '*'); } catch(e) {}
+        });
+      }
+    });
+
+    /* ─────────────────────── SETUP / DEVICE ───────────────────── */
+    const DEV_LABEL = { tv:'Telewizor', monitor:'Monitor', laptop:'Laptop' };
+    function deviceIcon(type) {
+      switch (type) {
+        case 'tv':      return '<svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="12" rx="1"/><path d="M8 16l1-2M16 16l-1-2M7 16h10" stroke-linecap="round"/></svg>';
+        case 'monitor': return '<svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="18" height="11" rx="1"/><path d="M12 13v3M8 16h8" stroke-linecap="round"/></svg>';
+        case 'laptop':  return '<svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="9" rx="1"/><path d="M2 15h20l-1.5-2.5H3.5z" stroke-linejoin="round"/></svg>';
+        default:        return '<svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="12" rx="1"/></svg>';
+      }
+    }
+    function loadDevice() {
+      try { return JSON.parse(localStorage.getItem('dcs-device') || '{}'); } catch(e) { return {}; }
+    }
+    // Device form-factor selector (TV / Monitor / Laptop)
+    let selectedClass = '';
+    document.querySelectorAll('#f-class .devsel-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedClass = btn.dataset.class;
+        document.querySelectorAll('#f-class .devsel-btn').forEach(b => b.classList.toggle('active', b === btn));
+      });
+    });
+    function fillSetupForm() {
+      const d = loadDevice();
+      const map = { brand:'f-brand', model:'f-model', size:'f-size', type:'f-type', res:'f-res', name:'f-name', serial:'f-serial' };
+      for (const k in map) if (d[k] != null) document.getElementById(map[k]).value = d[k];
+      selectedClass = d.deviceType || '';
+      document.querySelectorAll('#f-class .devsel-btn').forEach(b => b.classList.toggle('active', b.dataset.class === selectedClass));
+    }
+    function startWork() {
+      const res = document.getElementById('f-res').value;
+      const [resW, resH] = res ? res.split('x').map(Number) : [0, 0];
+      const d = {
+        brand:  document.getElementById('f-brand').value.trim(),
+        model:  document.getElementById('f-model').value.trim(),
+        size:   document.getElementById('f-size').value.trim(),
+        type:   document.getElementById('f-type').value,
+        deviceType: selectedClass,
+        res:    res, resW: resW, resH: resH,
+        name:   document.getElementById('f-name').value.trim(),
+        serial: document.getElementById('f-serial').value.trim(),
+      };
+      if (!d.brand || !d.model || !d.size || !d.deviceType || !d.res) {
+        document.getElementById('setup-hint').textContent = 'Uzupełnij producenta, model, przekątną, rodzaj urządzenia oraz rozdzielczość.';
+        return;
+      }
+      document.getElementById('setup-hint').textContent = '';
+      try { localStorage.setItem('dcs-device', JSON.stringify(d)); } catch(e) {}
+      sessionStart = new Date();
+      updateStatusBar();
+      showScreen('menu');
+    }
+
+    let sessionStart = new Date();
+    function fmtDate(dt) {
+      const p = n => String(n).padStart(2, '0');
+      return `${p(dt.getDate())}.${p(dt.getMonth()+1)}.${dt.getFullYear()}  ${p(dt.getHours())}:${p(dt.getMinutes())}`;
+    }
+    function isOnline() {
+      const p = location.protocol, h = location.hostname;
+      if (p === 'file:') return false;
+      if (h === 'localhost' || h === '127.0.0.1' || h === '') return false;
+      return true;
+    }
+    function updateDataStatus() {
+      const el = document.getElementById('sb-data-status');
+      if (!el) return;
+      const hasWba = !!localStorage.getItem('wba_data_v1');
+      const hasDev = !!localStorage.getItem('dcs-device');
+      const hasSpectral = !!localStorage.getItem('spectral_incoming');
+      const hasSpectralRaw = !!localStorage.getItem('spectral_single_rawdata');
+      const hasData = hasWba || hasDev || hasSpectral || hasSpectralRaw;
+      el.textContent = hasData ? 'ZAPISANE W PRZEGLĄDARCE' : 'POLA WYCZYSZCZONE';
+      el.className = 'sb-val ' + (hasData ? 'saved' : 'cleared');
+    }
+
+    function updateStatusBar() {
+      const d = loadDevice();
+      const dev = (d.brand || d.model) ? [d.brand, d.model].filter(Boolean).join(' ') : '—';
+      document.getElementById('sb-device').textContent = dev;
+      document.getElementById('sb-device-ic').innerHTML = d.deviceType ? deviceIcon(d.deviceType) : '';
+      document.getElementById('sb-size').textContent = d.size ? d.size + '″' : '—';
+      document.getElementById('sb-res').textContent = (d.resW && d.resH) ? (d.resW + '×' + d.resH) : '—';
+      document.getElementById('sb-type').textContent = d.deviceType ? (DEV_LABEL[d.deviceType] || '—') : '—';
+      document.getElementById('sb-date').textContent = fmtDate(sessionStart);
+      const on = isOnline();
+      document.getElementById('sb-dot').className = 'dot ' + (on ? 'on' : 'off');
+      const st = document.getElementById('sb-status');
+      st.textContent = on ? 'ONLINE' : 'LOCAL';
+      st.className = 'sb-status ' + (on ? 'on' : 'off');
+      updateDataStatus();
+    }
+
+    /* ─────────────────────── RESET ALL DATA ───────────── */
+    const APP_STORAGE_KEYS = ['dcs-device','wba_data_v1','spectral_incoming','spectral_single_rawdata','suite-theme'];
+    function confirmResetAll() {
+      document.getElementById('reset-modal').style.display = 'flex';
+    }
+    function closeResetModal() {
+      document.getElementById('reset-modal').style.display = 'none';
+    }
+    function resetAllData() {
+      APP_STORAGE_KEYS.forEach(k => {
+        if (k !== 'suite-theme') localStorage.removeItem(k);
+      });
+      // Broadcast reset to all cached iframes so they clear in-memory state
+      Object.values(frameCache).forEach(f => {
+        try { f.contentWindow.postMessage({ type: 'suite-reset' }, '*'); } catch(e) {}
+      });
+      closeResetModal();
+      updateStatusBar();
+      showScreen('setup');
+    }
+
+    /* ─────────────────────── THEME (veil crossfade) ───────────── */
+    const SUITE_THEME_ANIM_CSS =
+      'html.theme-anim,body.theme-anim,' +
+      'body.theme-anim *:not(.ts-thumb):not(.ts-track):not(.ts-stars):not(.ts-clouds){' +
+      'transition:background-color .9s ease,color .9s ease,border-color .9s ease,' +
+      'outline-color .9s ease,fill .9s ease,stroke .9s ease,box-shadow .9s ease,' +
+      'text-decoration-color .9s ease !important;}';
+    function injectThemeAnim(doc) {
+      try {
+        if (!doc || !doc.head || doc.getElementById('suite-theme-anim')) return;
+        const s = doc.createElement('style'); s.id = 'suite-theme-anim'; s.textContent = SUITE_THEME_ANIM_CSS;
+        doc.head.appendChild(s);
+      } catch(e) {}
+    }
+    function suiteThemeIsLight() { try { return localStorage.getItem('suite-theme') === 'light'; } catch(e) { return false; } }
+    const DARK_BG = '#080808', LIGHT_BG = '#f4f4f7';
+    function ensureVeil() {
+      let v = document.getElementById('theme-veil');
+      if (!v) { v = document.createElement('div'); v.id = 'theme-veil'; document.body.appendChild(v); }
+      return v;
+    }
+    function applyThemeToFrame(f) {
+      const light = suiteThemeIsLight();
+      try {
+        const d = f.contentDocument;
+        if (d && d.body) { injectThemeAnim(d); d.documentElement.classList.remove('theme-anim'); d.body.classList.remove('theme-anim'); d.body.classList.toggle('light', light); }
+      } catch(e) {}
+      try { f.contentWindow.postMessage({ type:'suite-theme', light:light, noToggle:true }, '*'); } catch(e) {}
+    }
+    function instantSwap(light) {
+      let crossOrigin = false;
+      document.documentElement.classList.remove('theme-anim');
+      document.body.classList.remove('theme-anim');
+      document.body.classList.toggle('light', light);
+      document.querySelectorAll('.tool-frame').forEach(f => {
+        let direct = false;
+        try {
+          const d = f.contentDocument;
+          if (d && d.body) { d.documentElement.classList.remove('theme-anim'); d.body.classList.remove('theme-anim'); d.body.classList.toggle('light', light); direct = true; }
+        } catch(e) {}
+        if (!direct) crossOrigin = true;
+        try { f.contentWindow.postMessage({ type:'suite-theme', light:light, noToggle:direct }, '*'); } catch(e) {}
+      });
+      return crossOrigin;
+    }
+    function applySuiteTheme(light, animate) {
+      try { localStorage.setItem('suite-theme', light ? 'light' : 'dark'); } catch(e) {}
+      if (!animate) { instantSwap(light); return; }
+      const veil = ensureVeil();
+      veil.style.background = light ? LIGHT_BG : DARK_BG;
+      veil.style.transition = 'opacity .18s ease';
+      requestAnimationFrame(() => { veil.style.opacity = '1'; });
+      setTimeout(() => {
+        const crossOrigin = instantSwap(light);
+        const toolOpen = document.body.classList.contains('tool-open');
+        const fadeOut = () => { veil.style.transition = 'opacity .28s ease'; veil.style.opacity = '0'; };
+        // Hold the veil only when a cross-origin tool is actually on screen (its content
+        // fades itself over ~.9s). Otherwise the shell swapped instantly → reveal now.
+        if (crossOrigin && toolOpen) setTimeout(fadeOut, 650); else requestAnimationFrame(fadeOut);
+      }, 190);
+    }
+    function toggleSuiteTheme() { applySuiteTheme(!document.body.classList.contains('light'), true); }
+
+    (function(){
+      const btn = document.getElementById('btn-shell-theme');
+      if (!btn) return;
+      let down=false, startX=0, moved=false;
+      btn.addEventListener('pointerdown', e => { down=true; moved=false; startX=e.clientX; });
+      window.addEventListener('pointermove', e => { if(!down) return; if(Math.abs(e.clientX-startX) > 6) moved=true; });
+      window.addEventListener('pointerup', e => {
+        if(!down) return; down=false;
+        if(moved) applySuiteTheme((e.clientX - startX) < 0, true);
+        else toggleSuiteTheme();
+      });
+    })();
+
+    /* ─────────────────────── EVENTS / INIT ────────────────────── */
+    document.getElementById('btn-start').addEventListener('click', startWork);
+    document.getElementById('btn-to-setup').addEventListener('click', () => { fillSetupForm(); showScreen('setup'); });
+    document.getElementById('btn-cat-back').addEventListener('click', () => catBack());
+
+    // Enter key in setup form submits
+    document.querySelectorAll('#screen-setup input').forEach(inp =>
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') startWork(); }));
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        if (document.body.classList.contains('tool-open')) closeTool();
+        else if (currentScreen === 'category') catBack();
+      }
+    });
+
+    renderMenu();
+    fillSetupForm();
+    applySuiteTheme(suiteThemeIsLight(), false);
+    updateStatusBar();
+    setInterval(() => { document.getElementById('sb-date').textContent = fmtDate(new Date(sessionStart.getTime())); }, 60000);
+  </script>
+</body>
+</html>

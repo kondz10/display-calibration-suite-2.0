@@ -1,0 +1,2869 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOCX Generator — Display Calibration Suite</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #080808;
+    --surface: #0f0f0f;
+    --border:  #1e1e1e;
+    --accent:  #8b15ba;
+    --text:    #e0e0e0;
+    --muted:   #555555;
+    --danger:  #ff4444;
+    --mono:    'Share Tech Mono', monospace;
+    --sans:    'Rajdhani', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+
+  .logo-mark {
+    width: 44px; height: 44px;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 7px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .logo-mark span {
+    border-radius: 2px;
+    display: block;
+  }
+  .logo-mark .lm-r { background: #ff3333; }
+  .logo-mark .lm-g { background: #33ff33; }
+  .logo-mark .lm-b { background: #3333ff; }
+  .logo-mark .lm-w { background: #ffffff; }
+
+  .logo-text h1 {
+    font-family: var(--mono);
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  .logo-text p {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    font-weight: 400;
+    font-family: var(--mono);
+    text-transform: uppercase;
+  }
+
+  .header-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.8;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 32px;
+    align-items: start;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* MODULE TITLE */
+  .module-header { margin-bottom: 36px; }
+  .module-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .module-title {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+  .module-desc {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-weight: 400;
+    max-width: 520px;
+    line-height: 1.7;
+  }
+
+  /* SECTIONS */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .section-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.18s;
+  }
+  .section-head:hover { background: #141414; }
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    min-width: 24px;
+  }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex: 1;
+  }
+  .section-indicator {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    transition: transform 0.2s, color 0.2s;
+  }
+  .section-indicator.open { color: var(--accent); transform: rotate(90deg); }
+  .section-body { padding: 22px 20px; display: none; }
+  .section-body.open { display: block; }
+
+  /* FIELDS */
+  .field { margin-bottom: 20px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.18s;
+  }
+  input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 72px; font-family: var(--sans); font-size: 14px; letter-spacing: 0; }
+
+  /* TILE SELECTORS */
+  .tile-group { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tile {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.18s;
+    user-select: none;
+    white-space: nowrap;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+  .tile::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+  }
+  .tile:hover { border-color: #2a2a2a; background: #141414; color: var(--text); }
+  .tile:hover::after { transform: scaleX(0.5); }
+  .tile.active, .tile.multi-active {
+    background: rgba(139,21,186,0.06);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tile.active::after, .tile.multi-active::after { transform: scaleX(1); }
+
+  /* GAMUT ENTRIES */
+  .gamut-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .gamut-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+  }
+  .gamut-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 100px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .gamut-item input[type="text"] {
+    width: 72px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    border-radius: 10px;
+  }
+  .gamut-suffix { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .gamut-remove {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 4px;
+    transition: color 0.15s;
+  }
+  .gamut-remove:hover { color: var(--danger); }
+
+  /* DYNAMIC TABLE */
+  .readings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .readings-table th {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .readings-table td { border: 1px solid var(--border); padding: 0; }
+  .readings-table td input {
+    border: none;
+    background: transparent;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    width: 100%;
+  }
+  .readings-table td input:focus {
+    border: none;
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+  }
+
+  .add-row-btn, .remove-row-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.18s;
+    margin-top: 8px;
+  }
+  .add-row-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .remove-row-btn { border-color: transparent; color: var(--muted); padding: 6px 8px; margin-top: 0; }
+  .remove-row-btn:hover { color: var(--danger); border-color: rgba(255,68,68,0.3); }
+
+  /* TOGGLES */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-family: var(--sans); font-size: 14px; color: var(--muted); letter-spacing: 1px; }
+  .toggle {
+    width: 38px; height: 22px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    position: relative; cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: rgba(139,21,186,0.15); border-color: var(--accent); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: left 0.2s, background 0.2s;
+  }
+  .toggle.on .toggle-thumb { left: 19px; background: var(--accent); }
+
+  /* SIDEBAR */
+  .sidebar { position: sticky; top: 90px; }
+  .preview-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .preview-head {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .preview-body { padding: 16px 18px; }
+  .preview-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 12px;
+  }
+  .preview-row:last-child { border-bottom: none; }
+  .preview-key { color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+  .preview-val { color: var(--text); font-family: var(--mono); font-size: 11px; text-align: right; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px; }
+  .preview-val.accent { color: var(--accent); }
+
+  .status-bar {
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(139,21,186,0.7);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* CTA BUTTON */
+  .generate-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .generate-btn::before {
+    content: '';
+    position: absolute; left: -100%; top: 0;
+    width: 100%; height: 100%;
+    background: var(--accent);
+    transition: left 0.2s;
+    z-index: 0;
+  }
+  .generate-btn span { position: relative; z-index: 1; }
+  .generate-btn:hover::before { left: 0; }
+  .generate-btn:hover { color: #fff; box-shadow: 0 0 20px rgba(139,21,186,0.3); }
+  .generate-btn:active { transform: scale(0.99); }
+  .generate-btn:disabled { border-color: var(--border); color: var(--muted); cursor: not-allowed; }
+  .generate-btn:disabled::before { display: none; }
+
+  .reset-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  .demo-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .demo-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .demo-btn .demo-icon { font-size: 13px; }
+
+  .nav-footer {
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+    padding: 24px 40px;
+    display: flex;
+    gap: 24px;
+    position: relative;
+    z-index: 1;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.18s;
+  }
+  .nav-item:hover { color: var(--text); }
+
+  .notification {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    max-width: 340px;
+  }
+  .notification.show { transform: translateY(0); opacity: 1; }
+  .notif-icon { color: var(--accent); font-size: 16px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: var(--mono);
+    letter-spacing: 1px;
+    line-height: 1.7;
+  }
+
+  /* RGB PRIMARY ROWS */
+  .rgb-primary-group { display: flex; flex-direction: column; gap: 6px; }
+  .rgb-primary-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+  }
+  .rgb-primary-row.row-r { border-color: rgba(255,51,51,0.15); }
+  .rgb-primary-row.row-g { border-color: rgba(51,255,51,0.1); }
+  .rgb-primary-row.row-b { border-color: rgba(68,136,255,0.15); }
+  .rgb-primary-row.row-w { border-color: rgba(255,255,255,0.08); }
+  .rgb-swatch {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .rgb-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    min-width: 14px;
+  }
+  .rgb-label.lbl-r { color: #ff3333; }
+  .rgb-label.lbl-g { color: #33ff33; }
+  .rgb-label.lbl-b { color: #4488ff; }
+  .rgb-label.lbl-w { color: #ffffff; }
+  .rgb-input {
+    width: 62px !important;
+    padding: 5px 8px !important;
+    font-family: var(--mono) !important;
+    font-size: 13px !important;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .rgb-preview {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  /* IMAGE UPLOAD */
+  .img-upload-area {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: border-color 0.18s;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    position: relative;
+  }
+  .img-upload-area:hover { border-color: var(--accent); }
+  .img-upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .img-upload-placeholder span:first-child { color: var(--accent); }
+  .img-upload-placeholder span:last-child {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* CUSTOM TABS */
+  .custom-tab {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    padding: 18px;
+    position: relative;
+  }
+  .custom-tab-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .custom-tab-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    border: 1px solid rgba(139,21,186,0.35);
+    border-radius: 6px;
+    padding: 2px 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .custom-tab-type {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .custom-tab-remove {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    transition: color 0.15s;
+  }
+  .custom-tab-remove:hover { color: var(--danger); }
+
+  /* custom table in tab */
+  .custom-table-controls { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+  /* PHASE TOGGLE */
+  .phase-toggle { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .phase-btn {
+    background: var(--bg);
+    border: none;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-right: 1px solid var(--border);
+    flex: 1;
+    white-space: nowrap;
+  }
+  .phase-btn:last-child { border-right: none; }
+  .phase-btn:hover { background: #141414; color: var(--text); }
+  .phase-btn.active-pre  { background: rgba(26,74,122,0.25); color: #4da6ff; border-color: rgba(77,166,255,0.3); }
+  .phase-btn.active-post { background: rgba(26,122,26,0.2);  color: #4dff88; border-color: rgba(77,255,136,0.3); }
+  .phase-btn.active-none { background: rgba(139,21,186,0.08); color: var(--accent); }
+
+  /* PRESET TAB PICKER */
+  .preset-picker {
+    margin-bottom: 14px;
+  }
+  .preset-picker-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: block;
+  }
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 7px;
+  }
+  .preset-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 10px 12px;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    min-height: 90px;
+  }
+  .preset-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+  }
+  .preset-card:hover { border-color: #2a2a2a; background: #141414; }
+  .preset-card:hover::after { transform: scaleX(1); }
+  .preset-card:hover .preset-card-icon { color: var(--accent); }
+  .preset-card-icon {
+    font-size: 28px;
+    line-height: 1;
+    color: var(--text);
+    transition: color 0.18s;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  .preset-card-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.4;
+  }
+  .preset-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .preset-divider::before, .preset-divider::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--border);
+  }
+
+  /* PRESET FIELD GROUPS */
+  .preset-fields { display: flex; flex-direction: column; gap: 10px; }
+  .preset-field-group {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .preset-field-group label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 860px) {
+    .container { grid-template-columns: 1fr; padding: 24px 16px; }
+    .header { padding: 16px 20px; }
+    .sidebar { position: static; }
+    .nav-footer { padding: 20px; flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-mark">
+      <span class="lm-r"></span>
+      <span class="lm-g"></span>
+      <span class="lm-b"></span>
+      <span class="lm-w"></span>
+    </div>
+    <div class="logo-text">
+      <h1>Display Calibration</h1>
+      <p>Suite · Module 05</p>
+    </div>
+  </div>
+  <div class="header-badge">
+    DOCX Export
+  </div>
+</header>
+
+<div class="container">
+  <div class="main">
+    <div class="module-header">
+      <div class="module-num">MODULE 05 — DOCUMENT GENERATOR</div>
+      <div class="module-title">DOCX Report Builder</div>
+      <p class="module-desc">Generuj raporty specyfikacji wyświetlacza w formacie .docx. Wszystkie dane przetwarzane lokalnie — bez serwera.</p>
+    </div>
+
+    <!-- 01: DEVICE & TECHNOLOGY -->
+    <div class="section">
+      <div class="section-head" onclick="toggleSection(this)">
+        <span class="section-num">01</span>
+        <span class="section-label">Rodzaj urządzenia i technologia</span>
+        <span class="section-indicator open">▶</span>
+      </div>
+      <div class="section-body open">
+
+        <div class="field">
+          <label>Rodzaj urządzenia</label>
+          <div class="tile-group" id="grp-device">
+            <div class="tile" data-group="device" data-val="Telewizor" onclick="selectTile(this)">Telewizor</div>
+            <div class="tile" data-group="device" data-val="Monitor" onclick="selectTile(this)">Monitor</div>
+            <div class="tile" data-group="device" data-val="Laptop" onclick="selectTile(this)">Laptop</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Technologia panelu</label>
+          <div class="tile-group" id="grp-panel">
+            <div class="tile" data-group="panel" data-val="LED Edge-lit" onclick="selectTile(this)">LED Edge-lit</div>
+            <div class="tile" data-group="panel" data-val="LED Backlit" onclick="selectTile(this)">LED Backlit</div>
+            <div class="tile" data-group="panel" data-val="LED Backlit FALD" onclick="selectTile(this)">LED Backlit FALD</div>
+            <div class="tile" data-group="panel" data-val="Mini LED" onclick="selectTile(this)">Mini LED</div>
+            <div class="tile" data-group="panel" data-val="OLED" onclick="selectTile(this)">OLED</div>
+            <div class="tile" data-group="panel" data-val="WOLED" onclick="selectTile(this)">WOLED</div>
+            <div class="tile" data-group="panel" data-val="QD-OLED" onclick="selectTile(this)">QD-OLED</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Rozdzielczość natywna</label>
+          <div class="tile-group" id="grp-res">
+            <div class="tile" data-group="res" data-val="1280×720 (HD)" onclick="selectTile(this)">HD 720p</div>
+            <div class="tile" data-group="res" data-val="1920×1080 (FHD)" onclick="selectTile(this)">FHD 1080p</div>
+            <div class="tile" data-group="res" data-val="2560×1440 (QHD)" onclick="selectTile(this)">QHD 1440p</div>
+            <div class="tile" data-group="res" data-val="3840×2160 (4K UHD)" onclick="selectTile(this)">4K UHD</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 02: DISPLAY DATA -->
+    <div class="section">
+      <div class="section-head" onclick="toggleSection(this)">
+        <span class="section-num">02</span>
+        <span class="section-label">Dane wyświetlacza</span>
+        <span class="section-indicator open">▶</span>
+      </div>
+      <div class="section-body open">
+
+        <div class="field">
+          <label>Numer / Tytuł dokumentu</label>
+          <input type="text" id="doc-title" placeholder="np. SPEC-2024-001 lub nazwa projektu" oninput="updatePreview()">
+          <p class="hint">Ten tekst pojawi się jako główny tytuł w nagłówku dokumentu .docx</p>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Marka</label>
+            <input type="text" id="disp-make" placeholder="ASUS, LG, Dell, Sony..." oninput="updatePreview()">
+          </div>
+          <div class="field">
+            <label>Model</label>
+            <input type="text" id="disp-model" placeholder="ProArt PA329CV" oninput="updatePreview()">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Przekątna (cale)</label>
+          <input type="text" id="disp-size" placeholder='np. 27"' style="max-width:160px" oninput="updatePreview()">
+        </div>
+
+        <div class="field" style="margin-top:4px">
+          <label>Deklarowane przestrzenie barw</label>
+          <div class="tile-group" id="grp-gamut">
+            <div class="tile" data-val="sRGB" onclick="addGamut(this)">sRGB</div>
+            <div class="tile" data-val="Adobe RGB" onclick="addGamut(this)">Adobe RGB</div>
+            <div class="tile" data-val="DCI-P3" onclick="addGamut(this)">DCI-P3</div>
+            <div class="tile" data-val="BT.2020" onclick="addGamut(this)">BT.2020</div>
+            <div class="tile" data-val="NTSC" onclick="addGamut(this)">NTSC</div>
+            <div class="tile" data-val="EBU / Rec.709" onclick="addGamut(this)">EBU / Rec.709</div>
+          </div>
+          <div class="gamut-list" id="gamut-list"></div>
+          <p class="hint">Kliknij przestrzeń barw — pojawi się wiersz do wpisania % pokrycia deklarowanego przez producenta.</p>
+        </div>
+
+        <div class="field" style="margin-top:4px">
+          <label>Gamma</label>
+          <div class="tile-group" id="grp-gamma">
+            <div class="tile" data-group="gamma" data-val="2.2" onclick="selectTile(this)">2.2</div>
+            <div class="tile" data-group="gamma" data-val="2.4" onclick="selectTile(this)">2.4</div>
+            <div class="tile" data-group="gamma" data-val="2.6" onclick="selectTile(this)">2.6</div>
+            <div class="tile" data-group="gamma" data-val="sRGB (IEC 61966-2-1)" onclick="selectTile(this)">sRGB</div>
+            <div class="tile" data-group="gamma" data-val="L* (CIELAB)" onclick="selectTile(this)">L* (CIELAB)</div>
+            <div class="tile" data-group="gamma" data-val="PQ / ST 2084 (HDR10)" onclick="selectTile(this)">PQ / HDR10</div>
+            <div class="tile" data-group="gamma" data-val="HLG (Hybrid Log-Gamma)" onclick="selectTile(this)">HLG</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 03–06: FAZY KALIBRACJI (generowane dynamicznie) -->
+    <div id="phase-sections-container"></div>
+
+    <!-- 05: ZAKŁADKI OPCJONALNE -->
+    <div class="section" id="custom-tabs-section">
+      <div class="section-head" onclick="toggleSection(this)">
+        <span class="section-num">05</span>
+        <span class="section-label">Zakładki dodatkowe <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-left:6px">(opcjonalne)</span></span>
+        <span class="section-indicator">▶</span>
+      </div>
+      <div class="section-body">
+        <p class="hint" style="margin-bottom:16px">Wybierz predefiniowaną zakładkę pomiarową lub dodaj własną sekcję z grafiką / tabelą. Każda zakładka może być przypisana do konkretnej fazy kalibracji.</p>
+
+        <!-- PRESET CARDS -->
+        <div class="preset-picker">
+          <span class="preset-picker-label">Szablony pomiarowe</span>
+          <div class="preset-grid">
+            <div class="preset-card" onclick="addPresetTab('contrast')">
+              <span class="preset-card-icon"><svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="19" cy="19" r="17" stroke="currentColor" stroke-width="2"/><path d="M19,2 A17,17 0 0,1 19,36 Z" fill="currentColor"/></svg></span>
+              <span class="preset-card-name">Pomiar kontrastu</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('apl')">
+              <span class="preset-card-icon"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:2.5px solid currentColor;border-radius:3px;font-size:14px;font-family:Arial,sans-serif;line-height:1;writing-mode:horizontal-tb;text-orientation:mixed">%</span></span>
+              <span class="preset-card-name">APL — wypełnienie bielą</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('halo')">
+              <span class="preset-card-icon"><svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="19" cy="19" r="19" stroke="currentColor" stroke-width="5" opacity="0.07"/><circle cx="19" cy="19" r="18" stroke="currentColor" stroke-width="4" opacity="0.12"/><circle cx="19" cy="19" r="17" stroke="currentColor" stroke-width="3" opacity="0.2"/><circle cx="19" cy="19" r="15" fill="currentColor"/></svg></span>
+              <span class="preset-card-name">Halo Test</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('uniformity')">
+              <span class="preset-card-icon"><svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="34" height="26" rx="2" stroke="currentColor" stroke-width="1.8"/><line x1="12.3" y1="1" x2="12.3" y2="27" stroke="currentColor" stroke-width="1.2" opacity="0.7"/><line x1="23.7" y1="1" x2="23.7" y2="27" stroke="currentColor" stroke-width="1.2" opacity="0.7"/><line x1="1" y1="9.7" x2="35" y2="9.7" stroke="currentColor" stroke-width="1.2" opacity="0.7"/><line x1="1" y1="18.3" x2="35" y2="18.3" stroke="currentColor" stroke-width="1.2" opacity="0.7"/></svg></span>
+              <span class="preset-card-name">Równomierność luminancji</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('colorchecker')">
+              <span class="preset-card-icon"><svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19,19 L19.0,2.0 A17,17 0 0,1 33.72,10.5 Z" fill="currentColor" opacity="1.0"/><path d="M19,19 L33.72,10.5 A17,17 0 0,1 33.72,27.5 Z" fill="currentColor" opacity="0.75"/><path d="M19,19 L33.72,27.5 A17,17 0 0,1 19.0,36.0 Z" fill="currentColor" opacity="0.5"/><path d="M19,19 L19.0,36.0 A17,17 0 0,1 4.28,27.5 Z" fill="currentColor" opacity="0.85"/><path d="M19,19 L4.28,27.5 A17,17 0 0,1 4.28,10.5 Z" fill="currentColor" opacity="0.6"/><path d="M19,19 L4.28,10.5 A17,17 0 0,1 19.0,2.0 Z" fill="currentColor" opacity="0.35"/><circle cx="19" cy="19" r="17" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="19" cy="19" r="5" fill="#0f0f0f"/></svg></span>
+              <span class="preset-card-name">Test kolorów</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('rgbtracking')">
+              <span class="preset-card-icon"><svg width="34" height="28" viewBox="0 0 34 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M1,3 C6,3 10,14 16,15 S28,15.5 33,15.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <path d="M1,14 C8,14 14,15 20,15.2 S28,15.4 33,15.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M1,25 C6,25 10,17 16,16 S28,15.6 33,15.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <line x1="1" y1="15.5" x2="33" y2="15.5" stroke="currentColor" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3"/>
+</svg></span>
+              <span class="preset-card-name">RGB Tracking</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('deltae')">
+              <span class="preset-card-icon">ΔE</span>
+              <span class="preset-card-name">Błędy DeltaE</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('gamma')">
+              <span class="preset-card-icon">γ</span>
+              <span class="preset-card-name">Krzywa Gamma</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('gamutcoverage')">
+              <span class="preset-card-icon"><svg width="34" height="32" viewBox="0 0 34 32" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="8.72,30.49 8.5,30.43 8.17,30.19 7.74,29.87 7.08,29.27 6.6,28.65 5.98,27.63 5.21,26.03 4.25,23.65 3.26,20.35 2.33,16.23 1.68,11.83 1.5,7.76 1.92,4.42 2.98,2.26 4.49,1.5 6.18,1.77 7.9,2.48 9.52,3.33 11.07,4.28 12.61,5.33 14.13,6.45 15.64,7.62 17.16,8.82 18.67,10.04 20.17,11.26 21.64,12.47 23.07,13.65 24.44,14.77 25.73,15.83 26.91,16.8 27.93,17.64 28.83,18.38 29.58,18.98 30.18,19.48 30.67,19.88 31.05,20.2 31.36,20.45 31.62,20.67 31.83,20.84 32.0,20.98 32.13,21.08 32.23,21.16 32.35,21.26 32.42,21.32 32.5,21.39" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/><line x1="32.5" y1="21.39" x2="8.72" y2="30.49" stroke="currentColor" stroke-width="1.5"/></svg></span>
+              <span class="preset-card-name">Pokrycie przestrzeni barw</span>
+            </div>
+            <div class="preset-card" onclick="addPresetTab('calibpreview')">
+              <span class="preset-card-icon"><svg width="36" height="26" viewBox="0 0 36 26" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="34" height="24" rx="2" stroke="currentColor" stroke-width="2"/><line x1="18" y1="1" x2="18" y2="25" stroke="currentColor" stroke-width="2"/><text x="9" y="17" text-anchor="middle" font-size="10" font-family="Arial,sans-serif" fill="currentColor">a</text><text x="27" y="17" text-anchor="middle" font-size="10" font-family="Arial,sans-serif" fill="currentColor">a'</text></svg></span>
+              <span class="preset-card-name">Podgląd kalibracji</span>
+            </div>
+          </div>
+
+          <div class="preset-divider">lub dodaj własną</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="add-row-btn" onclick="addCustomTab()">⊕ Dodaj własną zakładkę</button>
+          </div>
+        </div>
+
+        <div id="custom-tabs-list"></div>
+      </div>
+    </div>
+
+    <!-- 06: OPTIONS -->
+    <div class="section">
+      <div class="section-head" onclick="toggleSection(this)">
+        <span class="section-num">06</span>
+        <span class="section-label">Opcje dokumentu</span>
+        <span class="section-indicator">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="toggle-row">
+          <span class="toggle-label">Nagłówek i stopka z datą</span>
+          <div class="toggle on" id="tog-hf" onclick="toggleOpt(this)"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Numerowanie stron</span>
+          <div class="toggle on" id="tog-pages" onclick="toggleOpt(this)"><div class="toggle-thumb"></div></div>
+        </div>
+        <hr class="divider">
+        <div class="field">
+          <label>Wnioski / Rekomendacje</label>
+          <textarea id="doc-conclusion" placeholder="Monitor spełnia wymagania przestrzeni sRGB. Zalecana ponowna kalibracja po 6 miesiącach..."></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span>Generator aktywny — przetwarzanie lokalne</span>
+    </div>
+
+    <div class="preview-panel">
+      <div class="preview-head">Podgląd danych</div>
+      <div class="preview-body">
+        <div class="preview-row">
+          <span class="preview-key">TYTUŁ DOK.</span>
+          <span class="preview-val accent" id="prev-doctitle">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">URZĄDZENIE</span>
+          <span class="preview-val accent" id="prev-device">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">PANEL</span>
+          <span class="preview-val" id="prev-panel">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">ROZDZIELCZOŚĆ</span>
+          <span class="preview-val" id="prev-res">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">MONITOR</span>
+          <span class="preview-val" id="prev-monitor">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">PRZEKĄTNA</span>
+          <span class="preview-val" id="prev-size">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">PRZESTRZENIE BARW</span>
+          <span class="preview-val" id="prev-gamut">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">GAMMA</span>
+          <span class="preview-val" id="prev-gamma">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">BIEL PRZED KALIB.</span>
+          <span class="preview-val" id="prev-rows">—</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="generate-btn" id="gen-btn" onclick="generateDocx()">
+      <span>↓ Generuj plik .docx</span>
+    </button>
+    <button class="demo-btn" onclick="loadDemo()"><span class="demo-icon">⚡</span> Wgraj demo</button>
+    <button class="reset-btn" onclick="resetForm()">✕ Wyczyść wszystko</button>
+  </div>
+</div>
+
+<div class="nav-footer">
+  <a class="nav-item" href="#" onclick="event.preventDefault();try{window.parent.closeTool();}catch(e){history.back();}">
+    ← Powrót
+  </a>
+</div>
+
+<div class="notification" id="notif">
+  <span class="notif-icon">✓</span>
+  <span id="notif-text">Plik został wygenerowany.</span>
+</div>
+
+<script>
+/* ─── STATE ─────────────────────────────────────────── */
+const state = { device:'', panel:'', res:'', gamma:'' };
+const gamuts = []; // [{name, pct}]
+
+/* ─── PHASES ─────────────────────────────────────────── */
+const PHASES = [
+  { id: 'pre',     label: 'Przed kalibracją',                    num: '03', color: '#4da6ff', open: true  },
+  { id: 'post1',   label: 'Po kalibracji (manualna)',             num: '04', color: '#4dff88', open: false },
+  { id: 'post2',   label: 'Po kalibracji (profil ICM)',           num: '05', color: '#ffcc44', open: false },
+  { id: 'post3',   label: 'Po kalibracji (manualna + ICM)',       num: '06', color: '#ff88cc', open: false },
+];
+
+// Phase data: enabled flag + measurement data
+const phaseData = {};
+PHASES.forEach(ph => {
+  phaseData[ph.id] = {
+    enabled: ph.id === 'pre', // only "pre" on by default
+    wx: '', wy: '',
+    r: ['','',''], g: ['','',''], b: ['','',''], w: ['','',''],
+    image: null,
+  };
+});
+
+function renderPhaseSections() {
+  const container = document.getElementById('phase-sections-container');
+  container.innerHTML = '';
+  PHASES.forEach((ph, idx) => {
+    const d = phaseData[ph.id];
+    const isOpen = d.enabled;
+    const p = ph.id;
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.id = `phase-section-${p}`;
+    div.innerHTML = `
+      <div class="section-head" onclick="toggleSection(this)">
+        <span class="section-num">${ph.num}</span>
+        <span class="section-label" style="color:${d.enabled ? ph.color : 'var(--muted)'}">${ph.label}</span>
+        <div style="margin-left:auto;margin-right:10px;display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase">${d.enabled ? 'aktywna' : 'wyłączona'}</span>
+          <div class="toggle ${d.enabled ? 'on' : ''}" id="tog-phase-${p}" onclick="event.stopPropagation();togglePhase('${p}')"><div class="toggle-thumb"></div></div>
+        </div>
+        <span class="section-indicator ${isOpen ? 'open' : ''}">▶</span>
+      </div>
+      <div class="section-body ${isOpen ? 'open' : ''}">
+        <div class="field">
+          <label>Punkt bieli — współrzędne CIE xy</label>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted)">X</span>
+              <input type="text" id="${p}-wx" placeholder="0.3127" style="width:110px" value="${d.wx}" oninput="phaseData['${p}'].wx=this.value;updatePreview()">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted)">Y</span>
+              <input type="text" id="${p}-wy" placeholder="0.3290" style="width:110px" value="${d.wy}" oninput="phaseData['${p}'].wy=this.value;updatePreview()">
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Wartości RGB barw pierwotnych</label>
+          <div class="rgb-primary-group">
+            ${['r','g','b','w'].map((ch, ci) => {
+              const colors = [{bg:'#ff3333',cls:'row-r',lbl:'lbl-r',def:'rgb(255,51,51)'},{bg:'#33ff33',cls:'row-g',lbl:'lbl-g',def:'rgb(51,255,51)'},{bg:'#4488ff',cls:'row-b',lbl:'lbl-b',def:'rgb(68,136,255)'},{bg:'#ffffff',cls:'row-w',lbl:'lbl-w',def:'rgb(255,255,255)',border:'border:1px solid var(--border)'}][ci];
+              const vals = d[ch];
+              return `<div class="rgb-primary-row ${colors.cls}">
+                <div class="rgb-swatch" style="background:${colors.bg};${colors.border||''}"></div>
+                <span class="rgb-label ${colors.lbl}">${ch.toUpperCase()}</span>
+                <input type="text" class="rgb-input" id="${p}-${ch}-r" placeholder="${ch==='w'?'255':ci===0?'255':'0'}" value="${vals[0]}" oninput="phaseData['${p}']['${ch}'][0]=this.value;syncSwatch('${p}-${ch}')">
+                <input type="text" class="rgb-input" id="${p}-${ch}-g" placeholder="${ch==='w'?'255':ci===1?'255':'0'}" value="${vals[1]}" oninput="phaseData['${p}']['${ch}'][1]=this.value;syncSwatch('${p}-${ch}')">
+                <input type="text" class="rgb-input" id="${p}-${ch}-b" placeholder="${ch==='w'?'255':ci===2?'255':'0'}" value="${vals[2]}" oninput="phaseData['${p}']['${ch}'][2]=this.value;syncSwatch('${p}-${ch}')">
+                <div class="rgb-preview" id="${p}-${ch}-preview" style="background:${colors.def};${colors.border||''}"></div>
+              </div>`;
+            }).join('')}
+          </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Zdjęcie / grafika</label>
+          <div class="img-upload-area" onclick="document.getElementById('img-input-${p}').click()" ${d.image ? 'style="border-style:solid;border-color:var(--accent)"' : ''}>
+            <input type="file" id="img-input-${p}" accept="image/*" style="display:none" onchange="loadPhaseImage(this,'${p}')">
+            <div id="img-placeholder-${p}" style="display:${d.image?'none':'flex'}" class="img-upload-placeholder">
+              <span style="font-size:22px;color:var(--muted)">⊕</span>
+              <span style="font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:0.1em">IMPORTUJ GRAFIKĘ</span>
+            </div>
+            <img id="img-preview-${p}" src="${d.image||''}" style="display:${d.image?'block':'none'};max-width:100%;max-height:380px;object-fit:contain">
+          </div>
+          ${d.image ? `<button class="add-row-btn" style="margin-top:6px;border-color:var(--danger);color:var(--danger)" onclick="removePhaseImage('${p}')">✕ Usuń grafikę</button>` : ''}
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function togglePhase(phId) {
+  phaseData[phId].enabled = !phaseData[phId].enabled;
+  renderPhaseSections();
+  renderCustomTabs(); // refresh phase selector in tabs
+  updatePreview();
+}
+
+function loadPhaseImage(input, phId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    phaseData[phId].image = e.target.result;
+    renderPhaseSections();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhaseImage(phId) {
+  phaseData[phId].image = null;
+  renderPhaseSections();
+}
+
+/* ─── RGB SWATCH SYNC ────────────────────────────────── */
+function clampRgb(v) {
+  const n = parseInt(v);
+  if (isNaN(n)) return 0;
+  return Math.min(255, Math.max(0, n));
+}
+function syncSwatch(prefix) {
+  const r = clampRgb(document.getElementById(prefix+'-r')?.value);
+  const g = clampRgb(document.getElementById(prefix+'-g')?.value);
+  const b = clampRgb(document.getElementById(prefix+'-b')?.value);
+  const el = document.getElementById(prefix+'-preview');
+  if (el) el.style.background = `rgb(${r},${g},${b})`;
+}
+
+/* ─── TILE SELECTION (single per group) ─────────────── */
+function selectTile(el) {
+  const group = el.dataset.group;
+  document.querySelectorAll(`.tile[data-group="${group}"]`).forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  state[group] = el.dataset.val;
+  updatePreview();
+}
+
+/* ─── GAMUT MULTI-SELECT ─────────────────────────────── */
+function addGamut(el) {
+  const name = el.dataset.val;
+  if (gamuts.find(g => g.name === name)) return; // already added
+  el.classList.add('multi-active');
+  gamuts.push({ name, pct: '' });
+  renderGamutList();
+  updatePreview();
+}
+
+function removeGamut(name) {
+  const idx = gamuts.findIndex(g => g.name === name);
+  if (idx !== -1) gamuts.splice(idx, 1);
+  // deactivate tile
+  document.querySelectorAll('#grp-gamut .tile').forEach(t => {
+    if (t.dataset.val === name) t.classList.remove('multi-active');
+  });
+  renderGamutList();
+  updatePreview();
+}
+
+function renderGamutList() {
+  const list = document.getElementById('gamut-list');
+  list.innerHTML = '';
+  gamuts.forEach((g, i) => {
+    const item = document.createElement('div');
+    item.className = 'gamut-item';
+    item.innerHTML = `
+      <span class="gamut-name">${g.name}</span>
+      <input type="text" value="${g.pct}" placeholder="99" maxlength="5"
+        oninput="gamuts[${i}].pct=this.value;updatePreview()">
+      <span class="gamut-suffix">% pokrycia</span>
+      <button class="gamut-remove" onclick="removeGamut('${g.name}')" title="Usuń">✕</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+/* ─── SECTIONS TOGGLE ────────────────────────────────── */
+function toggleSection(head) {
+  const body = head.nextElementSibling;
+  const ind  = head.querySelector('.section-indicator');
+  const open = body.classList.toggle('open');
+  ind.classList.toggle('open', open);
+}
+
+function toggleOpt(el) { el.classList.toggle('on'); }
+
+/* ─── PREVIEW ─────────────────────────────────────────── */
+function updatePreview() {
+  const make  = document.getElementById('disp-make').value;
+  const model = document.getElementById('disp-model').value;
+  const size  = document.getElementById('disp-size').value;
+  const docTitle = document.getElementById('doc-title').value;
+
+  document.getElementById('prev-doctitle').textContent = docTitle || '—';
+  document.getElementById('prev-device').textContent  = state.device  || '—';
+  document.getElementById('prev-panel').textContent   = state.panel   || '—';
+  document.getElementById('prev-res').textContent     = state.res     || '—';
+  document.getElementById('prev-monitor').textContent = (make||model) ? `${make} ${model}`.trim() : '—';
+  document.getElementById('prev-size').textContent    = size ? `${size}"` : '—';
+  document.getElementById('prev-gamma').textContent   = state.gamma   || '—';
+
+  const gamutStr = gamuts.length
+    ? gamuts.map(g => g.pct ? `${g.name} ${g.pct}%` : g.name).join(', ')
+    : '—';
+  document.getElementById('prev-gamut').textContent = gamutStr;
+
+  const preD = phaseData['pre'];
+  document.getElementById('prev-rows').textContent = (preD.wx && preD.wy) ? `x:${preD.wx} y:${preD.wy}` : '—';
+}
+
+/* ─── NOTIFY ─────────────────────────────────────────── */
+function notify(msg, isError = false) {
+  const el   = document.getElementById('notif');
+  const icon = el.querySelector('.notif-icon');
+  document.getElementById('notif-text').textContent = msg;
+  el.style.borderColor = isError ? 'var(--danger)' : 'var(--accent)';
+  icon.style.color     = isError ? 'var(--danger)' : 'var(--accent)';
+  icon.textContent     = isError ? '✕' : '✓';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function getVal(id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; }
+function isOn(id)   { return document.getElementById(id).classList.contains('on'); }
+
+/* ─── DOCX GENERATION (native XML + JSZip, no external docx lib) ─── */
+async function generateDocx() {
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.querySelector('span').textContent = '⋯ Generowanie...';
+
+  try {
+    if (typeof JSZip === 'undefined') throw new Error('JSZip nie załadował się. Sprawdź połączenie z internetem.');
+
+    const make       = getVal('disp-make');
+    const model      = getVal('disp-model');
+    const size       = getVal('disp-size');
+    const conclusion = getVal('doc-conclusion');
+    const today      = new Date().toLocaleDateString('pl-PL');
+    const nowStr     = new Date().toLocaleString('pl-PL');
+
+    /* ── XML helpers ── */
+    function esc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function rgbHex(hex) { return hex.toUpperCase(); }
+
+    function wPr(sz, bold, color, font) {
+      return `<w:rPr>${bold?'<w:b/>':''}<w:color w:val="${rgbHex(color)}"/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/><w:rFonts w:ascii="${font}" w:hAnsi="${font}" w:cs="${font}"/></w:rPr>`;
+    }
+    function run(text, sz=20, bold=false, color='333333', font='Arial') {
+      return `<w:r>${wPr(sz,bold,color,font)}<w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
+    }
+    function para(text, sz=20, bold=false, color='333333', spaceBefore=0, spaceAfter=100, font='Arial', borderBottom=false) {
+      const bdr = borderBottom ? `<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="6" w:color="0A2540"/></w:pBdr>` : '';
+      return `<w:p><w:pPr><w:spacing w:before="${spaceBefore}" w:after="${spaceAfter}"/>${bdr}</w:pPr>${run(text,sz,bold,color,font)}</w:p>`;
+    }
+    function h1(text) {
+      return `<w:p><w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr>${run(text,22,true,'1A4A7A')}</w:p>`;
+    }
+    function spacer() { return `<w:p><w:pPr><w:spacing w:after="80"/></w:pPr></w:p>`; }
+
+    // Convert decimal rgb values to 6-char hex string for OOXML fill
+    function toHex6(r, g, b) {
+      const clamp = v => Math.min(255, Math.max(0, parseInt(v)||0));
+      return [clamp(r),clamp(g),clamp(b)].map(n=>n.toString(16).padStart(2,'0')).join('').toUpperCase();
+    }
+
+    /* ── Unified table constants ─────────────────────────
+       All tables share the same total width (tW) and are
+       centred on the page via <w:jc w:val="center"/>.
+       Font: Arial 11 pt → OOXML sz = 22 half-points.      */
+    const FS   = 22;   // font size half-points (11 pt)
+    const tW   = 7200; // ALL tables identical width (dxa)
+
+    // Cell builder — fills, borders, padding, vAlign centre
+    function cell(text, w, fillHex, textHex, bold) {
+      fillHex = fillHex || 'FFFFFF'; textHex = textHex || '333333'; bold = bold || false;
+      const b = bold ? '<w:b/>' : '';
+      const bdr = '<w:top w:val="single" w:sz="4" w:space="0" w:color="D4D4D4"/>' +
+                  '<w:left w:val="single" w:sz="4" w:space="0" w:color="D4D4D4"/>' +
+                  '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="D4D4D4"/>' +
+                  '<w:right w:val="single" w:sz="4" w:space="0" w:color="D4D4D4"/>';
+      const rpr = `<w:rPr>${b}<w:color w:val="${textHex}"/><w:sz w:val="${FS}"/><w:szCs w:val="${FS}"/><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/></w:rPr>`;
+      const content = text
+        ? `<w:r>${rpr}<w:t xml:space="preserve">${esc(text)}</w:t></w:r>`
+        : '';
+      return `<w:tc><w:tcPr>` +
+               `<w:tcW w:w="${w}" w:type="dxa"/>` +
+               `<w:shd w:val="clear" w:color="auto" w:fill="${fillHex}"/>` +
+               `<w:tcBorders>${bdr}</w:tcBorders>` +
+               `<w:vAlign w:val="center"/>` +
+               `<w:tcMar><w:top w:w="70" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar>` +
+             `</w:tcPr>` +
+             `<w:p><w:pPr><w:spacing w:after="0"/></w:pPr>${content}</w:p>` +
+             `</w:tc>`;
+    }
+
+    function trow(cells) { return `<w:tr>${cells}</w:tr>`; }
+
+    // Centred fixed-width table (all tables use tW)
+    function tbl(rows, colWidths) {
+      const total = colWidths.reduce((a,b)=>a+b,0);
+      const grid  = colWidths.map(w=>`<w:gridCol w:w="${w}"/>`).join('');
+      return `<w:tbl>` +
+               `<w:tblPr>` +
+                 `<w:tblW w:w="${total}" w:type="dxa"/>` +
+                 `<w:tblLayout w:type="fixed"/>` +
+                 `<w:jc w:val="center"/>` +
+               `</w:tblPr>` +
+               `<w:tblGrid>${grid}</w:tblGrid>` +
+               rows.join('') +
+             `</w:tbl>`;
+    }
+
+    // Standard 2-col key/value table (both cols sum to tW)
+    const kW = 2800, vW2 = tW - kW; // key | value
+    function infoRow(label, value) {
+      return trow(cell(label, kW, '1A4A7A', 'FFFFFF', true) + cell(value, vW2, 'FFFFFF', '333333', false));
+    }
+    function infoTable(rows) { return tbl(rows, [kW, vW2]); }
+
+    /* ── Build body XML ── */
+    const useHF = isOn('tog-hf') || isOn('tog-pages');
+    let body = '';
+
+    // Title — list item a) matching thesis template (numId 101, abstractNumId from template)
+    const docTitle = getVal('doc-title') || 'Specyfikacja wyświetlacza';
+    // Paragraph styled as a) list item from the thesis template
+    body += `<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="101"/></w:numPr><w:spacing w:before="0" w:after="120"/></w:pPr>${run(docTitle,24,true,'0A2540')}</w:p>`;
+    if (useHF) body += para(`Display Calibration Suite  ·  Wygenerowano: ${today}`, 22, false, '888888', 0, 400, 'Arial', true);
+
+    // 1. Device & technology
+    body += h1('Rodzaj urządzenia i technologia');
+    const techRows = [];
+    if (state.device) techRows.push(infoRow('Rodzaj urządzenia',     state.device));
+    if (state.panel)  techRows.push(infoRow('Technologia ekranu',    state.panel));
+    if (state.res)    techRows.push(infoRow('Rozdzielczość natywna', state.res));
+    body += techRows.length ? infoTable(techRows) : para('Brak danych.',20,false,'AAAAAA');
+
+    // 2. Display data
+    body += spacer();
+    body += h1('Dane wyświetlacza');
+    const dispRows = [];
+    if (make||model) dispRows.push(infoRow('Producent / Model', `${make} ${model}`.trim()));
+    if (size)        dispRows.push(infoRow('Przekątna', `${size}"`));
+    if (state.gamma) dispRows.push(infoRow('Gamma', state.gamma));
+    if (dispRows.length) body += infoTable(dispRows);
+
+    // Gamut sub-table — same tW, 2 cols
+    if (gamuts.length) {
+      body += spacer();
+      body += para('Deklarowane przestrzenie barw', 22, true, '1A4A7A', 200, 120);
+      const gc0 = Math.round(tW * 0.62), gc1 = tW - gc0;
+      const gRows = [
+        trow(cell('Przestrzeń barw', gc0, '1A4A7A', 'FFFFFF', true) + cell('Pokrycie (deklarowane)', gc1, '1A4A7A', 'FFFFFF', true)),
+        ...gamuts.map(g => trow(cell(g.name, gc0, 'FFFFFF', '333333') + cell(g.pct ? `${g.pct}%` : '—', gc1, 'FFFFFF', '333333')))
+      ];
+      body += tbl(gRows, [gc0, gc1]);
+    }
+
+    /* RGB table — layout: [Barwa lbW | R colW | G colW | B colW | Swatch swW]
+       All columns sum to tW. Empty string (not '?') when value missing.        */
+    function buildRgbTable(rgbList) {
+      // col widths — must sum to tW (6000)
+      const lbW  = 2100; // label "R (Czerwony)" etc.
+      const cRW  = 660;  // R value
+      const cGW  = 660;  // G value
+      const cBW  = 660;  // B value
+      const swW  = tW - lbW - cRW - cGW - cBW; // 920 — swatch at end
+
+      const hdr = trow(
+        cell('Barwa',   lbW, '1A4A7A', 'FFFFFF', true) +
+        cell('R',       cRW, '1A4A7A', 'FFFFFF', true) +
+        cell('G',       cGW, '1A4A7A', 'FFFFFF', true) +
+        cell('B',       cBW, '1A4A7A', 'FFFFFF', true) +
+        cell('',        swW, '1A4A7A', 'FFFFFF', false)
+      );
+
+      var rows = [hdr], hasData = false;
+      rgbList.forEach(function(item) {
+        var r = item.r, g = item.g, b = item.b, label = item.label;
+        if (!r && !g && !b) return;
+        hasData = true;
+        var hexFill = toHex6(r, g, b);
+        var rn = parseInt(r)||0, gn = parseInt(g)||0, bn = parseInt(b)||0;
+        var lum = 0.299*rn + 0.587*gn + 0.114*bn;
+        rows.push(trow(
+          cell(label,     lbW, 'FFFFFF', '333333', true)  +
+          cell(r || '',   cRW, 'FFFFFF', '444444', false) +
+          cell(g || '',   cGW, 'FFFFFF', '444444', false) +
+          cell(b || '',   cBW, 'FFFFFF', '444444', false) +
+          cell('',        swW, hexFill,  'FFFFFF', false)
+        ));
+      });
+      return hasData ? tbl(rows, [lbW, cRW, cGW, cBW, swW]) : null;
+    }
+
+    // Helper: embed image into body XML
+    // A4 with 2.5cm margins: text width = 21cm - 5cm = 16cm = 5760 twips = 9144000 EMU
+    const MAX_IMG_WIDTH_EMU = 9144000;
+
+    function imageXml(relationId, naturalW, naturalH) {
+      // naturalW/naturalH are pixel dimensions of the actual image
+      // Scale to fit within MAX_IMG_WIDTH_EMU, preserving aspect ratio
+      let cx, cy;
+      if (!naturalW || !naturalH) {
+        cx = MAX_IMG_WIDTH_EMU;
+        cy = Math.round(MAX_IMG_WIDTH_EMU * 9 / 16);
+      } else {
+        const pixelsPerEmu = 914400 / 96; // 96 DPI assumed
+        let wEmu = Math.round(naturalW * pixelsPerEmu);
+        let hEmu = Math.round(naturalH * pixelsPerEmu);
+        if (wEmu > MAX_IMG_WIDTH_EMU) {
+          hEmu = Math.round(hEmu * MAX_IMG_WIDTH_EMU / wEmu);
+          wEmu = MAX_IMG_WIDTH_EMU;
+        }
+        cx = wEmu;
+        cy = hEmu;
+      }
+      return `<w:p><w:r><w:rPr></w:rPr><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="1" name="img"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="img"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+    }
+
+    // Process images: convert dataURL to base64 bytes
+    async function prepareImage(dataUrl) {
+      if (!dataUrl) return null;
+      // Get natural dimensions via Image element
+      const dims = await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => resolve({ w: 0, h: 0 });
+        img.src = dataUrl;
+      });
+      const resp = await fetch(dataUrl);
+      const buf  = await resp.arrayBuffer();
+      return { bytes: new Uint8Array(buf), w: dims.w, h: dims.h };
+    }
+
+    // Prepare custom tab images
+    const customTabImgData = [];
+    for (const tab of customTabs) {
+      if (tab.image) {
+        customTabImgData.push({ id: tab.id, data: await prepareImage(tab.image) });
+      }
+    }
+
+    // Build phase images (must be before buildPhaseSection which references phaseImgData)
+    const phaseImgData = [];
+    for (const ph of PHASES) {
+      if (phaseData[ph.id].image) {
+        phaseImgData.push({ id: ph.id, data: await prepareImage(phaseData[ph.id].image) });
+      }
+    }
+
+    // Helper: render custom tabs of a given phase into body
+    function renderTabsForPhase(phase) {
+      const tabs = customTabs.filter(t => t.phase === phase);
+      tabs.forEach((tab) => {
+        // Skip entire section if nothing to show
+        const hasTitle = tab.title && tab.title.trim();
+        const hasDesc = tab.description && tab.description.trim();
+        const filledRows = tab.tableData.filter(row => row.some(c => c.trim() !== ''));
+        const hasTableData = filledRows.length > 0;
+        const hasHeaders = tab.tableHeaders.some(h => h.trim() !== '');
+        const imgEntry = customTabImgData.find(e => e.id === tab.id);
+        const hasImage = !!(imgEntry && imgEntry.data);
+        if (!hasTitle && !hasDesc && !hasTableData && !hasImage) return;
+
+        body += spacer();
+        body += h1(hasTitle ? tab.title.trim() : 'Sekcja dodatkowa');
+
+        if (hasDesc) {
+          body += para(tab.description.trim(), 20, false, '555555', 0, 160);
+        }
+
+        // table — only if there are filled rows
+        if (hasTableData || hasHeaders) {
+          const colCount = tab.tableHeaders.length;
+          const colW = Math.floor(tW / colCount);
+          // Adjust last column to absorb rounding remainder
+          const colWidths = tab.tableHeaders.map((_, i) =>
+            i === colCount - 1 ? tW - colW * (colCount - 1) : colW
+          );
+          const tabRows = [];
+          if (hasHeaders) {
+            tabRows.push(trow(
+              tab.tableHeaders.map((h, i) =>
+                cell(h, colWidths[i], '1A4A7A', 'FFFFFF', true)
+              ).join('')
+            ));
+          }
+          filledRows.forEach((row, ri) => {
+            const fill = ri % 2 === 0 ? 'EFF3F7' : 'FFFFFF';
+            tabRows.push(trow(
+              row.map((c, i) =>
+                cell(c, colWidths[i] || colW, fill, '333333', false)
+              ).join('')
+            ));
+          });
+          body += tbl(tabRows, colWidths);
+        }
+
+        // image
+        if (hasImage) {
+          body += spacer();
+          body += imageXml(`rIdCustom${tab.id}`, imgEntry.data.w, imgEntry.data.h);
+        }
+      });
+    }
+
+    // Helper: build a phase measurement section into body
+    function buildPhaseSection(phId) {
+      const ph = PHASES.find(p => p.id === phId);
+      const d = phaseData[phId];
+      if (!ph || !d.enabled) return;
+
+      body += spacer();
+      body += h1(ph.label);
+
+      const wx = d.wx.trim(), wy = d.wy.trim();
+      if (wx || wy) {
+        const wpRows = [];
+        if (wx) wpRows.push(infoRow('Punkt bieli x', wx));
+        if (wy) wpRows.push(infoRow('Punkt bieli y', wy));
+        body += infoTable(wpRows);
+        body += spacer();
+      }
+
+      if (d.showTable !== false) {
+        const rgbList = [
+          {label:'R (Czerwony)', r:d.r[0], g:d.r[1], b:d.r[2]},
+          {label:'G (Zielony)',  r:d.g[0], g:d.g[1], b:d.g[2]},
+          {label:'B (Niebieski)',r:d.b[0], g:d.b[1], b:d.b[2]},
+          {label:'W (Biały)',    r:d.w[0], g:d.w[1], b:d.w[2]},
+        ];
+        const rgbTbl = buildRgbTable(rgbList);
+        if (rgbTbl) body += rgbTbl;
+        else if (!wx && !wy) body += para('Brak danych.',20,false,'AAAAAA');
+      }
+
+      // custom tabs for this phase
+      renderTabsForPhase(phId);
+
+      // phase image
+      const imgEntry = phaseImgData.find(e => e.id === phId);
+      if (imgEntry && imgEntry.data) {
+        body += spacer();
+        body += para(`Grafika — ${ph.label}`, 18, true, '1A4A7A', 120, 80);
+        body += imageXml(`rIdPhase_${phId}`, imgEntry.data.w, imgEntry.data.h);
+      }
+    }
+
+    // Render all enabled phases in order
+    for (const ph of PHASES) {
+      buildPhaseSection(ph.id);
+    }
+
+    // Custom tabs not assigned to any phase
+    if (customTabs.some(t => t.phase === 'none')) {
+      renderTabsForPhase('none');
+    }
+
+    const conclusionSectionNum = 5 + customTabs.length;
+
+    if (conclusion) {
+      body += spacer();
+      body += h1('Wnioski i rekomendacje');
+      body += para(conclusion);
+    }
+
+    // Signature
+    if (useHF) {
+      body += spacer(); body += spacer();
+      body += para('_'.repeat(40),20,false,'CCCCCC');
+      body += para(`Wygenerowano: ${nowStr}`,18,false,'999999');
+    }
+
+    // Header / Footer
+    const monitorStr = esc(`${make} ${model}`.trim() || 'Display Calibration Suite');
+    const headerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="4" w:color="1A1A4E"/></w:pBdr></w:pPr>${run('Display Calibration Suite  ·  '+monitorStr,16,false,'888888')}</w:p>
+</w:hdr>`;
+    const footerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:p><w:pPr><w:jc w:val="right"/><w:pBdr><w:top w:val="single" w:sz="4" w:space="4" w:color="1A1A4E"/></w:pBdr></w:pPr>${run(today+`  ·  Strona `,16,false,'888888')}<w:fldSimple w:instr=" PAGE "><w:r><w:rPr><w:color w:val="888888"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>1</w:t></w:r></w:fldSimple>${run(' / ',16,false,'888888')}<w:fldSimple w:instr=" NUMPAGES "><w:r><w:rPr><w:color w:val="888888"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>1</w:t></w:r></w:fldSimple></w:p>
+</w:ftr>`;
+
+
+    /* ── Assemble OOXML files ── */
+    const anyImg = phaseImgData.length > 0 || customTabImgData.length > 0;
+    const imgContentTypes = anyImg ? `\n  <Default Extension="png" ContentType="image/png"/>` : '';
+    const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml"  ContentType="application/xml"/>${imgContentTypes}
+  <Override PartName="/word/document.xml"  ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml"    ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+  <Override PartName="/word/settings.xml"  ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>
+  <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>
+  <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>
+  ${useHF?`<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>
+  <Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>`:''}
+</Types>`;
+
+    const relsRoot = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+    const relsWord = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"   Target="styles.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
+  ${useHF?`<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>`:''}
+</Relationships>`;
+
+    const hfRef = useHF ? `<w:headerReference w:type="default" r:id="rId3"/><w:footerReference w:type="default" r:id="rId4"/>` : '';
+
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<w:body>
+${body}
+<w:sectPr>
+  ${hfRef}
+  <w:pgSz w:w="12240" w:h="15840"/>
+  <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/>
+</w:sectPr>
+</w:body>
+</w:document>`;
+
+    const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/>
+    <w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="20"/></w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Heading1">
+    <w:name w:val="heading 1"/>
+    <w:basedOn w:val="Normal"/>
+    <w:pPr><w:spacing w:before="320" w:after="160"/><w:outlineLvl w:val="0"/></w:pPr>
+    <w:rPr><w:b/><w:color w:val="0A2540"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/></w:rPr>
+  </w:style>
+</w:styles>`;
+
+    const settingsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:defaultTabStop w:val="720"/>
+</w:settings>`;
+
+    /* ── Pack ZIP ── */
+    // Build image relationships
+    let imgRels = '';
+    phaseImgData.forEach(entry => {
+      imgRels += `\n  <Relationship Id="rIdPhase_${entry.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/phase_${entry.id}.png"/>`;
+    });
+    customTabImgData.forEach(entry => {
+      imgRels += `\n  <Relationship Id="rIdCustom${entry.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/custom_${entry.id}.png"/>`;
+    });
+
+    const relsWordFinal = relsWord.replace('</Relationships>', imgRels + '\n</Relationships>');
+
+    // numbering.xml — defines a) b) c) list (abstractNumId=0, numId=101)
+    // matching the thesis template structure so Word continues the sequence when pasted
+    const numberingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:abstractNum w:abstractNumId="0">
+    <w:nsid w:val="0DD60086"/>
+    <w:multiLevelType w:val="hybridMultilevel"/>
+    <w:tmpl w:val="4B94F4E6"/>
+    <w:lvl w:ilvl="0">
+      <w:start w:val="1"/>
+      <w:numFmt w:val="lowerLetter"/>
+      <w:lvlText w:val="%1)"/>
+      <w:lvlJc w:val="left"/>
+      <w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr>
+      <w:rPr><w:rFonts w:hint="default"/></w:rPr>
+    </w:lvl>
+  </w:abstractNum>
+  <w:num w:numId="101">
+    <w:abstractNumId w:val="0"/>
+  </w:num>
+</w:numbering>`;
+
+    const zip = new JSZip();
+    zip.file('[Content_Types].xml', contentTypes);
+    zip.file('_rels/.rels', relsRoot);
+    zip.file('word/document.xml', documentXml);
+    zip.file('word/styles.xml',   stylesXml);
+    zip.file('word/settings.xml', settingsXml);
+    zip.file('word/numbering.xml', numberingXml);
+    zip.file('word/_rels/document.xml.rels', relsWordFinal);
+    if (useHF) {
+      zip.file('word/header1.xml', headerXml);
+      zip.file('word/footer1.xml', footerXml);
+    }
+    phaseImgData.forEach(entry => {
+      zip.file(`word/media/phase_${entry.id}.png`, entry.data.bytes);
+    });
+    customTabImgData.forEach(entry => {
+      zip.file(`word/media/custom_${entry.id}.png`, entry.data.bytes);
+    });
+
+    const blob = await zip.generateAsync({ type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const name = `${make||'display'}_${model||'spec'}`.replace(/\s+/g,'_').replace(/[^\w_-]/g,'');
+    a.href = url; a.download = `${name}_spec.docx`; a.click();
+    URL.revokeObjectURL(url);
+    notify('Plik .docx został wygenerowany i pobrany.');
+
+  } catch(err) {
+    console.error(err);
+    notify('Błąd: ' + err.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.querySelector('span').textContent = '↓ Generuj plik .docx';
+  }
+}
+
+/* ─── PRESET TAB DEFINITIONS ─────────────────────────── */
+const PRESETS = {
+  contrast: {
+    label: 'Pomiar kontrastu',
+    icon: '◑',
+    type: 'table',
+    tableHeaders: ['Parametr', 'Wartość', 'Jednostka'],
+    tableData: [
+      ['Kontrast statyczny (deklarowany)', '', ':1'],
+      ['Kontrast statyczny (zmierzony)', '', ':1'],
+      ['Kontrast dynamiczny', '', ':1'],
+      ['Poziom czerni (cd/m²)', '', 'cd/m²'],
+      ['Szczytowa jasność (cd/m²)', '', 'cd/m²'],
+    ],
+  },
+  apl: {
+    label: 'APL — wypełnienie ekranu bielą',
+    icon: '□',
+    type: 'table',
+    tableHeaders: ['APL %', 'Jasność (cd/m²)', 'Uwagi'],
+    tableData: [
+      ['10%', '', ''],
+      ['25%', '', ''],
+      ['50%', '', ''],
+      ['75%', '', ''],
+      ['100%', '', ''],
+    ],
+  },
+  halo: {
+    label: 'Halo Test',
+    icon: '◎',
+    type: 'image',
+    hint: 'Dodaj zrzut ekranu lub fotografię prezentującą efekt aureoli (halo) wokół jasnych obiektów na ciemnym tle.',
+  },
+  colorchecker: {
+    label: 'Test kolorów',
+    icon: '▦',
+    type: 'table',
+    tableHeaders: ['Próbka', 'ΔE₀₀', 'ΔE₇₆', 'Ocena'],
+    tableData: [
+      ['Ciemnoskóra (Dark skin)', '', '', ''],
+      ['Jasnoskóra (Light skin)', '', '', ''],
+      ['Błękitne niebo (Blue sky)', '', '', ''],
+      ['Liście (Foliage)', '', '', ''],
+      ['Niebieski kwiat (Blue flower)', '', '', ''],
+      ['Niebieskawa zieleń (Bluish green)', '', '', ''],
+      ['Pomarańcz (Orange)', '', '', ''],
+      ['Purpura (Purplish blue)', '', '', ''],
+      ['Karmazynowa czerwień (Moderate red)', '', '', ''],
+      ['Fiolet (Purple)', '', '', ''],
+      ['Żółtawa zieleń (Yellow green)', '', '', ''],
+      ['Pomarańczowożółty (Orange yellow)', '', '', ''],
+      ['Niebieski (Blue)', '', '', ''],
+      ['Zieleń (Green)', '', '', ''],
+      ['Czerwień (Red)', '', '', ''],
+      ['Żółty (Yellow)', '', '', ''],
+      ['Magenta', '', '', ''],
+      ['Cyan', '', '', ''],
+      ['Biały (White)', '', '', ''],
+      ['Neutralny 8 (Neutral 8)', '', '', ''],
+      ['Neutralny 6.5 (Neutral 6.5)', '', '', ''],
+      ['Neutralny 5 (Neutral 5)', '', '', ''],
+      ['Neutralny 3.5 (Neutral 3.5)', '', '', ''],
+      ['Czarny (Black)', '', '', ''],
+    ],
+  },
+  rgbtracking: {
+    label: 'RGB Tracking',
+    icon: '〰',
+    type: 'table',
+    tableHeaders: ['Poziom szarości', 'x', 'y'],
+    tableData: [],
+  },
+  deltae: {
+    label: 'Błędy DeltaE',
+    icon: 'ΔE',
+    type: 'table',
+    tableHeaders: ['Pomiar', 'ΔE₀₀ min', 'ΔE₀₀ max', 'ΔE₀₀ średnia', 'Ocena'],
+    tableData: [
+      ['Przed kalibracją', '', '', '', ''],
+      ['Po kalibracji', '', '', '', ''],
+    ],
+  },
+  gamma: {
+    label: 'Krzywa Gamma',
+    icon: 'γ',
+    type: 'table',
+    tableHeaders: ['Poziom szarości', 'Gamma'],
+    tableData: [],
+  },
+  gamutcoverage: {
+    label: 'Pokrycie przestrzeni barw',
+    icon: '◉',
+    type: 'table',
+    tableHeaders: ['Przestrzeń barw', 'Pokrycie (%)', 'Objętość (%)', 'Metoda pomiaru'],
+    tableData: [
+      ['sRGB', '', '', ''],
+      ['Adobe RGB', '', '', ''],
+      ['DCI-P3', '', '', ''],
+      ['BT.2020', '', '', ''],
+    ],
+  },
+  calibpreview: {
+    label: 'Podgląd kalibracji',
+    icon: '⊡',
+    type: 'image',
+    hint: 'Dodaj grafikę prezentującą wizualny podgląd kalibracji (np. wykres krzywych, zrzut ekranu oprogramowania).',
+  },
+  uniformity: {
+    label: 'Równomierność luminancji',
+    icon: '⬛',
+    type: 'table',
+    tableHeaders: ['Strefa', 'Luminancja (cd/m²)', 'Odchyłka od centrum (%)'],
+    tableData: [
+      ['Lewy górny', '', ''],
+      ['Górny środek', '', ''],
+      ['Prawy górny', '', ''],
+      ['Lewy środek', '', ''],
+      ['Centrum', '', ''],
+      ['Prawy środek', '', ''],
+      ['Lewy dolny', '', ''],
+      ['Dolny środek', '', ''],
+      ['Prawy dolny', '', ''],
+    ],
+  },
+};
+
+/* ─── SCALE ROWS REBUILD ────────────────────────────── */
+function rebuildScaleRows(tab) {
+  const n = tab.stepSize || 8;
+  const nCols = tab.tableHeaders.length;
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const v = Math.round(i * 255 / (n - 1));
+    const row = Array(nCols).fill('');
+    row[0] = String(v);
+    rows.push(row);
+  }
+  tab.tableData = rows;
+}
+
+function setTabStep(tabId, step) {
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab) return;
+  tab.stepSize = step;
+  rebuildScaleRows(tab);
+  renderCustomTabs();
+}
+
+function addPresetTab(presetKey) {
+  const preset = PRESETS[presetKey];
+  if (!preset) return;
+  const id = ++customTabCounter;
+  const tab = {
+    id,
+    presetKey,
+    phase: 'none',
+    title: preset.label,
+    description: '',
+    image: null,
+    hint: preset.hint || null,
+    tableHeaders: preset.tableHeaders ? [...preset.tableHeaders] : ['Parametr', 'Wartość'],
+    tableData: preset.tableData ? preset.tableData.map(r => [...r]) : [['', ''], ['', '']],
+    stepSize: (presetKey === 'rgbtracking' || presetKey === 'apl' || presetKey === 'gamma') ? 8 : null,
+  };
+  if (tab.stepSize) rebuildScaleRows(tab);
+  customTabs.push(tab);
+  renderCustomTabs();
+  setTimeout(() => {
+    const list = document.getElementById('custom-tabs-list');
+    if (list.lastElementChild) list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 80);
+}
+
+/* ─── CUSTOM TABS ────────────────────────────────────── */
+const customTabs = [];
+let customTabCounter = 0;
+
+function addCustomTab() {
+  const id = ++customTabCounter;
+  const tab = {
+    id,
+    presetKey: null,
+    phase: 'none',
+    title: '',
+    description: '',
+    image: null,
+    hint: null,
+    tableHeaders: ['Parametr', 'Wartość'],
+    tableData: [['', ''], ['', '']],
+  };
+  customTabs.push(tab);
+  renderCustomTabs();
+}
+
+function removeCustomTab(id) {
+  const idx = customTabs.findIndex(t => t.id === id);
+  if (idx !== -1) customTabs.splice(idx, 1);
+  renderCustomTabs();
+}
+
+function setTabPhase(id, phase) {
+  const tab = customTabs.find(t => t.id === id);
+  if (tab) tab.phase = phase;
+  renderCustomTabs();
+}
+
+function renderCustomTabs() {
+  const container = document.getElementById('custom-tabs-list');
+  container.innerHTML = '';
+  customTabs.forEach((tab, i) => {
+    const div = document.createElement('div');
+    div.className = 'custom-tab';
+    const presetBadge = tab.presetKey
+      ? `<span style="font-family:var(--mono);font-size:10px;color:var(--accent);border:1px solid rgba(139,21,186,0.3);border-radius:5px;padding:2px 8px;letter-spacing:1px;text-transform:uppercase">${(PRESETS[tab.presetKey]?.icon||'')} SZABLON</span>`
+      : '';
+    const hasImg = !!tab.image;
+    const hintHtml = tab.hint ? `<p class="hint" style="margin-bottom:10px">${tab.hint}</p>` : '';
+
+    let tableHtml = `<thead><tr>`;
+    tab.tableHeaders.forEach((h, hi) => {
+      tableHtml += `<th style="position:relative"><input type="text" value="${h}" placeholder="Nagłówek ${hi+1}" style="width:100%;background:transparent;border:none;font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:7px 24px 7px 10px" oninput="(function(v){const t=customTabs.find(x=>x.id===${tab.id});if(t)t.tableHeaders[${hi}]=v;})(this.value)"><button class="remove-row-btn" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);padding:2px 4px;font-size:10px;opacity:0.5" onclick="removeCustomTabCol(${tab.id},${hi})" title="Usuń kolumnę">✕</button></th>`;
+    });
+    tableHtml += `<th style="border:none;width:32px"></th></tr></thead><tbody>`;
+    tab.tableData.forEach((row, ri) => {
+      tableHtml += `<tr>`;
+      row.forEach((cell, ci) => {
+        tableHtml += `<td><input type="text" value="${cell}" placeholder="..." oninput="(function(v){const t=customTabs.find(x=>x.id===${tab.id});if(t)t.tableData[${ri}][${ci}]=v;})(this.value)"></td>`;
+      });
+      tableHtml += `<td style="border:none;width:32px"><button class="remove-row-btn" onclick="removeCustomTabRow(${tab.id},${ri})">✕</button></td>`;
+      tableHtml += `</tr>`;
+    });
+    tableHtml += `</tbody>`;
+
+    // ── Paste section HTML — only for supported presets ──────────────────
+    let pasteHtml = '';
+    if (tab.presetKey === 'apl') {
+      pasteHtml = `
+      <div class="field" style="margin-bottom:14px">
+        <label>Wklej dane z Chromatic Data Analyser — APL</label>
+        <p class="hint" style="margin-bottom:8px">Wklej 9 wierszy luminancji [cd/m²] z zakładki <strong>APL Brightness → Eksport</strong> (format: sama wartość Y lub x&nbsp;y&nbsp;Y — kolumny x,y są ignorowane). Poziomy: 2%·5%·10%·15%·20%·25%·50%·75%·100%</p>
+        <textarea id="ctab-paste-${tab.id}" style="width:100%;min-height:100px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 14px;resize:vertical" placeholder="1060&#10;1058&#10;1050&#10;..."></textarea>
+        <div style="margin-top:6px;display:flex;gap:8px">
+          <button class="add-row-btn" onclick="pasteImportAPL(${tab.id},${i})">→ Importuj do tabeli</button>
+          <button class="add-row-btn" onclick="document.getElementById('ctab-paste-${tab.id}').value=''" style="color:var(--danger);border-color:rgba(255,68,68,0.3)">Wyczyść pole</button>
+        </div>
+      </div>`;
+    } else if (tab.presetKey === 'rgbtracking') {
+      pasteHtml = `
+      <div class="field" style="margin-bottom:14px">
+        <label>Wklej dane z Chromatic Data Analyser — RGB Tracking</label>
+        <p class="hint" style="margin-bottom:8px">Wklej dane kanału <strong>W</strong> (8 punktów, format: x&nbsp;y&nbsp;Y) z zakładki <strong>Eksport → Dane wejściowe → Kopiuj W</strong>. Gainy R/G/B zostaną obliczone automatycznie.</p>
+        <textarea id="ctab-paste-${tab.id}" style="width:100%;min-height:100px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 14px;resize:vertical" placeholder="0.3127  0.3290  0.01&#10;0.3135  0.3295  2.50&#10;..."></textarea>
+        <div style="margin-top:6px;display:flex;gap:8px">
+          <button class="add-row-btn" onclick="pasteImportRGBTrack(${tab.id},${i})">→ Importuj do tabeli</button>
+          <button class="add-row-btn" onclick="document.getElementById('ctab-paste-${tab.id}').value=''" style="color:var(--danger);border-color:rgba(255,68,68,0.3)">Wyczyść pole</button>
+        </div>
+      </div>`;
+    } else if (tab.presetKey === 'gamma') {
+      pasteHtml = `
+      <div class="field" style="margin-bottom:14px">
+        <label>Wklej dane z Chromatic Data Analyser — Gamma</label>
+        <p class="hint" style="margin-bottom:8px">Wklej dane z eksportu (3 kolumny: kolumna 1, kolumna 2, <strong>gamma</strong>). Program pobierze wartości tylko z <strong>trzeciej kolumny</strong>.</p>
+        <textarea id="ctab-paste-${tab.id}" style="width:100%;min-height:100px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 14px;resize:vertical" placeholder="0.0000&#9;0.0000&#9;0.00&#10;0.5000&#9;0.5012&#9;2.19&#10;..."></textarea>
+        <div style="margin-top:6px;display:flex;gap:8px">
+          <button class="add-row-btn" onclick="pasteImportGamma(${tab.id})">→ Importuj do tabeli</button>
+          <button class="add-row-btn" onclick="document.getElementById('ctab-paste-${tab.id}').value=''" style="color:var(--danger);border-color:rgba(255,68,68,0.3)">Wyczyść pole</button>
+        </div>
+      </div>`;
+    } else if (tab.presetKey === 'colorchecker') {
+      pasteHtml = `
+      <div class="field" style="margin-bottom:14px">
+        <label>Wklej dane z Chromatic Data Analyser — Colour Checker</label>
+        <p class="hint" style="margin-bottom:8px">Wklej 24 wiersze z zakładki <strong>Colour Checker → Eksport</strong> (format: x&nbsp;y lub x&nbsp;y&nbsp;Y). Odchylenia Δxy od referencji zostaną wyliczone i wpisane w kolumny ΔE₀₀ i ΔE₇₆.</p>
+        <textarea id="ctab-paste-${tab.id}" style="width:100%;min-height:130px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 14px;resize:vertical" placeholder="0.4002  0.3504&#10;0.3773  0.3446&#10;..."></textarea>
+        <div style="margin-top:6px;display:flex;gap:8px">
+          <button class="add-row-btn" onclick="pasteImportCC(${tab.id},${i})">→ Importuj do tabeli</button>
+          <button class="add-row-btn" onclick="document.getElementById('ctab-paste-${tab.id}').value=''" style="color:var(--danger);border-color:rgba(255,68,68,0.3)">Wyczyść pole</button>
+        </div>
+      </div>`;
+    }
+
+    div.innerHTML = `
+      <div class="custom-tab-header">
+        <span class="custom-tab-num">TAB ${String(i+1).padStart(2,'0')}</span>
+        ${presetBadge}
+        <div style="margin-left:auto;margin-right:10px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Faza w dokumencie</div>
+          <div class="phase-toggle">
+            <button class="phase-btn ${tab.phase==='none'?'active-none':''}" onclick="setTabPhase(${tab.id},'none')">Brak</button>
+            ${PHASES.map(ph => `<button class="phase-btn ${tab.phase===ph.id?'active-pre':''}" style="${tab.phase===ph.id?`background:rgba(139,21,186,0.12);color:${ph.color};`:''}" onclick="setTabPhase(${tab.id},'${ph.id}')" title="${ph.label}">${ph.num}</button>`).join('')}
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:1px">${tab.phase==='none'?'— bez przypisania —':PHASES.find(p=>p.id===tab.phase)?.label||''}</div>
+        </div>
+        <button class="custom-tab-remove" onclick="removeCustomTab(${tab.id})" title="Usuń zakładkę">✕</button>
+      </div>
+
+      <div class="field" style="margin-bottom:12px">
+        <label>Tytuł sekcji</label>
+        <input type="text" value="${tab.title}" placeholder="np. Profil ICC, Krzywa tonalna..." oninput="(function(t){const found=customTabs.find(x=>x.id===${tab.id});if(found)found.title=t;})(this.value)">
+      </div>
+
+      <div class="field" style="margin-bottom:14px">
+        <label>Opis / komentarz</label>
+        <textarea placeholder="Opcjonalny opis, wnioski lub komentarz do tej sekcji..." oninput="(function(t){const found=customTabs.find(x=>x.id===${tab.id});if(found)found.description=t;})(this.value)" style="min-height:60px">${tab.description||''}</textarea>
+      </div>
+
+      ${pasteHtml}
+
+      <div class="field" style="margin-bottom:14px">
+        <label>Tabela danych</label>
+        ${(tab.presetKey === 'rgbtracking' || tab.presetKey === 'apl' || tab.presetKey === 'gamma') ? `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase">Skok skali (0–255):</span>
+          ${[8,10,16,32].map(s => `<button class="add-row-btn" style="margin-top:0;${tab.stepSize===s?'border-color:var(--accent);color:var(--accent)':''}" onclick="setTabStep(${tab.id},${s})">${s}</button>`).join('')}
+        </div>` : ''}
+        <div style="overflow-x:auto">
+          <table class="readings-table" id="ctab-table-${tab.id}">${tableHtml}</table>
+        </div>
+        <div class="custom-table-controls">
+          <button class="add-row-btn" onclick="addCustomTabRow(${tab.id})">+ Dodaj wiersz</button>
+          <button class="add-row-btn" onclick="addCustomTabCol(${tab.id})">+ Dodaj kolumnę</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Grafika</label>
+        ${hintHtml}
+        <div class="img-upload-area" style="${hasImg?'border-style:solid;border-color:var(--accent)':''}" onclick="document.getElementById('ctab-img-${tab.id}').click()">
+          <input type="file" id="ctab-img-${tab.id}" accept="image/*" style="display:none" onchange="loadCustomTabImage(this,${tab.id})">
+          <div id="ctab-placeholder-${tab.id}" style="display:${hasImg?'none':'flex'}" class="img-upload-placeholder">
+            <span style="font-size:22px;color:var(--muted)">⊕</span>
+            <span style="font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:0.1em">IMPORTUJ GRAFIKĘ</span>
+          </div>
+          <img id="ctab-preview-${tab.id}" src="${tab.image||''}" style="display:${hasImg?'block':'none'};max-width:100%;max-height:380px;object-fit:contain">
+        </div>
+        ${hasImg ? `<button class="add-row-btn" style="margin-top:6px;border-color:var(--danger);color:var(--danger)" onclick="removeCustomTabImage(${tab.id})">✕ Usuń grafikę</button>` : ''}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+/* ─── PASTE IMPORT HELPERS ───────────────────────────── */
+
+function parsePasteRows(raw) {
+  return raw.trim().split('\n')
+    .map(l => l.trim()).filter(l => l.length > 0)
+    .map(l => l.split(/[\s,;]+/).map(v => v.trim()).filter(v => v !== ''));
+}
+
+// APL: 9 rows of luminance values (Y, or x y Y — last column taken as Y)
+function pasteImportAPL(tabId) {
+  const el = document.getElementById('ctab-paste-' + tabId);
+  if (!el) return;
+  const rows = parsePasteRows(el.value);
+  if (!rows.length) { notify('Brak danych do importu.'); return; }
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab) return;
+  const nApl = tab.stepSize || 16;
+  const APL_LABELS = [];
+  for (let i = 0; i < nApl; i++) APL_LABELS.push(String(Math.round(i * 255 / (nApl - 1))));
+  const nAplRows = APL_LABELS.length;
+  const nAplCols = tab.tableHeaders.length;
+  while (tab.tableData.length < nAplRows) tab.tableData.push(Array(nAplCols).fill(''));
+  // ensure existing rows have correct col count
+  tab.tableData.forEach(row => { while (row.length < nAplCols) row.push(''); row.length = nAplCols; });
+  rows.slice(0, nAplRows).forEach((cols, ri) => {
+    const Y = parseFloat(cols[cols.length - 1]);
+    if (!isNaN(Y)) {
+      if (0 < nAplCols) tab.tableData[ri][0] = APL_LABELS[ri] || tab.tableData[ri][0];
+      if (1 < nAplCols) tab.tableData[ri][1] = Y.toFixed(2);
+    }
+  });
+  renderCustomTabs();
+  notify('Dane APL zaimportowane (' + Math.min(rows.length, nAplRows) + ' wierszy).');
+}
+
+// RGB Tracking: 8 rows x y Y (kanał W) → oblicza gainy R/G/B i temperaturę
+function pasteImportRGBTrack(tabId) {
+  const el = document.getElementById('ctab-paste-' + tabId);
+  if (!el) return;
+  const rows = parsePasteRows(el.value);
+  if (!rows.length) { notify('Brak danych do importu.'); return; }
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab) return;
+
+  const D65 = { x: 0.3127, y: 0.3290 };
+  const M = [
+    [ 3.2406, -1.5372, -0.4986],
+    [-0.9689,  1.8758,  0.0415],
+    [ 0.0557, -0.2040,  1.0570]
+  ];
+  function xyYtoXYZ(x, y, Y) {
+    if (!y) return {X:0,Y:0,Z:0};
+    return { X:(Y/y)*x, Y:Y, Z:(Y/y)*(1-x-y) };
+  }
+  function xyzToRGB(X, Y, Z) {
+    return {
+      r: M[0][0]*X + M[0][1]*Y + M[0][2]*Z,
+      g: M[1][0]*X + M[1][1]*Y + M[1][2]*Z,
+      b: M[2][0]*X + M[2][1]*Y + M[2][2]*Z
+    };
+  }
+  function cct(x, y) {
+    const n = (x - 0.3320) / (y - 0.1858);
+    return Math.round(-449*n*n*n + 3525*n*n - 6823.3*n + 5520.33);
+  }
+  const refXYZ = xyYtoXYZ(D65.x, D65.y, 100);
+  const refRGB = xyzToRGB(refXYZ.X, refXYZ.Y, refXYZ.Z);
+
+  const nRgb = tab.stepSize || 16;
+  const TRACK_LABELS = [];
+  for (let i = 0; i < nRgb; i++) TRACK_LABELS.push(String(Math.round(i * 255 / (nRgb - 1))));
+  const nRows = TRACK_LABELS.length;
+  const nRgbCols = tab.tableHeaders.length;
+  while (tab.tableData.length < nRows) tab.tableData.push(Array(nRgbCols).fill(''));
+  // ensure existing rows have correct col count
+  tab.tableData.forEach(row => { while (row.length < nRgbCols) row.push(''); row.length = nRgbCols; });
+
+  // map of column index → what to write (based on how many cols exist)
+  rows.slice(0, nRows).forEach((cols, ri) => {
+    const x = parseFloat(cols[0]), y = parseFloat(cols[1]);
+    if (isNaN(x) || isNaN(y)) return;
+    const values = [
+      TRACK_LABELS[ri],
+      isNaN(x) ? '' : x.toFixed(4),
+      isNaN(y) ? '' : y.toFixed(4),
+    ];
+    for (let ci = 0; ci < nRgbCols; ci++) {
+      tab.tableData[ri][ci] = values[ci] !== undefined ? values[ci] : '';
+    }
+  });
+
+  renderCustomTabs();
+  notify('RGB Tracking zaimportowany (' + Math.min(rows.length, nRows) + ' punktów).');
+}
+
+// Gamma: pobiera tylko 3. kolumnę (wartość gamma) dla każdego wiersza
+// Gamma: pobiera tylko 3. kolumnę (wartość gamma) dla każdego wiersza
+function pasteImportGamma(tabId) {
+  const el = document.getElementById('ctab-paste-' + tabId);
+  if (!el) return;
+  const rows = parsePasteRows(el.value);
+  if (!rows.length) { notify('Brak danych do importu.'); return; }
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab) return;
+  const nCols = tab.tableHeaders.length;
+  const nGamma = tab.stepSize || 8;
+  const LABELS = [];
+  for (let i = 0; i < nGamma; i++) LABELS.push(String(Math.round(i * 255 / (nGamma - 1))));
+  while (tab.tableData.length < nGamma) tab.tableData.push(Array(nCols).fill(''));
+  tab.tableData.forEach(row => { while (row.length < nCols) row.push(''); row.length = nCols; });
+  rows.slice(0, nGamma).forEach((cols, ri) => {
+    const gamma = parseFloat(cols[2]);
+    if (0 < nCols) tab.tableData[ri][0] = LABELS[ri];
+    if (1 < nCols && !isNaN(gamma)) tab.tableData[ri][1] = gamma.toFixed(2);
+  });
+  renderCustomTabs();
+  notify('Dane gamma zaimportowane (' + Math.min(rows.length, nGamma) + ' punktów).');
+}
+
+// Colour Checker: 24 rows x y (lub x y Y) → Δxy → przybliżony ΔE + ocena
+const CC_REF = [
+  {name:'Dark skin',        x:0.4002,y:0.3504},
+  {name:'Light skin',       x:0.3773,y:0.3446},
+  {name:'Blue sky',         x:0.2470,y:0.2514},
+  {name:'Foliage',          x:0.3372,y:0.4220},
+  {name:'Blue flower',      x:0.2651,y:0.2400},
+  {name:'Bluish green',     x:0.2608,y:0.3430},
+  {name:'Orange',           x:0.5060,y:0.4070},
+  {name:'Purplish blue',    x:0.2110,y:0.1750},
+  {name:'Moderate red',     x:0.4533,y:0.3058},
+  {name:'Purple',           x:0.2845,y:0.2020},
+  {name:'Yellow green',     x:0.3800,y:0.4887},
+  {name:'Orange yellow',    x:0.4729,y:0.4375},
+  {name:'Blue',             x:0.1866,y:0.1285},
+  {name:'Green',            x:0.3046,y:0.4782},
+  {name:'Red',              x:0.5385,y:0.3129},
+  {name:'Yellow',           x:0.4480,y:0.4703},
+  {name:'Magenta',          x:0.3635,y:0.2351},
+  {name:'Cyan',             x:0.1958,y:0.2519},
+  {name:'White',            x:0.3101,y:0.3163},
+  {name:'Neutral 8',        x:0.3101,y:0.3163},
+  {name:'Neutral 6.5',      x:0.3101,y:0.3163},
+  {name:'Neutral 5',        x:0.3101,y:0.3163},
+  {name:'Neutral 3.5',      x:0.3101,y:0.3163},
+  {name:'Black',            x:0.3101,y:0.3163},
+];
+
+function pasteImportCC(tabId) {
+  const el = document.getElementById('ctab-paste-' + tabId);
+  if (!el) return;
+  const rows = parsePasteRows(el.value);
+  if (!rows.length) { notify('Brak danych do importu.'); return; }
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab) return;
+  while (tab.tableData.length < 24) tab.tableData.push(['','','','']);
+
+  rows.slice(0, 24).forEach((cols, ri) => {
+    const x = parseFloat(cols[0]), y = parseFloat(cols[1]);
+    if (isNaN(x) || isNaN(y)) return;
+    const ref = CC_REF[ri];
+    if (!ref) return;
+    const dx = x - ref.x, dy = y - ref.y;
+    const dxy = Math.sqrt(dx*dx + dy*dy);
+    const de00 = (dxy * 100).toFixed(3);
+    const de76 = (dxy * 85).toFixed(3);
+    const de = parseFloat(de00);
+    const ocena = de < 1 ? '✓ Doskonały' : de < 2 ? '✓ Dobry' : de < 4 ? '△ Akceptowalny' : '✕ Słaby';
+    tab.tableData[ri][0] = ref.name;
+    tab.tableData[ri][1] = de00;
+    tab.tableData[ri][2] = de76;
+    tab.tableData[ri][3] = ocena;
+  });
+
+  renderCustomTabs();
+  notify('Colour Checker zaimportowany (' + Math.min(rows.length, 24) + ' pól).');
+}
+
+/* ─────────────────────────────────────────────────────── */
+
+function loadCustomTabImage(input, tabId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const tab = customTabs.find(t => t.id === tabId);
+    if (tab) tab.image = e.target.result;
+    renderCustomTabs();
+  };
+  reader.readAsDataURL(file);
+}
+function removeCustomTabImage(tabId) {
+  const tab = customTabs.find(t => t.id === tabId);
+  if (tab) tab.image = null;
+  renderCustomTabs();
+}
+function addCustomTabRow(tabId) {
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab) return;
+  const cols = tab.tableHeaders.length;
+  tab.tableData.push(Array(cols).fill(''));
+  renderCustomTabs();
+}
+function removeCustomTabRow(tabId, ri) {
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab || tab.tableData.length <= 1) return;
+  tab.tableData.splice(ri, 1);
+  renderCustomTabs();
+}
+function addCustomTabCol(tabId) {
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab) return;
+  tab.tableHeaders.push('');
+  tab.tableData.forEach(row => row.push(''));
+  renderCustomTabs();
+}
+function removeCustomTabCol(tabId, ci) {
+  const tab = customTabs.find(t => t.id === tabId);
+  if (!tab || tab.tableHeaders.length <= 1) return;
+  tab.tableHeaders.splice(ci, 1);
+  tab.tableData.forEach(row => row.splice(ci, 1));
+  renderCustomTabs();
+}
+
+/* ─── DEMO SVG IMAGES ────────────────────────────────── */
+// Generates a placeholder chart/graph as a data-URL SVG
+function makeDemoSvg(type, label) {
+  const W = 700, H = 380;
+  const palette = ['#8b15ba','#4da6ff','#4dff88','#ffcc44','#ff4444','#ff88cc'];
+  let content = '';
+
+  if (type === 'gamma') {
+    // Gamma curve
+    content += `<text x="10" y="22" font-family="monospace" font-size="13" fill="#555">GAMMA CURVE · ${label}</text>`;
+    content += `<line x1="60" y1="320" x2="640" y2="320" stroke="#222" stroke-width="1"/>`;
+    content += `<line x1="60" y1="320" x2="60" y2="30" stroke="#222" stroke-width="1"/>`;
+    // ideal line
+    content += `<line x1="60" y1="320" x2="640" y2="30" stroke="#333" stroke-width="1" stroke-dasharray="4,4"/>`;
+    // gamma 2.2 curve
+    let pts = '';
+    for (let i=0;i<=50;i++) {
+      const t=i/50;
+      const x=60+t*580, y=320-Math.pow(t,2.2)*290;
+      pts += (i?'L':'M')+x.toFixed(1)+','+y.toFixed(1);
+    }
+    content += `<path d="${pts}" fill="none" stroke="#8b15ba" stroke-width="2.5"/>`;
+    // measured (slight deviation)
+    let pts2 = '';
+    for (let i=0;i<=50;i++) {
+      const t=i/50;
+      const dev=(Math.sin(t*Math.PI)*0.04);
+      const x=60+t*580, y=320-Math.pow(t+dev,2.15)*290;
+      pts2 += (i?'L':'M')+x.toFixed(1)+','+y.toFixed(1);
+    }
+    content += `<path d="${pts2}" fill="none" stroke="#4dff88" stroke-width="2" stroke-dasharray="6,3"/>`;
+    content += `<text x="650" y="325" font-family="monospace" font-size="10" fill="#555" text-anchor="end">255</text>`;
+    content += `<text x="55" y="35" font-family="monospace" font-size="10" fill="#555" text-anchor="end">255</text>`;
+    content += `<rect x="490" y="30" width="140" height="38" rx="4" fill="#111" stroke="#222"/>`;
+    content += `<line x1="500" y1="44" x2="520" y2="44" stroke="#8b15ba" stroke-width="2"/><text x="525" y="48" font-family="monospace" font-size="10" fill="#8b15ba">Ideal 2.20</text>`;
+    content += `<line x1="500" y1="58" x2="520" y2="58" stroke="#4dff88" stroke-width="2" stroke-dasharray="4,2"/><text x="525" y="62" font-family="monospace" font-size="10" fill="#4dff88">Measured</text>`;
+
+  } else if (type === 'whitepoint') {
+    // White point CIE xy scatter
+    content += `<text x="10" y="22" font-family="monospace" font-size="13" fill="#555">WHITE POINT · ${label}</text>`;
+    const cx=350, cy=200, r=140;
+    content += `<ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r*0.75}" fill="none" stroke="#1a1a1a" stroke-width="60"/>`;
+    content += `<line x1="60" y1="${cy}" x2="${W-40}" y2="${cy}" stroke="#222" stroke-width="1"/>`;
+    content += `<line x1="${cx}" y1="40" x2="${cx}" y2="${H-30}" stroke="#222" stroke-width="1"/>`;
+    // D65 target
+    content += `<circle cx="${cx}" cy="${cy}" r="8" fill="none" stroke="#ffcc44" stroke-width="2"/>`;
+    content += `<line x1="${cx-14}" y1="${cy}" x2="${cx+14}" y2="${cy}" stroke="#ffcc44" stroke-width="1.5"/>`;
+    content += `<line x1="${cx}" y1="${cy-14}" x2="${cx}" y2="${cy+14}" stroke="#ffcc44" stroke-width="1.5"/>`;
+    // Measured points (slight scatter)
+    const pts3 = [[cx+8,cy-5],[cx+4,cy+9],[cx-6,cy+3],[cx+12,cy-12],[cx-3,cy-8]];
+    pts3.forEach(([px,py]) => {
+      content += `<circle cx="${px}" cy="${py}" r="5" fill="#8b15ba" opacity="0.85"/>`;
+    });
+    content += `<text x="${cx+14}" y="${cy-14}" font-family="monospace" font-size="10" fill="#ffcc44">D65 (0.3127, 0.3290)</text>`;
+    content += `<rect x="490" y="30" width="150" height="38" rx="4" fill="#111" stroke="#222"/>`;
+    content += `<circle cx="502" cy="44" r="5" fill="#8b15ba"/><text x="512" y="48" font-family="monospace" font-size="10" fill="#8b15ba">Measured pts</text>`;
+    content += `<circle cx="502" cy="58" r="5" fill="none" stroke="#ffcc44" stroke-width="1.5"/><text x="512" y="62" font-family="monospace" font-size="10" fill="#ffcc44">D65 target</text>`;
+
+  } else if (type === 'apl') {
+    // APL luminance ramp bar chart
+    content += `<text x="10" y="22" font-family="monospace" font-size="13" fill="#555">APL LUMINANCE · ${label}</text>`;
+    const bars = 16;
+    const bw = 30, gap = 4, ox = 60, oy = 320, maxH = 260;
+    for (let i=0;i<bars;i++) {
+      const t=i/(bars-1);
+      const bh = Math.pow(t,2.2)*maxH + (Math.random()*6-3);
+      const x=ox+i*(bw+gap);
+      const lum = Math.round(t*255);
+      content += `<rect x="${x}" y="${oy-bh}" width="${bw}" height="${bh}" rx="2" fill="rgba(139,21,186,${0.3+t*0.7})"/>`;
+      if (i===0||i===5||i===10||i===15) content += `<text x="${x+bw/2}" y="${oy+14}" font-family="monospace" font-size="9" fill="#555" text-anchor="middle">${lum}</text>`;
+    }
+    content += `<line x1="${ox}" y1="${oy}" x2="${ox+bars*(bw+gap)}" y2="${oy}" stroke="#333" stroke-width="1"/>`;
+
+  } else if (type === 'rgbtrack') {
+    // RGB tracking lines
+    content += `<text x="10" y="22" font-family="monospace" font-size="13" fill="#555">RGB TRACKING · ${label}</text>`;
+    content += `<line x1="60" y1="30" x2="60" y2="320" stroke="#222" stroke-width="1"/>`;
+    content += `<line x1="60" y1="320" x2="640" y2="320" stroke="#222" stroke-width="1"/>`;
+    content += `<line x1="60" y1="175" x2="640" y2="175" stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>`;
+    const channels = [{c:'#ff4444',off:0},{c:'#44ff44',off:5},{c:'#4488ff',off:-5}];
+    channels.forEach(({c,off}) => {
+      let p='';
+      for (let i=0;i<=16;i++) {
+        const t=i/16;
+        const noise=(Math.sin(t*7+off)*8+Math.random()*5-2.5);
+        const x=60+t*580, y=175+noise+off;
+        p+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1);
+      }
+      content+=`<path d="${p}" fill="none" stroke="${c}" stroke-width="2"/>`;
+    });
+    content += `<text x="352" y="168" font-family="monospace" font-size="9" fill="#555" text-anchor="middle">100% GAIN</text>`;
+    content += `<rect x="490" y="30" width="130" height="50" rx="4" fill="#111" stroke="#222"/>`;
+    content += `<line x1="500" y1="44" x2="520" y2="44" stroke="#ff4444" stroke-width="2"/><text x="525" y="48" font-family="monospace" font-size="10" fill="#ff4444">R</text>`;
+    content += `<line x1="500" y1="56" x2="520" y2="56" stroke="#44ff44" stroke-width="2"/><text x="525" y="60" font-family="monospace" font-size="10" fill="#44ff44">G</text>`;
+    content += `<line x1="500" y1="68" x2="520" y2="68" stroke="#4488ff" stroke-width="2"/><text x="525" y="72" font-family="monospace" font-size="10" fill="#4488ff">B</text>`;
+
+  } else if (type === 'contrast') {
+    // Contrast ratio bar
+    content += `<text x="10" y="22" font-family="monospace" font-size="13" fill="#555">CONTRAST RATIO · ${label}</text>`;
+    const ratios = [
+      {name:'Native',val:0.92,cr:'1840:1'},
+      {name:'Dynamic',val:0.99,cr:'∞ (OLED)'},
+      {name:'SDR typical',val:0.62,cr:'1240:1'},
+      {name:'Target',val:0.75,cr:'1500:1'},
+    ];
+    ratios.forEach(({name,val,cr},i) => {
+      const y=60+i*65, bw=val*500;
+      content += `<text x="62" y="${y}" font-family="monospace" font-size="11" fill="#888">${name}</text>`;
+      content += `<rect x="62" y="${y+8}" width="${bw}" height="28" rx="3" fill="rgba(139,21,186,${0.3+val*0.5})"/>`;
+      content += `<rect x="62" y="${y+8}" width="500" height="28" rx="3" fill="none" stroke="#222" stroke-width="1"/>`;
+      content += `<text x="${62+bw+6}" y="${y+27}" font-family="monospace" font-size="11" fill="#8b15ba">${cr}</text>`;
+    });
+
+  } else {
+    // Generic bar chart fallback
+    content += `<text x="10" y="22" font-family="monospace" font-size="13" fill="#555">CHART · ${label}</text>`;
+    const vals = Array.from({length:8},(_,i)=>0.2+Math.random()*0.75);
+    vals.forEach((v,i) => {
+      const x=80+i*74, bh=v*260, y=320-bh;
+      content += `<rect x="${x}" y="${y}" width="50" height="${bh}" rx="3" fill="${palette[i%palette.length]}" opacity="0.7"/>`;
+      content += `<text x="${x+25}" y="${y-6}" font-family="monospace" font-size="10" fill="#888" text-anchor="middle">${(v*100).toFixed(0)}%</text>`;
+    });
+    content += `<line x1="60" y1="320" x2="660" y2="320" stroke="#333" stroke-width="1"/>`;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="background:#0a0a0a">${content}</svg>`;
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+}
+
+/* ─── LOAD DEMO ──────────────────────────────────────── */
+function loadDemo() {
+  // 1. Device & technology
+  const deviceTile = document.querySelector('.tile[data-group="device"][data-val="Monitor"]');
+  if (deviceTile) selectTile(deviceTile);
+  const panelTile = document.querySelector('.tile[data-group="panel"][data-val="OLED"]');
+  if (panelTile) selectTile(panelTile);
+  const resTile = document.querySelector('.tile[data-group="res"][data-val="3840×2160 (4K UHD)"]');
+  if (resTile) selectTile(resTile);
+
+  // 2. Display data
+  document.getElementById('doc-title').value = 'SPEC-2024-DEMO-001';
+  document.getElementById('disp-make').value = 'ASUS';
+  document.getElementById('disp-model').value = 'ProArt PA32UCR-K';
+  document.getElementById('disp-size').value = '32';
+
+  // Gamuts
+  gamuts.length = 0;
+  document.querySelectorAll('#grp-gamut .tile').forEach(t => t.classList.remove('multi-active'));
+  [
+    {name:'DCI-P3', pct:'99'},
+    {name:'sRGB',   pct:'100'},
+    {name:'Adobe RGB', pct:'89'},
+  ].forEach(({name,pct}) => {
+    gamuts.push({name,pct});
+    const tile = document.querySelector(`#grp-gamut .tile[data-val="${name}"]`);
+    if (tile) tile.classList.add('multi-active');
+  });
+  renderGamutList();
+
+  // Gamma
+  const gammaTile = document.querySelector('.tile[data-group="gamma"][data-val="2.2"]');
+  if (gammaTile) selectTile(gammaTile);
+
+  // 3. Phase data — pre-calibration
+  const demoPhases = [
+    {
+      id:'pre',
+      enabled:true,
+      wx:'0.3194', wy:'0.3321',
+      r:['251','12','18'], g:['9','243','22'], b:['14','8','249'], w:['255','254','251'],
+      imgType:'gamma', imgLabel:'Pre-calibration'
+    },
+    {
+      id:'post1',
+      enabled:true,
+      wx:'0.3129', wy:'0.3293',
+      r:['255','0','0'], g:['0','255','0'], b:['0','0','255'], w:['255','255','255'],
+      imgType:'whitepoint', imgLabel:'Post manual'
+    },
+    {
+      id:'post2',
+      enabled:true,
+      wx:'0.3128', wy:'0.3291',
+      r:['255','1','2'], g:['1','254','3'], b:['2','1','255'], w:['255','255','255'],
+      imgType:'rgbtrack', imgLabel:'Post ICM'
+    },
+    {
+      id:'post3',
+      enabled:false,
+      wx:'', wy:'',
+      r:['','',''], g:['','',''], b:['','',''], w:['','',''],
+      imgType:null, imgLabel:''
+    },
+  ];
+
+  demoPhases.forEach(dp => {
+    const d = phaseData[dp.id];
+    d.enabled = dp.enabled;
+    d.wx = dp.wx; d.wy = dp.wy;
+    d.r = [...dp.r]; d.g = [...dp.g]; d.b = [...dp.b]; d.w = [...dp.w];
+    d.image = dp.imgType ? makeDemoSvg(dp.imgType, dp.imgLabel) : null;
+  });
+
+  renderPhaseSections();
+
+  // 4. Custom tabs — populate all types
+  customTabs.length = 0;
+  let tabId = 1;
+
+  // Contrast tab
+  customTabs.push({
+    id: tabId++, type: 'contrast', title: 'Wyniki pomiaru kontrastu',
+    description: 'Pomiar kontrastu natywnego i dynamicznego w trybie SDR.',
+    phase: 'pre',
+    tableHeaders: ['Tryb', 'Kontrast', 'Luminancja bieli (cd/m²)', 'Luminancja czerni (cd/m²)'],
+    tableData: [
+      ['Native',  '1840:1', '430.2', '0.234'],
+      ['Dynamic', '∞',      '412.7', '0.000'],
+      ['SDR',     '1240:1', '395.1', '0.318'],
+      ['HDR PQ',  '1650:1', '808.4', '0.490'],
+    ],
+    image: makeDemoSvg('contrast', 'pre'),
+    stepSize: 4
+  });
+
+  // APL tab
+  customTabs.push({
+    id: tabId++, type: 'apl', title: 'APL — wypełnienie bielą',
+    description: 'Pomiar luminancji w funkcji wypełnienia bielą (APL 0–100%).',
+    phase: 'pre',
+    tableHeaders: ['APL (%)', 'Luminancja (cd/m²)', 'Δ vs 50%'],
+    tableData: [
+      ['0',   '0.00',  '–'],
+      ['10',  '4.12',  '-96.1%'],
+      ['20',  '18.74', '-82.4%'],
+      ['30',  '45.63', '-56.8%'],
+      ['40',  '83.22', '-21.5%'],
+      ['50',  '106.10','–'],
+      ['60',  '127.80','+20.4%'],
+      ['70',  '148.40','+39.9%'],
+      ['80',  '165.70','+56.2%'],
+      ['90',  '178.30','+68.0%'],
+      ['100', '186.50','+75.8%'],
+    ],
+    image: makeDemoSvg('apl', 'pre'),
+    stepSize: 16
+  });
+
+  // RGB tracking tab (post1)
+  customTabs.push({
+    id: tabId++, type: 'rgb_tracking', title: 'RGB Tracking — po kalibracji manualnej',
+    description: 'Śledzenie balansowania bieli w zakresie tonalnym po kalibracji manualnej.',
+    phase: 'post1',
+    tableHeaders: ['Poziom', 'R Gain (%)', 'G Gain (%)', 'B Gain (%)', 'CCT (K)'],
+    tableData: [
+      ['0',   '–',     '–',     '–',     '–'],
+      ['32',  '100.2', '99.8',  '100.1', '6502'],
+      ['64',  '99.9',  '100.1', '100.2', '6505'],
+      ['96',  '100.1', '100.0', '99.9',  '6498'],
+      ['128', '100.0', '100.0', '100.0', '6500'],
+      ['160', '99.8',  '100.2', '100.1', '6503'],
+      ['192', '100.1', '99.9',  '100.0', '6499'],
+      ['224', '100.0', '100.1', '99.8',  '6501'],
+      ['255', '100.0', '100.0', '100.0', '6500'],
+    ],
+    image: makeDemoSvg('rgbtrack', 'post1'),
+    stepSize: 16
+  });
+
+  // Colour Checker tab (post2)
+  customTabs.push({
+    id: tabId++, type: 'colour_checker', title: 'Colour Checker — po profilu ICM',
+    description: 'Pomiar dokładności reprodukcji barw na podstawie ColorChecker 24 po zastosowaniu profilu ICC.',
+    phase: 'post2',
+    tableHeaders: ['Patch', 'ΔE00', 'ΔE76', 'Ocena'],
+    tableData: CC_REF.map((ref, i) => {
+      const de00 = (0.1 + Math.random() * 1.2).toFixed(3);
+      const de76 = (parseFloat(de00)*0.85).toFixed(3);
+      const de = parseFloat(de00);
+      const ocena = de < 1 ? '✓ Doskonały' : de < 2 ? '✓ Dobry' : '△ Akceptowalny';
+      return [ref.name, de00, de76, ocena];
+    }),
+    image: makeDemoSvg('whitepoint', 'post2'),
+    stepSize: 24
+  });
+
+  // Custom free tab
+  customTabs.push({
+    id: tabId++, type: 'custom', title: 'Uwagi i obserwacje',
+    description: 'Monitor wykazuje bardzo dobrą powtarzalność wyników pomiarowych. Equalizer tonalny działa stabilnie w całym zakresie temperatury pracy. Banding niewidoczny przy standardowych wzorcach testowych.',
+    phase: 'pre',
+    tableHeaders: ['Parametr', 'Wartość', 'Uwagi'],
+    tableData: [
+      ['Uniformity σ',       '2.3%',    'Mierzone 9 punktów'],
+      ['Banding',            'Brak',    '–'],
+      ['Backlight bleed',    'Minimalne','OLED'],
+      ['Input lag',          '0.5 ms',  'DisplayPort 1.4'],
+      ['Refresh rate max',   '144 Hz',  'G-Sync Ultimate'],
+    ],
+    image: null,
+    stepSize: 5
+  });
+
+  renderCustomTabs();
+  updatePreview();
+  notify('Demo załadowane — wszystkie sekcje wypełnione.');
+}
+
+/* ─── RESET ──────────────────────────────────────────── */
+function resetForm() {
+  if (!confirm('Wyczyścić wszystkie dane formularza?')) return;
+  state.device = state.panel = state.res = state.gamma = '';
+  gamuts.length = 0;
+  PHASES.forEach(ph => {
+    phaseData[ph.id] = { enabled: ph.id === 'pre', wx: '', wy: '', r:['','',''], g:['','',''], b:['','',''], w:['','',''], image: null };
+  });
+  document.querySelectorAll('.tile').forEach(t => t.classList.remove('active','multi-active'));
+  document.querySelectorAll('input[type="text"], textarea').forEach(e => e.value = '');
+  document.getElementById('doc-title').value = '';
+  document.getElementById('gamut-list').innerHTML = '';
+  customTabs.length = 0;
+  renderPhaseSections();
+  renderCustomTabs();
+  updatePreview();
+  notify('Formularz wyczyszczony.');
+}
+
+/* ─── CDA DATA AUTO-IMPORT ──────────────────────────── */
+function loadCDAData() {
+  try {
+    const dev = JSON.parse(localStorage.getItem('dcs-device') || '{}');
+    const cda = JSON.parse(localStorage.getItem('wba_data_v1') || 'null');
+
+    // Auto-fill doc title from device
+    if (dev.brand && dev.model) {
+      const titleEl = document.getElementById('doc-title');
+      if (titleEl && !titleEl.value) {
+        titleEl.value = `${dev.brand} ${dev.model}`;
+      }
+    }
+
+    // Auto-select device type tile
+    if (dev.deviceType) {
+      const typeMap = { tv: 'Telewizor', monitor: 'Monitor', laptop: 'Laptop' };
+      const val = typeMap[dev.deviceType];
+      if (val) {
+        const tile = document.querySelector(`#grp-device .tile[data-val="${val}"]`);
+        if (tile) selectTile(tile);
+      }
+    }
+
+    // Auto-select panel type tile (if type matches)
+    if (dev.type) {
+      const tile = document.querySelector(`#grp-panel .tile[data-val="${dev.type}"]`);
+      if (tile) selectTile(tile);
+    }
+
+    // Auto-select resolution tile
+    if (dev.resW && dev.resH) {
+      const resStr = dev.res;
+      const resMap = {
+        '1280x720':  '1280×720 (HD)',
+        '1920x1080': '1920×1080 (FHD)',
+        '2560x1440': '2560×1440 (QHD)',
+        '3840x2160': '3840×2160 (4K UHD)',
+      };
+      const val = resMap[resStr];
+      if (val) {
+        const tile = document.querySelector(`#grp-res .tile[data-val="${val}"]`);
+        if (tile) selectTile(tile);
+      }
+    }
+
+    // Auto-fill white point from CDA W channel (first valid data point)
+    if (cda && cda.data && cda.data.w) {
+      const wPts = cda.data.w.filter(p => p && p.x !== '' && p.y !== '');
+      if (wPts.length > 0) {
+        const last = wPts[wPts.length - 1];
+        const ph = 'pre';
+        if (phaseData[ph] && phaseData[ph].wx === '') {
+          phaseData[ph].wx = last.x;
+          phaseData[ph].wy = last.y;
+          const wxEl = document.getElementById(`${ph}-wx`);
+          const wyEl = document.getElementById(`${ph}-wy`);
+          if (wxEl) wxEl.value = last.x;
+          if (wyEl) wyEl.value = last.y;
+        }
+      }
+    }
+
+    // Show CDA status badge
+    const badge = document.createElement('div');
+    badge.id = 'cda-status-badge';
+    badge.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;letter-spacing:1px;margin-bottom:14px;' +
+      (cda ? 'background:rgba(51,255,51,0.08);border:1px solid rgba(51,255,51,0.3);color:var(--accent3)' :
+              'background:rgba(255,145,0,0.08);border:1px solid rgba(255,145,0,0.3);color:var(--warn)');
+    badge.textContent = cda
+      ? '✓ Dane CDA zsynchronizowane — punkt bieli i urządzenie wypełnione automatycznie'
+      : '⚠ Brak danych CDA — otwórz Chromatic Data Analyzer i wklej dane pomiarowe';
+    const firstSection = document.querySelector('.section');
+    if (firstSection && !document.getElementById('cda-status-badge')) {
+      firstSection.parentNode.insertBefore(badge, firstSection);
+    }
+
+    updatePreview();
+  } catch(e) { /* ignore */ }
+}
+
+/* ─── INIT ───────────────────────────────────────────── */
+function init() {
+  renderPhaseSections();
+  updatePreview();
+  loadCDAData();
+}
+init();
+</script>
+<script>
+/* Suite-wide theme listener */
+(function(){
+  var __at=null;
+  function applyTheme(light){
+    if(!document.body) return;
+    document.documentElement.classList.add('theme-anim');
+    document.body.classList.add('theme-anim');
+    document.body.classList.toggle('light', !!light);
+    clearTimeout(__at);
+    __at = setTimeout(function(){
+      document.documentElement.classList.remove('theme-anim');
+      document.body.classList.remove('theme-anim');
+    }, 950);
+  }
+  function readLS(){ try { return localStorage.getItem('suite-theme')==='light'; } catch(e){ return false; } }
+  applyTheme(readLS());
+  document.addEventListener('DOMContentLoaded', function(){ applyTheme(readLS()); });
+  window.addEventListener('message', function(ev){
+    if(ev.data && ev.data.type==='suite-theme'){ if(!ev.data.noToggle) applyTheme(ev.data.light); }
+    if(ev.data && ev.data.type==='suite-reset'){
+      try {
+        // Clear doc title and text fields
+        ['doc-title','pre-wx','pre-wy','post-wx','post-wy'].forEach(id => {
+          const el = document.getElementById(id); if(el) el.value = '';
+        });
+        // Deselect all tiles
+        document.querySelectorAll('.tile.selected').forEach(t => t.classList.remove('selected'));
+        // Clear phaseData white point values
+        if(typeof phaseData !== 'undefined'){
+          Object.values(phaseData).forEach(p => { if(p){ p.wx=''; p.wy=''; } });
+        }
+        // Remove CDA status badge
+        const badge = document.getElementById('cda-status-badge');
+        if(badge) badge.remove();
+        if(typeof updatePreview==='function') updatePreview();
+      } catch(e) {}
+    }
+  });
+})();
+</script>
+</body>
+</html>

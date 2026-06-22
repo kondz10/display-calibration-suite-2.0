@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TI3 Generator — Argyll Display Profiler</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #080808;
+    --surface: #0f0f0f;
+    --surface2: #141414;
+    --border:  #1e1e1e;
+    --accent:  #8b15ba;
+    --accent3: #33ff33;
+    --warn:    #ff9100;
+    --text:    #e0e0e0;
+    --muted:   #555555;
+    --text2:   #777777;
+    --text3:   #3a3a3a;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+    --radius: 10px;
+    --tab-h: 48px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36px 32px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  /* Logo icon 2×2 */
+  .logo-icon {
+    width: 44px; height: 44px;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 7px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .logo-icon span { border-radius: 2px; display: block; }
+  .lr { background: #ff3333; }
+  .lg { background: #33ff33; }
+  .lb { background: #3333ff; }
+  .lw { background: #ffffff; }
+
+  .header-text h1 {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: 5px;
+    color: var(--accent);
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .header-sub {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 6px;
+    font-weight: 400;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0;
+    background: transparent;
+    position: relative;
+    bottom: -1px;
+  }
+  .tab {
+    height: 42px;
+    padding: 0 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: color .18s, border-color .18s, background .18s;
+  }
+  .tab-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    transition: color .18s;
+  }
+  .tab:hover {
+    color: var(--text2);
+    background: var(--surface2);
+    border-color: #2a2a2a;
+  }
+  .tab:hover .tab-num { color: var(--muted); }
+  .tab.active {
+    color: var(--accent);
+    background: var(--bg);
+    border-color: var(--accent);
+    border-bottom: 1px solid var(--bg);
+  }
+  .tab.active .tab-num { color: var(--accent); opacity: 0.6; }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1;
+    padding: 28px 32px;
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ── SECTION ── */
+  .section-title {
+    font-size: 13px;
+    font-family: var(--mono);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title em {
+    color: var(--accent);
+    font-style: normal;
+    margin-right: 8px;
+  }
+
+  /* ── GRID ── */
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  @media (max-width: 700px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* ── FIELD ── */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  label .req { color: var(--accent); margin-left: 2px; }
+  label .hint {
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--muted);
+    opacity: 0.6;
+    margin-left: 6px;
+  }
+
+  input, select, textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(139,21,186,.08);
+  }
+  select { cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555555'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 30px;
+  }
+  textarea { resize: vertical; font-family: var(--mono); font-size: 12px; line-height: 1.6; }
+  input[type=number]::-webkit-inner-spin-button { opacity: .3; }
+
+  .spacer { margin-top: 24px; }
+
+  /* ── INFO BOX ── */
+  .infobox {
+    background: rgba(139,21,186,.04);
+    border: 1px solid rgba(139,21,186,.15);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .infobox strong { color: var(--accent); font-family: var(--mono); font-size: 13px; letter-spacing: 1px; }
+  .infobox code {
+    font-family: var(--mono);
+    background: rgba(139,21,186,.1);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text);
+  }
+  .warnbox {
+    background: rgba(255,145,0,.04);
+    border: 1px solid rgba(255,145,0,.2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: #ffa040;
+    margin-bottom: 20px;
+    line-height: 1.7;
+  }
+
+  /* ── MEASUREMENTS TABLE ── */
+  .meas-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .meas-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .meas-table td {
+    padding: 5px 4px;
+    vertical-align: middle;
+  }
+  .meas-table tr:hover td { background: rgba(255,255,255,.02); }
+
+  .rgb-swatch {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.1);
+    flex-shrink: 0;
+  }
+  .rgb-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+  }
+  .rgb-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    min-width: 28px;
+  }
+
+  .meas-table input[type=number] {
+    width: 90px;
+    padding: 6px 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+
+  /* ── PASTE IMPORT ── */
+  .paste-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 800px) { .paste-grid { grid-template-columns: 1fr 1fr; } }
+  .paste-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.18s;
+  }
+  .paste-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+    transform-origin: left;
+  }
+  .paste-card:focus-within { border-color: rgba(139,21,186,0.4); }
+  .paste-card:focus-within::after { transform: scaleX(1); }
+  .paste-card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+  }
+  .paste-card textarea {
+    width: 100%;
+    height: 140px;
+    font-size: 11px;
+    padding: 8px;
+    background: var(--bg);
+    border-color: var(--border);
+    color: var(--text2);
+  }
+  .paste-card textarea:focus { border-color: var(--accent); color: var(--text); }
+  .paste-status {
+    font-size: 10px;
+    font-family: var(--mono);
+    min-height: 14px;
+    letter-spacing: 1px;
+  }
+  .paste-ok { color: #33ff33; }
+  .paste-err { color: #ff5252; }
+
+  /* ── CHANNEL TABS ── */
+  .ch-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  .ch-tab {
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .ch-tab:hover { border-color: #2a2a2a; color: var(--text); background: var(--surface2); }
+  .ch-tab.active-r { background: rgba(255,51,51,0.07); border-color: #ff3333; color: #ff3333; }
+  .ch-tab.active-g { background: rgba(51,255,51,0.07); border-color: #33ff33; color: #33ff33; }
+  .ch-tab.active-b { background: rgba(68,136,255,0.07); border-color: #4488ff; color: #4488ff; }
+  .ch-tab.active-gray { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.3); color: #ffffff; }
+
+  .ch-panel { display: none; }
+  .ch-panel.active { display: block; }
+
+  /* ── OUTPUT ── */
+  .output-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: #a8d8ea;
+    white-space: pre;
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  .output-box .kw { color: var(--accent); }
+  .output-box .val { color: #33ff33; }
+  .output-box .com { color: var(--muted); }
+  .output-box .num { color: var(--warn); }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+    color: var(--muted);
+  }
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    z-index: 0;
+  }
+  .btn > * { position: relative; z-index: 1; }
+  .btn > svg { position: relative; z-index: 1; }
+  .btn:hover::before { transform: translateX(0); }
+  .btn:hover { color: #fff; border-color: var(--accent); }
+
+  .btn-primary {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn-primary:hover { color: #fff; }
+
+  .btn-secondary {
+    border-color: var(--border);
+    color: var(--muted);
+  }
+  .btn-secondary::before { background: var(--surface2); }
+  .btn-secondary:hover { color: var(--text); border-color: #2a2a2a; }
+
+  .btn-success {
+    border-color: #33ff33;
+    color: #33ff33;
+  }
+  .btn-success::before { background: #33ff33; }
+  .btn-success:hover { color: #000; }
+  .btn-success:disabled {
+    border-color: var(--border);
+    color: var(--muted);
+    cursor: default;
+    pointer-events: none;
+  }
+  .btn svg { width: 15px; height: 15px; }
+
+  /* ── PROGRESS DOTS ── */
+  .progress-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .pdot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--border);
+  }
+  .pdot.done { background: var(--accent); border-color: var(--accent); }
+  .pdot.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(139,21,186,0.6); }
+  .pdot-label { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-left: 4px; }
+
+  /* ── STATUS ── */
+  .status-ok { color: #33ff33; font-size: 11px; font-family: var(--mono); letter-spacing: 1px; }
+  .status-warn { color: var(--muted); font-size: 11px; font-family: var(--mono); }
+  .status-err { color: #ff5252; font-size: 11px; font-family: var(--mono); }
+
+  /* ── COPY FLASH ── */
+  @keyframes flashOk { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .flash { animation: flashOk .4s ease; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── ACCURACY BUTTONS ── */
+  .acc-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 22px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--mono);
+    transition: all .18s;
+    gap: 2px;
+    min-width: 110px;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .acc-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+    transform-origin: left;
+  }
+  .acc-btn:hover { border-color: #2a2a2a; background: var(--surface2); color: var(--text); }
+  .acc-btn:hover::after { transform: scaleX(0.5); }
+  .acc-btn.active-acc {
+    border-color: var(--accent);
+    background: rgba(139,21,186,.06);
+    color: var(--accent);
+  }
+  .acc-btn.active-acc::after { transform: scaleX(1); }
+  .acc-num {
+    font-family: var(--mono);
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+  .acc-btn.active-acc .acc-num { text-shadow: 0 0 18px rgba(139,21,186,0.6); }
+  .acc-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    opacity: 0.7;
+  }
+  .acc-btn.active-acc .acc-sub { color: var(--accent); opacity: .7; }
+
+html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo-icon">
+      <span class="lr"></span>
+      <span class="lg"></span>
+      <span class="lb"></span>
+      <span class="lw"></span>
+    </div>
+    <div class="header-text">
+      <h1>TI3 · Argyll · Display Profiler</h1>
+      <p class="header-sub">Calibration Target Generator · CGATS Format</p>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" onclick="switchTab(0)">
+      <span class="tab-num">01</span>Profil wyświetlacza
+    </button>
+    <button class="tab" onclick="switchTab(1)">
+      <span class="tab-num">02</span>Pomiary
+    </button>
+    <button class="tab" onclick="switchTab(2)">
+      <span class="tab-num">03</span>Eksport TI3
+    </button>
+    <button class="tab" onclick="switchTab(3)">
+      <span class="tab-num">04</span>ColorChecker
+    </button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ══════════════════════ PANEL 1: PROFIL ══════════════════════ -->
+<div class="panel active" id="panel-0">
+
+  <div class="progress-row">
+    <div class="pdot active" id="pd0"></div>
+    <div class="pdot" id="pd1"></div>
+    <div class="pdot" id="pd2"></div>
+    <span class="pdot-label">Krok 1 z 3 — metadane wyświetlacza</span>
+  </div>
+
+  <div class="infobox">
+    Dane z tej sekcji trafiają do nagłówka pliku <strong>TI3</strong>. Są wymagane przez <strong>colprof</strong> / <strong>dispcal</strong> do poprawnego budowania profilu ICC.
+    Pola oznaczone <strong style="color:var(--accent)">*</strong> są obowiązkowe.
+  </div>
+
+  <div class="section-title"><em>01</em> Identyfikacja</div>
+  <div class="grid grid-2">
+    <div class="field">
+      <label>Nazwa profilu <span class="req">*</span><span class="hint">np. Dell_U2722D_D65</span></label>
+      <input type="text" id="prof_desc" placeholder="MójMonitor_2024" value="">
+    </div>
+    <div class="field">
+      <label>Producent wyświetlacza <span class="req">*</span></label>
+      <input type="text" id="disp_mfr" placeholder="Dell / LG / Samsung…">
+    </div>
+    <div class="field">
+      <label>Model wyświetlacza <span class="req">*</span></label>
+      <input type="text" id="disp_model" placeholder="U2722D">
+    </div>
+    <div class="field">
+      <label>Numer seryjny <span class="hint">(opcjonalnie)</span></label>
+      <input type="text" id="disp_serial" placeholder="SN1234567">
+    </div>
+  </div>
+
+  <div class="spacer">
+    <div class="section-title"><em>02</em> Technologia panelu</div>
+  </div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Typ technologii <span class="req">*</span></label>
+      <select id="disp_tech">
+        <option value="LCD White LED" selected>LED Back-lit</option>
+        <option value="LCD FALD">LED Back-lit FALD</option>
+        <option value="Mini LED">Mini LED</option>
+        <option value="LCD Edge LED">LED Edge-lit</option>
+        <option value="OLED">OLED</option>
+        <option value="WOLED">WOLED</option>
+        <option value="QD-OLED">QD-OLED</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Docelowy biały punkt <span class="req">*</span></label>
+      <select id="white_point">
+        <option value="DCI">DCI white</option>
+        <option value="D65" selected>D65</option>
+        <option value="D50">D50</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Gamma docelowa <span class="req">*</span></label>
+      <select id="target_gamma">
+        <option value="1.0">1.0</option>
+        <option value="1.8">1.8</option>
+        <option value="2.0">2.0</option>
+        <option value="2.2" selected>2.2</option>
+        <option value="2.4">2.4</option>
+        <option value="2.6">2.6</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="spacer">
+    <div class="section-title"><em>03</em> Warunki pomiaru</div>
+  </div>
+  <div class="grid grid-4">
+    <div class="field">
+      <label>Spektroradiometr / kolorymetr <span class="req">*</span></label>
+      <input type="text" id="instrument" placeholder="np. i1Display Pro, Spyder X, CA-310…">
+    </div>
+    <div class="field">
+      <label>Przestrzeń obserwatora</label>
+      <select id="observer">
+        <option value="1931_2" selected>CIE 1931 2°</option>
+        <option value="1964_10">CIE 1964 10°</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Data pomiaru</label>
+      <input type="date" id="meas_date" value="">
+    </div>
+    <div class="field">
+      <label>Operator <span class="hint">(opcjonalnie)</span></label>
+      <input type="text" id="operator" placeholder="Jan Kowalski">
+    </div>
+  </div>
+
+
+
+  <div class="btn-row" style="margin-top:28px">
+    <button class="btn btn-primary" onclick="switchTab(1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Dalej: Pomiary
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════ PANEL 2: POMIARY ══════════════════════ -->
+<div class="panel" id="panel-1">
+
+  <div class="progress-row">
+    <div class="pdot done" id="pd0b"></div>
+    <div class="pdot active"></div>
+    <div class="pdot"></div>
+    <span class="pdot-label">Krok 2 z 3 — wprowadź dane z miernika</span>
+  </div>
+
+  <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">
+    <span style="font-size:11px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--text2);">Dokładność pomiaru:</span>
+    <button class="acc-btn" id="acc-8" onclick="setAccuracy(8)">
+      <span class="acc-num">8</span> kroków
+      <span class="acc-sub">szybki · 32 próbki</span>
+    </button>
+    <button class="acc-btn" id="acc-16" onclick="setAccuracy(16)">
+      <span class="acc-num">16</span> kroków
+      <span class="acc-sub">dokładny · 64 próbki</span>
+    </button>
+    <button class="acc-btn active-acc" id="acc-32" onclick="setAccuracy(32)">
+      <span class="acc-num">32</span> kroków
+      <span class="acc-sub">pełny · 128 próbki</span>
+    </button>
+  </div>
+
+  <div class="infobox" id="steps-infobox">
+    Skala RGB: <strong id="steps-label">0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 255</strong> (32 kroki). Podaj x, y, Y dla wszystkich kroków wszystkich kanałów.
+    Luminancja Y (cd/m²): wymagana dla <strong>wszystkich kroków</strong> we wszystkich kanałach (Gray, R, G, B) — format danych jest identyczny dla każdego kanału.
+  </div>
+  <div class="warnbox" style="font-size:11px">
+    ⚠ <strong>Krok 0 (RGB=0,0,0) dla kanałów R, G, B</strong> jest automatycznie ignorowany —
+    generator zawsze używa w tym miejscu danych z <strong>Gray krok 0</strong>.
+    Dzieje się tak dlatego, że gdy wyświetlacz pokazuje czerń (R=G=B=0), jest to fizycznie
+    <em>ten sam stan</em> niezależnie od mierzonego kanału — colorymetr zawsze zmierzy to samo.
+    Wklejone x, y dla tego wiersza w kanałach kolorów nie mają wpływu na wynikowy plik TI3.
+  </div>
+
+
+
+  <div class="section-title" style="margin-bottom:12px"><em>IMPORT</em> Wklej dane z miernika (x, y, Y — rozdzielone tabulatorem lub spacją)</div>
+  <div class="paste-grid">
+    <div class="paste-card">
+      <div class="paste-card-title"><span style="color:#aaa">⬜</span> <span style="color:var(--text)">Gray</span></div>
+      <textarea id="paste-gray" placeholder="0.3127&#9;0.3290&#9;1.0000&#10;0.3128&#9;0.3291&#9;0.8542&#10;...&#10;(32 wiersze)"></textarea>
+      <div>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px" onclick="parsePaste('gray')">Wczytaj</button>
+        <span class="paste-status" id="ps-gray"></span>
+      </div>
+    </div>
+    <div class="paste-card">
+      <div class="paste-card-title"><span style="color:#ff8080">🔴</span> <span style="color:#ff8080">Red</span></div>
+      <textarea id="paste-r" placeholder="0.6400&#9;0.3300&#9;0.1200&#10;0.6398&#9;0.3301&#9;1.6500&#10;...&#10;(32 wiersze)"></textarea>
+      <div>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px" onclick="parsePaste('r')">Wczytaj</button>
+        <span class="paste-status" id="ps-r"></span>
+      </div>
+    </div>
+    <div class="paste-card">
+      <div class="paste-card-title"><span style="color:#80ff9a">🟢</span> <span style="color:#80ff9a">Green</span></div>
+      <textarea id="paste-g" placeholder="0.3000&#9;0.6000&#9;0.0800&#10;0.3001&#9;0.5999&#9;4.6000&#10;...&#10;(32 wiersze)"></textarea>
+      <div>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px" onclick="parsePaste('g')">Wczytaj</button>
+        <span class="paste-status" id="ps-g"></span>
+      </div>
+    </div>
+    <div class="paste-card">
+      <div class="paste-card-title"><span style="color:#80aaff">🔵</span> <span style="color:#80aaff">Blue</span></div>
+      <textarea id="paste-b" placeholder="0.1500&#9;0.0600&#9;0.0050&#10;0.1502&#9;0.0601&#9;0.7000&#10;...&#10;(32 wiersze)"></textarea>
+      <div>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px" onclick="parsePaste('b')">Wczytaj</button>
+        <span class="paste-status" id="ps-b"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Channel selector -->
+  <div class="ch-tabs">
+    <button class="ch-tab active-gray" id="cht-gray" onclick="switchCh('gray')">⬜ Szarość (Gray ramp)</button>
+    <button class="ch-tab" id="cht-r" onclick="switchCh('r')">🔴 Red</button>
+    <button class="ch-tab" id="cht-g" onclick="switchCh('g')">🟢 Green</button>
+    <button class="ch-tab" id="cht-b" onclick="switchCh('b')">🔵 Blue</button>
+  </div>
+
+  <div id="ch-gray" class="ch-panel active">
+    <div class="section-title"><em>Gray</em> ramp — R=G=B (32 kroki)</div>
+    <div id="table-gray"></div>
+  </div>
+  <div id="ch-r" class="ch-panel">
+    <div class="section-title"><em>Red</em> ramp — G=B=0 (32 kroki)</div>
+    <div id="table-r"></div>
+  </div>
+  <div id="ch-g" class="ch-panel">
+    <div class="section-title"><em>Green</em> ramp — R=B=0 (32 kroki)</div>
+    <div id="table-g"></div>
+  </div>
+  <div id="ch-b" class="ch-panel">
+    <div class="section-title"><em>Blue</em> ramp — R=G=0 (32 kroki)</div>
+    <div id="table-b"></div>
+  </div>
+
+  <div class="btn-row" style="margin-top: 28px">
+    <button class="btn btn-secondary" onclick="switchTab(0)">← Wróć</button>
+    <button class="btn btn-secondary" onclick="fillSampleData()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      Wstaw przykładowe dane
+    </button>
+    <button class="btn btn-primary" onclick="switchTab(2)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Dalej: Generuj TI3
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════ PANEL 3: EKSPORT ══════════════════════ -->
+<div class="panel" id="panel-2">
+
+  <div class="progress-row">
+    <div class="pdot done"></div>
+    <div class="pdot done"></div>
+    <div class="pdot active"></div>
+    <span class="pdot-label">Krok 3 z 3 — generuj i pobierz plik TI3</span>
+  </div>
+
+  <div class="warnbox" style="font-size:13px">
+    ⚠ Generowanie pliku <strong>.ti3</strong> wymaga uzupełnienia <strong>obu</strong> sekcji:<br>
+    &nbsp;&nbsp;① <strong>Pomiary RGBW</strong> — zakładka „Pomiary” (kanały Gray, R, G, B)<br>
+    &nbsp;&nbsp;② <strong>ColorChecker 24 patche</strong> — zakładka „ColorChecker” (wklej dane i kliknij Wczytaj)<br>
+    Brakujące dane zostaną wskazane automatycznie po kliknięciu „Generuj TI3”.
+  </div>
+  <div class="infobox">
+    Plik <strong>.ti3</strong> (format CGATS) jest gotowy do użycia z Argyll CMS. Uruchom: <br>
+    <code>colprof -v -D "NazwaProfilu" -q m -a s -d 3 pomiary.ti3</code><br>
+    lub podaj plik bezpośrednio do <strong>colprof</strong> / <strong>ProfileMaker</strong>.
+  </div>
+
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px">
+    <button class="btn btn-primary" onclick="generateTI3()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4v16h16V8l-4-4H4z"/><path d="M14 4v4h4"/></svg>
+      Generuj TI3
+    </button>
+    <button class="btn btn-success" id="btn-download" onclick="downloadTI3()" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+      Pobierz .ti3
+    </button>
+    <button class="btn btn-secondary" id="btn-copy" onclick="copyTI3()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      Kopiuj
+    </button>
+    <button class="btn btn-secondary" onclick="switchTab(3)" style="border-color:rgba(139,21,186,0.4);color:var(--accent)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      + ColorChecker
+    </button>
+    <span id="gen-status" class="status-warn">— wymagane: pomiary RGBW + ColorChecker (24 patche)</span>
+  </div>
+
+  <div id="output-preview" class="output-box">— wygeneruj plik klikając "Generuj TI3" —</div>
+
+  <div style="margin-top:20px">
+    <div class="section-title"><em>CMD</em> Komendy Argyll</div>
+    <div class="infobox" style="font-family:var(--mono); font-size:11px; line-height:2">
+      <span style="color:var(--text3)"># Profilowanie wyświetlacza (podstawowe):</span><br>
+      <span style="color:var(--accent)">colprof</span> -v -D "<span id="cmd-desc">NazwaProfilu</span>" -q m -a s -d 3 <span id="cmd-file">pomiary.ti3</span><br><br>
+      <span style="color:var(--text3)"># Z gammą 2.2:</span><br>
+      <span style="color:var(--accent)">colprof</span> -v -D "<span id="cmd-desc2">NazwaProfilu</span>" -q m -a s -d 3 -g 2.2 <span id="cmd-file2">pomiary.ti3</span><br><br>
+      <span style="color:var(--text3)"># Kalibracja (jeśli masz dispcal):</span><br>
+      <span style="color:var(--accent)">dispcal</span> -v -d 1 -y l -t 6500 -g 2.2 <span id="cmd-desc3">NazwaProfilu</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PANEL 4: COLORCHECKER ══════════════════════ -->
+<div class="panel" id="panel-3">
+
+  <div class="progress-row">
+    <div class="pdot done"></div>
+    <div class="pdot done"></div>
+    <div class="pdot done"></div>
+    <div class="pdot active"></div>
+    <span class="pdot-label">Opcjonalnie — dodaj próbki ColorChecker do TI3</span>
+  </div>
+
+  <div class="infobox">
+    Wklej pomiary <strong>Macbeth ColorChecker</strong> (24 plamy barwne).<br>
+    Format <strong>6 kolumn</strong>: <code>R&nbsp;G&nbsp;B&nbsp;x&nbsp;y&nbsp;Y</code> — wartości urządzenia (0–255) + chromatyczność + luminancja cd/m².<br>
+    Format <strong>3 kolumny</strong>: <code>x&nbsp;y&nbsp;Y</code> — użyje standardowych wartości sRGB jako device R/G/B (mniej dokładne).<br>
+    Kolejność plam: <strong>Dark Skin → Black</strong> (standardowa kolejność wierszy ColorChecker 4×6).<br>
+    <strong style="color:var(--warn)">⚠ Dla spójnego TI3 użyj formatu 6-kolumnowego</strong> — device RGB musi odpowiadać rzeczywistym wartościom wysłanym na wyświetlacz.
+  </div>
+
+  <div class="section-title"><em>IMPORT</em> Wklej 24 wiersze pomiarów (R G B x y Y lub x y Y)</div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom:20px">
+
+    <!-- Paste card -->
+    <div class="paste-card" style="grid-column:1">
+      <div class="paste-card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span style="color:var(--text)">ColorChecker 24 — wklej R G B x y Y</span>
+      </div>
+      <textarea id="paste-cc" style="width:100%;height:340px;font-size:11px;padding:8px;background:var(--bg);border-color:var(--border);color:var(--text2);font-family:var(--mono);line-height:1.7;resize:vertical"
+        placeholder="115  82  68  0.4000  0.3500  10.00&#10;194 150 130  0.3772  0.3483  34.88&#10; 98 122 157  0.2471  0.2539  19.43&#10; 87 108  67  0.3499  0.3775  13.30&#10;133 128 177  0.2680  0.2457  24.60&#10;103 189 170  0.2613  0.3430  42.89&#10;214 126  44  0.5082  0.4089  30.10&#10; 80  91 166  0.2110  0.1750  11.95&#10;193  90  99  0.4534  0.3132  19.11&#10; 94  60 108  0.2934  0.2216   6.57&#10;157 188  64  0.3804  0.4868  44.34&#10;224 163  46  0.4861  0.4379  43.12&#10; 56  61 150  0.1712  0.1348   6.50&#10; 70 148  73  0.3091  0.4924  23.07&#10;175  54  60  0.5528  0.3014  14.38&#10;231 199  31  0.4450  0.4744  59.10&#10;187  86 149  0.3626  0.2497  19.78&#10;  8 133 161  0.1958  0.2538  19.72&#10;243 243 242  0.3500  0.3543  91.29&#10;200 200 200  0.3500  0.3543  59.10&#10;160 160 160  0.3500  0.3543  36.18&#10;122 122 121  0.3500  0.3543  19.78&#10; 85  85  85  0.3500  0.3543   9.00&#10; 52  52  52  0.3500  0.3543   3.14&#10;(24 wiersze: R G B x y Y)"></textarea>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px" onclick="parsePasteCC()">Wczytaj</button>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px" onclick="fillSampleCC()">Wstaw przykładowe</button>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px;color:#ff5252;border-color:#ff5252" onclick="clearCC()">Wyczyść</button>
+        <span class="paste-status" id="ps-cc"></span>
+      </div>
+    </div>
+
+    <!-- Preview table -->
+    <div style="grid-column:2; overflow-x:auto">
+      <div id="cc-table-wrap">
+        <div style="color:var(--text3);font-family:var(--mono);font-size:11px;padding:20px 0">— wczytaj dane, aby zobaczyć podgląd —</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CC status banner -->
+  <div id="cc-banner" style="display:none; background:rgba(51,255,51,0.04); border:1px solid rgba(51,255,51,0.2); border-radius:var(--radius); padding:12px 16px; font-family:var(--mono); font-size:12px; color:#33ff33; margin-bottom:16px">
+    ✓ 24 próbki ColorChecker zostaną dołączone do następnego <strong>Generuj TI3</strong>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="switchTab(2)">← Wróć do Eksport</button>
+    <button class="btn btn-primary" onclick="switchTab(2); setTimeout(generateTI3, 80)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4v16h16V8l-4-4H4z"/><path d="M14 4v4h4"/></svg>
+      Generuj TI3 z ColorChecker
+    </button>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+const STEPS_8  = [0, 36, 73, 109, 146, 182, 219, 255];
+const STEPS_16 = [0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255];
+const STEPS_32 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 255];
+let STEPS = STEPS_32;
+let ACCURACY = 32;
+
+const CHANNELS = ['gray','r','g','b'];
+const CH_LABELS = { gray:'Szarość', r:'Red', g:'Green', b:'Blue' };
+
+// measurements[ch][step] = {x, y, Y}
+const meas = {};
+function initMeas() {
+  CHANNELS.forEach(ch => {
+    meas[ch] = STEPS.map(() => ({x:'', y:'', Y:''}));
+  });
+}
+initMeas();
+
+let generatedTI3 = '';
+
+// ── Accuracy switcher ──────────────────────────────────────────────
+function setAccuracy(n) {
+  if (ACCURACY === n) return;
+  const hasData = CHANNELS.some(ch => meas[ch].some(m => m.x !== '' || m.y !== '' || m.Y !== ''));
+  if (hasData) {
+    if (!confirm(`Zmiana dokładności z ${ACCURACY} na ${n} kroków wyczyści wprowadzone dane pomiarowe. Kontynuować?`)) return;
+  }
+  ACCURACY = n;
+  STEPS = n === 32 ? STEPS_32 : (n === 16 ? STEPS_16 : STEPS_8);
+  initMeas();
+
+  // Update UI
+  document.getElementById('acc-8').classList.toggle('active-acc', n === 8);
+  document.getElementById('acc-16').classList.toggle('active-acc', n === 16);
+  document.getElementById('acc-32').classList.toggle('active-acc', n === 32);
+
+  const labels = STEPS.join(', ');
+  document.getElementById('steps-label').textContent = labels;
+  document.querySelector('#steps-infobox strong:first-of-type').nextSibling.textContent = ` (${n} kroków). `;
+
+  // Update section titles
+  document.querySelector('#ch-gray .section-title').innerHTML = `<em>Gray</em> ramp — R=G=B (${n} kroków)`;
+  document.querySelector('#ch-r .section-title').innerHTML = `<em>Red</em> ramp — G=B=0 (${n} kroków)`;
+  document.querySelector('#ch-g .section-title').innerHTML = `<em>Green</em> ramp — R=B=0 (${n} kroków)`;
+  document.querySelector('#ch-b .section-title').innerHTML = `<em>Blue</em> ramp — R=G=0 (${n} kroków)`;
+
+  // Update paste placeholders
+  const rowHint = `(${n} wierszy)`;
+  document.getElementById('paste-gray').placeholder = `0.3127\t0.3290\t1.0000\n0.3128\t0.3291\t0.8542\n...\n${rowHint}`;
+  document.getElementById('paste-r').placeholder   = `0.6400\t0.3300\t0.1200\n0.6398\t0.3301\t1.6500\n...\n${rowHint}`;
+  document.getElementById('paste-g').placeholder   = `0.3000\t0.6000\t0.0800\n0.3001\t0.5999\t4.6000\n...\n${rowHint}`;
+  document.getElementById('paste-b').placeholder   = `0.1500\t0.0600\t0.0050\n0.1502\t0.0601\t0.7000\n...\n${rowHint}`;
+
+  // Rebuild tables
+  buildTables();
+  generatedTI3 = '';
+  document.getElementById('btn-download').disabled = true;
+  document.getElementById('gen-status').textContent = '— wymagane: pomiary RGBW + ColorChecker (24 patche)';
+  document.getElementById('gen-status').className = 'status-warn';
+}
+
+
+// ── Paste parser ───────────────────────────────────────────────────
+function parsePaste(ch) {
+  const raw = document.getElementById('paste-' + ch).value.trim();
+  const statusEl = document.getElementById('ps-' + ch);
+  if (!raw) { statusEl.textContent = '— pusto'; statusEl.className = 'paste-status'; return; }
+
+  const lines = raw.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length !== ACCURACY) {
+    statusEl.textContent = `✗ Oczekiwano ${ACCURACY} wierszy, jest ${lines.length}`;
+    statusEl.className = 'paste-status paste-err';
+    return;
+  }
+
+  const parsed = [];
+  for (let i = 0; i < ACCURACY; i++) {
+    // Split by tab, comma, semicolon or multiple spaces
+    const cols = lines[i].split(/[\t,;]+|\s{2,}|\s/).map(c => c.replace(',','.')).filter(c => c !== '');
+    if (cols.length < 2) {
+      statusEl.textContent = `✗ Wiersz ${i+1}: za mało kolumn`;
+      statusEl.className = 'paste-status paste-err';
+      return;
+    }
+    const x = parseFloat(cols[0]);
+    const y = parseFloat(cols[1]);
+    const Y = cols.length >= 3 ? parseFloat(cols[2]) : '';
+    if (isNaN(x) || isNaN(y)) {
+      statusEl.textContent = `✗ Wiersz ${i+1}: nieprawidłowe dane`;
+      statusEl.className = 'paste-status paste-err';
+      return;
+    }
+    // For color channels at row 0 (black patch): skip chromaticity validation —
+    // those values are ignored anyway; the generator uses gray[0] instead.
+    const isColorBlackRow = (ch !== 'gray' && i === 0);
+    if (!isColorBlackRow && (x <= 0 || y <= 0 || (x + y) >= 1)) {
+      statusEl.textContent = `✗ Wiersz ${i+1}: x/y poza zakresem (wymagane: x>0, y>0, x+y<1)`;
+      statusEl.className = 'paste-status paste-err';
+      return;
+    }
+    parsed.push({x, y, Y: (cols.length >= 3 && !isNaN(Y)) ? Y : ''});
+  }
+
+  // Save and rebuild table — store Y for all rows in all channels (same format as Gray)
+  parsed.forEach((p, i) => {
+    meas[ch][i].x = p.x;
+    meas[ch][i].y = p.y;
+    meas[ch][i].Y = p.Y;
+  });
+  buildTable(ch);
+
+  const yCount = parsed.filter(p => p.Y !== '').length;
+  const yMax = ACCURACY;
+  const blackNote = (ch !== 'gray') ? ' — krok 0 ignorowany (używany Gray krok 0)' : '';
+  statusEl.textContent = `✓ ${ACCURACY} wierszy, Y: ${yCount}/${yMax}${blackNote}`;
+  statusEl.className = 'paste-status paste-ok';
+
+  // Switch to this channel tab to show result
+  switchCh(ch);
+}
+
+// ── ColorChecker state ─────────────────────────────────────────────
+const CC_NAMES = [
+  'Dark Skin','Light Skin','Blue Sky','Foliage','Blue Flower','Bluish Green',
+  'Orange','Purplish Blue','Moderate Red','Purple','Yellow Green','Orange Yellow',
+  'Blue','Green','Red','Yellow','Magenta','Cyan',
+  'White','Neutral 8','Neutral 6.5','Neutral 5','Neutral 3.5','Black'
+];
+
+// Approximate sRGB values for swatches (display only)
+const CC_RGB = [
+  [115,82,68],[194,150,130],[98,122,157],[87,108,67],[133,128,177],[103,189,170],
+  [214,126,44],[80,91,166],[193,90,99],[94,60,108],[157,188,64],[224,163,46],
+  [56,61,150],[70,148,73],[175,54,60],[231,199,31],[187,86,149],[8,133,161],
+  [243,243,242],[200,200,200],[160,160,160],[122,122,121],[85,85,85],[52,52,52]
+];
+
+let ccMeas = null; // null = not loaded; array of 24 {x,y,Y}
+
+function parsePasteCC() {
+  const raw = document.getElementById('paste-cc').value.trim();
+  const statusEl = document.getElementById('ps-cc');
+  if (!raw) { statusEl.textContent = '— pusto'; statusEl.className = 'paste-status'; return; }
+
+  const lines = raw.split(/\n/).map(l => l.trim()).filter(l => l.length > 0 && !/^\(/.test(l));
+  if (lines.length !== 24) {
+    statusEl.textContent = `✗ Oczekiwano 24 wierszy, jest ${lines.length}`;
+    statusEl.className = 'paste-status paste-err';
+    return;
+  }
+
+  const parsed = [];
+  let mode6col = false; // detected from first valid row
+  for (let i = 0; i < 24; i++) {
+    const cols = lines[i].split(/[\t,;]+|\s+/).map(c => c.replace(',','.')).filter(c => c !== '');
+    if (i === 0) {
+      // Detect mode: 6 cols (R G B x y Y) vs 3 cols (x y Y)
+      // If first 3 values are integers 0-255 and next 3 are small floats → 6-col
+      if (cols.length >= 6) {
+        const v0 = parseFloat(cols[0]), v1 = parseFloat(cols[1]), v2 = parseFloat(cols[2]);
+        const v3 = parseFloat(cols[3]);
+        if (Number.isInteger(v0) && v0 >= 0 && v0 <= 255 &&
+            Number.isInteger(v1) && v1 >= 0 && v1 <= 255 &&
+            Number.isInteger(v2) && v2 >= 0 && v2 <= 255 &&
+            v3 > 0 && v3 < 1) {
+          mode6col = true;
+        }
+      }
+    }
+
+    let devR, devG, devB, x, y, Y;
+    if (mode6col) {
+      if (cols.length < 6) {
+        statusEl.textContent = `✗ Wiersz ${i+1}: oczekiwano 6 kolumn (R G B x y Y)`;
+        statusEl.className = 'paste-status paste-err';
+        return;
+      }
+      devR = Math.round(parseFloat(cols[0]));
+      devG = Math.round(parseFloat(cols[1]));
+      devB = Math.round(parseFloat(cols[2]));
+      x = parseFloat(cols[3]);
+      y = parseFloat(cols[4]);
+      Y = cols.length >= 6 ? parseFloat(cols[5]) : 0;
+      if (devR < 0 || devR > 255 || devG < 0 || devG > 255 || devB < 0 || devB > 255) {
+        statusEl.textContent = `✗ Wiersz ${i+1}: R/G/B poza zakresem 0–255`;
+        statusEl.className = 'paste-status paste-err';
+        return;
+      }
+    } else {
+      if (cols.length < 2) {
+        statusEl.textContent = `✗ Wiersz ${i+1}: za mało kolumn`;
+        statusEl.className = 'paste-status paste-err';
+        return;
+      }
+      // Fallback: use CC_RGB standard device values
+      devR = CC_RGB[i][0]; devG = CC_RGB[i][1]; devB = CC_RGB[i][2];
+      x = parseFloat(cols[0]);
+      y = parseFloat(cols[1]);
+      Y = cols.length >= 3 ? parseFloat(cols[2]) : 0;
+    }
+
+    if (isNaN(x) || isNaN(y) || x <= 0 || y <= 0 || (x+y) >= 1) {
+      statusEl.textContent = `✗ Wiersz ${i+1}: x/y poza zakresem (wymagane: x>0, y>0, x+y<1)`;
+      statusEl.className = 'paste-status paste-err';
+      return;
+    }
+    parsed.push({devR, devG, devB, x, y, Y: (!isNaN(Y) && Y !== null) ? Y : 0});
+  }
+
+  ccMeas = parsed;
+  const modeLabel = mode6col ? '6-kol (R G B x y Y)' : '3-kol (x y Y — std RGB)';
+  statusEl.textContent = `✓ 24 wiersze wczytane [${modeLabel}]`;
+  statusEl.className = 'paste-status paste-ok';
+  document.getElementById('cc-banner').style.display = 'block';
+  buildCCTable();
+}
+
+function fillSampleCC() {
+  // Standard ColorChecker sRGB device values + approximate xyY (D65 illuminant)
+  const sample = [
+    [115, 82, 68,  0.4000,0.3500,10.00],
+    [194,150,130,  0.3772,0.3483,34.88],
+    [ 98,122,157,  0.2471,0.2539,19.43],
+    [ 87,108, 67,  0.3499,0.3775,13.30],
+    [133,128,177,  0.2680,0.2457,24.60],
+    [103,189,170,  0.2613,0.3430,42.89],
+    [214,126, 44,  0.5082,0.4089,30.10],
+    [ 80, 91,166,  0.2110,0.1750,11.95],
+    [193, 90, 99,  0.4534,0.3132,19.11],
+    [ 94, 60,108,  0.2934,0.2216, 6.57],
+    [157,188, 64,  0.3804,0.4868,44.34],
+    [224,163, 46,  0.4861,0.4379,43.12],
+    [ 56, 61,150,  0.1712,0.1348, 6.50],
+    [ 70,148, 73,  0.3091,0.4924,23.07],
+    [175, 54, 60,  0.5528,0.3014,14.38],
+    [231,199, 31,  0.4450,0.4744,59.10],
+    [187, 86,149,  0.3626,0.2497,19.78],
+    [  8,133,161,  0.1958,0.2538,19.72],
+    [243,243,242,  0.3500,0.3543,91.29],
+    [200,200,200,  0.3500,0.3543,59.10],
+    [160,160,160,  0.3500,0.3543,36.18],
+    [122,122,121,  0.3500,0.3543,19.78],
+    [ 85, 85, 85,  0.3500,0.3543, 9.00],
+    [ 52, 52, 52,  0.3500,0.3543, 3.14]
+  ];
+  const lines = sample.map(r =>
+    `${String(r[0]).padStart(3)} ${String(r[1]).padStart(3)} ${String(r[2]).padStart(3)}  ${r[3].toFixed(4)}\t${r[4].toFixed(4)}\t${r[5].toFixed(2)}`
+  ).join('\n');
+  document.getElementById('paste-cc').value = lines;
+  parsePasteCC();
+}
+
+function clearCC() {
+  ccMeas = null;
+  document.getElementById('paste-cc').value = '';
+  document.getElementById('ps-cc').textContent = '';
+  document.getElementById('ps-cc').className = 'paste-status';
+  document.getElementById('cc-banner').style.display = 'none';
+  document.getElementById('cc-table-wrap').innerHTML = '<div style="color:var(--text3);font-family:var(--mono);font-size:11px;padding:20px 0">— wczytaj dane, aby zobaczyć podgląd —</div>';
+}
+
+function buildCCTable() {
+  if (!ccMeas) return;
+  const rows = ccMeas.map((m, i) => {
+    const r = m.devR, g = m.devG, b = m.devB;
+    const hasCustomRGB = (r !== CC_RGB[i][0] || g !== CC_RGB[i][1] || b !== CC_RGB[i][2]);
+    const rgbColor = `rgb(${r},${g},${b})`;
+    return `<tr>
+      <td>
+        <div class="rgb-cell">
+          <div class="rgb-swatch" style="background:${rgbColor}"></div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text)">${CC_NAMES[i]}</span>
+        </div>
+      </td>
+      <td style="font-family:var(--mono);font-size:12px;padding:4px 8px;color:${hasCustomRGB?'#33ff33':'var(--text3)'}">
+        ${r} ${g} ${b}${hasCustomRGB?'':' <span style="font-size:10px;color:var(--text3)">(std)</span>'}
+      </td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);padding:4px 8px">${m.x.toFixed(4)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);padding:4px 8px">${m.y.toFixed(4)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--warn);padding:4px 8px">${m.Y.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('cc-table-wrap').innerHTML = `
+    <table class="meas-table">
+      <thead><tr>
+        <th>Plama / Patch</th>
+        <th>Device R G B</th>
+        <th>x (CIE)</th>
+        <th>y (CIE)</th>
+        <th>Y cd/m²</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ── Build measurement tables ──────────────────────────────────────
+function buildTables() {
+  CHANNELS.forEach(ch => buildTable(ch));
+}
+
+function buildTable(ch) {
+  const el = document.getElementById('table-' + ch);
+  const rows = STEPS.map((v, i) => {
+    let r, g, b;
+    if (ch === 'gray') { r = g = b = v; }
+    else if (ch === 'r') { r = v; g = 0; b = 0; }
+    else if (ch === 'g') { r = 0; g = v; b = 0; }
+    else { r = 0; g = 0; b = v; }
+
+    const pct = (v / 255 * 100).toFixed(1);
+
+    // Step 0 of color channels = RGB(0,0,0) — identical black state as gray step 0.
+    // Lock these fields; generator always uses gray[0] data here.
+    const isColorBlack = (ch !== 'gray' && i === 0);
+
+    if (isColorBlack) {
+      return `<tr style="opacity:0.45">
+        <td>
+          <div class="rgb-cell">
+            <div class="rgb-swatch" style="background:rgb(0,0,0)"></div>
+            <span class="rgb-val">0</span>
+            <span style="color:var(--text3);font-size:10px">0.0%</span>
+          </div>
+        </td>
+        <td colspan="3">
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text3);padding-left:8px">
+            ← używa danych z <strong style="color:var(--accent)">Gray krok 0</strong>
+            &nbsp;(RGB=0,0,0 to zawsze ten sam czarny punkt)
+          </span>
+        </td>
+      </tr>`;
+    }
+
+    const showY = true; // Y active for all rows in all channels
+    const yCell = showY
+      ? `<input type="number" step="0.000001" min="0" placeholder="cd/m²"
+          id="m_${ch}_${i}_Y" value="${meas[ch][i].Y}"
+          oninput="saveMeas('${ch}',${i},'Y',this.value)" onblur="saveMeas('${ch}',${i},'Y',this.value)">`
+      : `<span style="color:var(--text3);font-family:var(--mono);font-size:11px">—</span>`;
+    return `<tr>
+      <td>
+        <div class="rgb-cell">
+          <div class="rgb-swatch" style="background:rgb(${r},${g},${b})"></div>
+          <span class="rgb-val">${v}</span>
+          <span style="color:var(--text3);font-size:10px">${pct}%</span>
+        </div>
+      </td>
+      <td><input type="number" step="0.0001" min="0" max="1" placeholder="0.3127"
+        id="m_${ch}_${i}_x" value="${meas[ch][i].x}"
+        oninput="saveMeas('${ch}',${i},'x',this.value)" onblur="saveMeas('${ch}',${i},'x',this.value)"></td>
+      <td><input type="number" step="0.0001" min="0" max="1" placeholder="0.3290"
+        id="m_${ch}_${i}_y" value="${meas[ch][i].y}"
+        oninput="saveMeas('${ch}',${i},'y',this.value)" onblur="saveMeas('${ch}',${i},'y',this.value)"></td>
+      <td>${yCell}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<table class="meas-table">
+    <thead><tr>
+      <th>Patch RGB</th>
+      <th>x (CIE)</th>
+      <th>y (CIE)</th>
+      <th id="yhdr_${ch}">Y cd/m²</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function saveMeas(ch, idx, coord, val) {
+  meas[ch][idx][coord] = val;
+  // Walidacja wizualna dla x i y
+  if (coord === 'x' || coord === 'y') {
+    const el = document.getElementById(`m_${ch}_${idx}_${coord}`);
+    if (!el) return;
+    const num = parseFloat(val);
+    const xVal = coord === 'x' ? num : (meas[ch][idx].x !== '' ? parseFloat(meas[ch][idx].x) : 0.3127);
+    const yVal = coord === 'y' ? num : (meas[ch][idx].y !== '' ? parseFloat(meas[ch][idx].y) : 0.3290);
+    const invalid = isNaN(num) || num <= 0 || num >= 1 || (xVal + yVal >= 1);
+    el.style.borderColor = (val !== '' && invalid) ? '#ff5252' : '';
+    el.title = (val !== '' && invalid) ? 'x i y muszą być >0 i x+y<1' : '';
+  }
+}
+
+// ── Tab switching ──────────────────────────────────────────────────
+function switchTab(n) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === n));
+  document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === n));
+  if (n === 2) {
+    updateCmdHints();
+  }
+  // Update CC banner note in status
+  if (n === 2 && ccMeas) {
+    document.getElementById('gen-status').textContent = '— gotowe — kliknij Generuj TI3';
+  }
+}
+
+function switchCh(ch) {
+  CHANNELS.forEach(c => {
+    document.getElementById('ch-' + c).classList.toggle('active', c === ch);
+  });
+  const tabMap = { gray: 'cht-gray', r: 'cht-r', g: 'cht-g', b: 'cht-b' };
+  const activeClass = { gray: 'active-gray', r: 'active-r', g: 'active-g', b: 'active-b' };
+  Object.keys(tabMap).forEach(c => {
+    const el = document.getElementById(tabMap[c]);
+    el.className = 'ch-tab';
+    if (c === ch) el.classList.add(activeClass[c]);
+  });
+}
+
+// ── Sample data ────────────────────────────────────────────────────
+function fillSampleData() {
+  // Typical sRGB-ish LCD measurements (xyY)
+  const samples8 = {
+    gray: [
+      [0.3127,0.3290,0.12],[0.3130,0.3292,1.7352],[0.3128,0.3291,7.7701],[0.3129,0.3290,18.5998],
+      [0.3127,0.3289,35.2708],[0.3126,0.3290,57.2041],[0.3128,0.3291,85.89],[0.3127,0.3290,120.0]
+    ],
+    r: [
+      [0.6400,0.3300,0.02],[0.6395,0.3302,0.3568],[0.6398,0.3301,1.6154],[0.6399,0.3300,3.8738],
+      [0.6401,0.3299,7.3504],[0.6402,0.3298,11.9244],[0.6400,0.3300,17.9066],[0.6400,0.3300,25.02]
+    ],
+    g: [
+      [0.3000,0.6000,0.02],[0.3002,0.5999,0.9901],[0.3001,0.6001,4.6147],[0.3000,0.6000,11.119],
+      [0.2999,0.6002,21.1316],[0.3001,0.5998,34.3048],[0.3000,0.6000,51.5335],[0.3000,0.6000,72.02]
+    ],
+    b: [
+      [0.1500,0.0600,0.005],[0.1502,0.0601,0.1532],[0.1501,0.0600,0.707],[0.1500,0.0599,1.7007],
+      [0.1499,0.0598,3.2304],[0.1501,0.0601,5.2429],[0.1500,0.0600,7.8751],[0.1500,0.0600,11.005]
+    ]
+  };
+
+  // For 16 steps, interpolate between 8-step samples
+  const interp16 = (arr) => {
+    const result = [];
+    for (let i = 0; i < 16; i++) {
+      const t = i / 15 * 7; // map 0..15 → 0..7
+      const lo = Math.floor(t);
+      const hi = Math.min(lo + 1, 7);
+      const f = t - lo;
+      result.push([
+        arr[lo][0] + (arr[hi][0] - arr[lo][0]) * f,
+        arr[lo][1] + (arr[hi][1] - arr[lo][1]) * f,
+        arr[lo][2] + (arr[hi][2] - arr[lo][2]) * f
+      ]);
+    }
+    return result;
+  };
+
+  const interp32 = (arr) => {
+    const result = [];
+    for (let i = 0; i < 32; i++) {
+      const t = i / 31 * 7;
+      const lo = Math.floor(t);
+      const hi = Math.min(lo + 1, 7);
+      const f = t - lo;
+      result.push([
+        arr[lo][0] + (arr[hi][0] - arr[lo][0]) * f,
+        arr[lo][1] + (arr[hi][1] - arr[lo][1]) * f,
+        arr[lo][2] + (arr[hi][2] - arr[lo][2]) * f
+      ]);
+    }
+    return result;
+  };
+
+  const samples = ACCURACY === 8 ? samples8 : ACCURACY === 16 ? {
+    gray: interp16(samples8.gray),
+    r:    interp16(samples8.r),
+    g:    interp16(samples8.g),
+    b:    interp16(samples8.b)
+  } : {
+    gray: interp32(samples8.gray),
+    r:    interp32(samples8.r),
+    g:    interp32(samples8.g),
+    b:    interp32(samples8.b)
+  };
+
+  CHANNELS.forEach(ch => {
+    STEPS.forEach((_, i) => {
+      meas[ch][i].x = samples[ch][i][0];
+      meas[ch][i].y = samples[ch][i][1];
+      meas[ch][i].Y = samples[ch][i][2];
+    });
+  });
+  buildTables();
+  document.getElementById('prof_desc').value = 'LCD_sRGB_D65_Sample';
+  document.getElementById('disp_mfr').value = 'Generic';
+  document.getElementById('disp_model').value = 'LCD Monitor';
+}
+
+// ── xyY → XYZ conversion ───────────────────────────────────────────
+function xyY_to_XYZ(x, y, Y) {
+  if (y === 0 || y <= 0) return [0, 0, 0];
+  if (x + y >= 1) return [0, Y, 0]; // poza gamut — zwróć tylko Y
+  const X = (x * Y) / y;
+  const Z = ((1 - x - y) * Y) / y;
+  return [X, Y, Z];
+}
+
+// ── TI3 Generator ──────────────────────────────────────────────────
+function generateTI3() {
+  const statusEl = document.getElementById('gen-status');
+
+  // Walidacja obowiązkowych pól metadanych
+  const desc    = v('prof_desc');
+  const mfr     = v('disp_mfr');
+  const model   = v('disp_model');
+  if (!desc || !mfr || !model) {
+    statusEl.textContent = '✗ Uzupełnij pola: Nazwa profilu, Producent, Model (Krok 1)';
+    statusEl.className = 'status-err';
+    switchTab(0);
+    return;
+  }
+
+  // Walidacja: wszystkie kroki RGBW muszą mieć wypełnione x i y
+  const chLabels = { gray: 'Gray', r: 'Red', g: 'Green', b: 'Blue' };
+  let rgbwMissing = false;
+  for (const ch of CHANNELS) {
+    for (let i = 0; i < STEPS.length; i++) {
+      // krok 0 kanałów kolorowych = zawsze czarny z gray[0], pomijamy
+      if (ch !== 'gray' && i === 0) continue;
+      const row = meas[ch][i];
+      if (row.x === '' || row.x === undefined || row.y === '' || row.y === undefined) {
+        statusEl.textContent = `✗ Brak pomiarów RGBW — kanał ${chLabels[ch]}, krok ${STEPS[i]} — uzupełnij dane w zakładce „Pomiary"`;
+        statusEl.className = 'status-err';
+        switchTab(1);
+        switchCh(ch);
+        rgbwMissing = true;
+        break;
+      }
+    }
+    if (rgbwMissing) return;
+  }
+
+  // Walidacja: ColorChecker musi być wczytany
+  if (!ccMeas || ccMeas.length !== 24) {
+    statusEl.textContent = '✗ Brak danych ColorChecker — wczytaj 24 patche w zakładce „ColorChecker"';
+    statusEl.className = 'status-err';
+    switchTab(3);
+    return;
+  }
+  const serial  = v('disp_serial')|| '';
+  const tech    = v('disp_tech');
+  const wp      = v('white_point');
+  const gamma   = v('target_gamma');
+  const instr   = v('instrument');
+  const obs     = v('observer');
+  const dateVal = v('meas_date') || new Date().toISOString().slice(0,10);
+  const oper    = v('operator') || '';
+
+  // Primaries come from step 255 (index 7) of each channel in measurements
+  const getPrimXY = (ch) => {
+    const lastIdx = STEPS.length - 1;
+    return {
+      x: meas[ch][lastIdx].x !== '' ? parseFloat(meas[ch][lastIdx].x) : null,
+      y: meas[ch][lastIdx].y !== '' ? parseFloat(meas[ch][lastIdx].y) : null,
+      Y: meas[ch][lastIdx].Y !== '' ? parseFloat(meas[ch][lastIdx].Y) : null
+    };
+  };
+  const primR = getPrimXY('r');
+  const primG = getPrimXY('g');
+  const primB = getPrimXY('b');
+  const primW = getPrimXY('gray');
+  const hasPrimaries = primR.x && primR.y && primG.x && primG.y && primB.x && primB.y;
+
+  // Build DATA records
+  // Format: SAMPLE_ID  RGB_R  RGB_G  RGB_B  XYZ_X  XYZ_Y  XYZ_Z
+  let records = [];
+  let sampleId = 1;
+
+  // Use gray ramp as primary data (most important for display profiling)
+  CHANNELS.forEach(ch => {
+    STEPS.forEach((step, i) => {
+      let r, g, b;
+      if (ch === 'gray') { r = g = b = step; }
+      else if (ch === 'r') { r = step; g = 0; b = 0; }
+      else if (ch === 'g') { r = 0; g = step; b = 0; }
+      else { r = 0; g = 0; b = step; }
+
+      // For r/g/b at step i=0: RGB=(0,0,0) — same black state as gray step 0.
+      // Chromaticity at near-zero luminance is unmeasurable, always use gray[0].
+      const isColorBlack = (ch !== 'gray' && i === 0);
+      const srcCh  = isColorBlack ? 'gray' : ch;
+      const srcIdx = isColorBlack ? 0 : i;
+
+      const xi = meas[srcCh][srcIdx].x !== '' && meas[srcCh][srcIdx].x !== undefined ? parseFloat(meas[srcCh][srcIdx].x) : 0.3127;
+      const yi = meas[srcCh][srcIdx].y !== '' && meas[srcCh][srcIdx].y !== undefined ? parseFloat(meas[srcCh][srcIdx].y) : 0.3290;
+      const Ymeas = meas[srcCh][srcIdx].Y !== '' ? parseFloat(meas[srcCh][srcIdx].Y) : null;
+      const Yfallback = (() => { const vv = STEPS[i]/255; return vv===0 ? 0 : Math.pow(vv,2.2); })();
+      const Y  = (Ymeas !== null && !isNaN(Ymeas)) ? Ymeas : Yfallback;
+      const [X, Yval, Z] = xyY_to_XYZ(xi, yi, Y);
+
+      // Normalize RGB to 0-100 scale for CGATS
+      const rn = (r / 255 * 100).toFixed(4);
+      const gn = (g / 255 * 100).toFixed(4);
+      const bn = (b / 255 * 100).toFixed(4);
+
+      records.push(
+        `${String(sampleId).padStart(3)} ${rn.padStart(9)} ${gn.padStart(9)} ${bn.padStart(9)}  ${X.toFixed(6).padStart(10)} ${Yval.toFixed(6).padStart(10)} ${Z.toFixed(6).padStart(10)}`
+      );
+      sampleId++;
+    });
+  });
+
+  // ColorChecker patches (required — validated above)
+  if (ccMeas && ccMeas.length === 24) {
+    ccMeas.forEach((m, i) => {
+      const [Xcc, Ycc, Zcc] = xyY_to_XYZ(m.x, m.y, m.Y);
+      // Use actual device RGB from measurement data (devR/G/B from 6-col input,
+      // or CC_RGB standard values when imported in 3-col mode)
+      const cr = m.devR, cg = m.devG, cb = m.devB;
+      const rn = (cr / 255 * 100).toFixed(4);
+      const gn = (cg / 255 * 100).toFixed(4);
+      const bn = (cb / 255 * 100).toFixed(4);
+      records.push(
+        `${String(sampleId).padStart(3)} ${rn.padStart(9)} ${gn.padStart(9)} ${bn.padStart(9)}  ${Xcc.toFixed(6).padStart(10)} ${Ycc.toFixed(6).padStart(10)} ${Zcc.toFixed(6).padStart(10)}`
+      );
+      sampleId++;
+    });
+  }
+
+  const numSamples = records.length;
+  const nowISO = new Date().toISOString().replace('T',' ').slice(0,19);
+
+  let lines = [];
+
+  // CGATS header
+  lines.push(`CTI3`);
+  lines.push(``);
+  lines.push(`DESCRIPTOR "Argyll Calibration Target chart information 3"`);
+  lines.push(`ORIGINATOR "TI3 Generator"`);
+  lines.push(`CREATED "${nowISO}"`);
+  lines.push(`DEVICE_CLASS "DISPLAY"`);
+  lines.push(`COLOR_REP "RGB_XYZ"`);
+  lines.push(``);
+
+  // Display info
+  lines.push(`TARGET_INSTRUMENT "${instr}"`);
+  lines.push(`DISPLAY_TYPE_REFRESH "NO"`);
+  lines.push(`DISPLAY_TYPE_SETTLE_TIME "0"`);
+  lines.push(``);
+
+  // Keywords / metadata
+  lines.push(`KEYWORD "DISPLAY_MANUFACTURER"`);
+  lines.push(`DISPLAY_MANUFACTURER "${mfr}"`);
+  lines.push(`KEYWORD "DISPLAY_MODEL"`);
+  lines.push(`DISPLAY_MODEL "${model}"`);
+  if (serial) {
+    lines.push(`KEYWORD "DISPLAY_SERIAL"`);
+    lines.push(`DISPLAY_SERIAL "${serial}"`);
+  }
+  lines.push(`KEYWORD "DISPLAY_TECHNOLOGY"`);
+  lines.push(`DISPLAY_TECHNOLOGY "${tech}"`);
+  lines.push(`KEYWORD "TARGET_WHITE_POINT"`);
+  lines.push(`TARGET_WHITE_POINT "${wp}"`);
+  lines.push(`KEYWORD "TARGET_GAMMA"`);
+  lines.push(`TARGET_GAMMA "${gamma}"`);
+  lines.push(`KEYWORD "OBSERVER"`);
+  lines.push(`OBSERVER "${obs}"`);
+  if (oper) {
+    lines.push(`KEYWORD "OPERATOR"`);
+    lines.push(`OPERATOR "${oper}"`);
+  }
+  lines.push(`KEYWORD "MEASUREMENT_DATE"`);
+  lines.push(`MEASUREMENT_DATE "${dateVal}"`);
+  lines.push(`KEYWORD "PROFILE_DESCRIPTION"`);
+  lines.push(`PROFILE_DESCRIPTION "${desc}"`);
+  lines.push(``);
+
+  // Luminance note
+  lines.push(`# NOTE: Y values in cd/m² from direct measurements for all channels and steps. Fallback: gamma 2.2 approximation where Y not provided.`);
+  lines.push(`# NOTE: ColorChecker 24 patches appended after primary R/G/B/Gray ramps. Device RGB from measurement input.`);
+  lines.push(``);
+
+  // LUMINANCE_XYZ — from gray ramp step 255 (white point absolute luminance)
+  const wXYZ = (() => {
+    const lastIdx = STEPS.length - 1;
+    const wx = meas['gray'][lastIdx].x !== '' ? parseFloat(meas['gray'][lastIdx].x) : 0;
+    const wy = meas['gray'][lastIdx].y !== '' ? parseFloat(meas['gray'][lastIdx].y) : 0;
+    const wY = meas['gray'][lastIdx].Y !== '' ? parseFloat(meas['gray'][lastIdx].Y) : null;
+    if (wx && wy && wY !== null) {
+      const wX = (wx * wY) / wy;
+      const wZ = ((1 - wx - wy) * wY) / wy;
+      return [wX, wY, wZ];
+    }
+    return null;
+  })();
+  if (wXYZ) {
+    lines.push(`KEYWORD "LUMINANCE_XYZ"`);
+    lines.push(`LUMINANCE_XYZ ${wXYZ[0].toFixed(6)} ${wXYZ[1].toFixed(6)} ${wXYZ[2].toFixed(6)}`);
+    lines.push(``);
+  }
+
+  // Primaries — from step 255 of each channel; only include if Y is also provided
+  if (hasPrimaries && primR.Y !== null && primG.Y !== null && primB.Y !== null) {
+    const [Xr,Yr,Zr] = xyY_to_XYZ(primR.x, primR.y, primR.Y);
+    const [Xg,Yg,Zg] = xyY_to_XYZ(primG.x, primG.y, primG.Y);
+    const [Xb,Yb,Zb] = xyY_to_XYZ(primB.x, primB.y, primB.Y);
+    lines.push(`KEYWORD "RED_X"`);
+    lines.push(`KEYWORD "RED_Y"`);
+    lines.push(`KEYWORD "RED_Z"`);
+    lines.push(`RED_X ${Xr.toFixed(6)}`);
+    lines.push(`RED_Y ${Yr.toFixed(6)}`);
+    lines.push(`RED_Z ${Zr.toFixed(6)}`);
+    lines.push(`KEYWORD "GREEN_X"`);
+    lines.push(`KEYWORD "GREEN_Y"`);
+    lines.push(`KEYWORD "GREEN_Z"`);
+    lines.push(`GREEN_X ${Xg.toFixed(6)}`);
+    lines.push(`GREEN_Y ${Yg.toFixed(6)}`);
+    lines.push(`GREEN_Z ${Zg.toFixed(6)}`);
+    lines.push(`KEYWORD "BLUE_X"`);
+    lines.push(`KEYWORD "BLUE_Y"`);
+    lines.push(`KEYWORD "BLUE_Z"`);
+    lines.push(`BLUE_X ${Xb.toFixed(6)}`);
+    lines.push(`BLUE_Y ${Yb.toFixed(6)}`);
+    lines.push(`BLUE_Z ${Zb.toFixed(6)}`);
+    lines.push(``);
+  }
+  // If Y not provided for primaries — skip block, Argyll derives from DATA
+
+  // DATA_FORMAT
+  lines.push(`NUMBER_OF_FIELDS 7`);
+  lines.push(`BEGIN_DATA_FORMAT`);
+  lines.push(`SAMPLE_ID  RGB_R  RGB_G  RGB_B  XYZ_X  XYZ_Y  XYZ_Z`);
+  lines.push(`END_DATA_FORMAT`);
+  lines.push(``);
+  lines.push(`NUMBER_OF_SETS ${numSamples}`);
+  lines.push(`BEGIN_DATA`);
+  records.forEach(r => lines.push(r));
+  lines.push(`END_DATA`);
+
+  generatedTI3 = lines.join('\n');
+
+  // Render highlighted preview
+  renderPreview(generatedTI3);
+  document.getElementById('btn-download').disabled = false;
+  document.getElementById('gen-status').textContent = `✓ ${numSamples} próbek (${ACCURACY} kroków × 4 kanały +24 ColorChecker) — gotowy do pobrania`;
+  document.getElementById('gen-status').className = 'status-ok';
+  updateCmdHints();
+}
+
+function renderPreview(text) {
+  const el = document.getElementById('output-preview');
+  const html = text
+    .split('\n')
+    .map(line => {
+      if (line.startsWith('#')) return `<span class="com">${esc(line)}</span>`;
+      if (/^(CTI3|BEGIN_DATA|END_DATA|BEGIN_DATA_FORMAT|END_DATA_FORMAT)/.test(line))
+        return `<span class="kw">${esc(line)}</span>`;
+      if (/^(KEYWORD|NUMBER_OF_|DEVICE_CLASS|COLOR_REP|ORIGINATOR|DESCRIPTOR|CREATED|TARGET_|DISPLAY_|OBSERVER|MEASUREMENT_|PROFILE_|OPERATOR|RED_|GREEN_|BLUE_|LUMINANCE_)/.test(line)) {
+        const m = line.match(/^(\S+)\s*(.*)/);
+        if (m) return `<span style="color:#7eb8e0">${esc(m[1])}</span>${m[2] ? ' <span class="val">' + esc(m[2]) + '</span>' : ''}`;
+      }
+      // DATA lines (starts with number)
+      if (/^\s*\d/.test(line)) return `<span class="num">${esc(line)}</span>`;
+      return esc(line);
+    })
+    .join('\n');
+  el.innerHTML = html;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function downloadTI3() {
+  if (!generatedTI3) return;
+  const desc = v('prof_desc') || 'monitor_profile';
+  const fname = desc.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_\-]/g,'') + '.ti3';
+  const blob = new Blob([generatedTI3], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fname; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyTI3() {
+  if (!generatedTI3) { generateTI3(); }
+  const btn = document.getElementById('btn-copy');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(generatedTI3).then(() => {
+      btn.classList.add('flash');
+      btn.textContent = '✓ Skopiowano!';
+      setTimeout(() => { btn.textContent = 'Kopiuj'; btn.classList.remove('flash'); }, 1500);
+    }).catch(() => {
+      fallbackCopy(btn);
+    });
+  } else {
+    fallbackCopy(btn);
+  }
+}
+
+function fallbackCopy(btn) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = generatedTI3;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.classList.add('flash');
+    btn.textContent = '✓ Skopiowano!';
+    setTimeout(() => { btn.textContent = 'Kopiuj'; btn.classList.remove('flash'); }, 1500);
+  } catch(e) {
+    btn.textContent = '✗ Błąd kopiowania';
+    setTimeout(() => { btn.textContent = 'Kopiuj'; }, 2000);
+  }
+}
+
+function updateCmdHints() {
+  const desc = v('prof_desc') || 'NazwaProfilu';
+  const fname = (desc.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_\-]/g,'') || 'pomiary') + '.ti3';
+  ['cmd-desc','cmd-desc2','cmd-desc3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = desc;
+  });
+  ['cmd-file','cmd-file2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = fname;
+  });
+}
+
+function v(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+// ── Set default date ───────────────────────────────────────────────
+document.getElementById('meas_date').value = new Date().toISOString().slice(0, 10);
+
+// ── Init ───────────────────────────────────────────────────────────
+buildTables();
+</script>
+<style>
+/* ── Suite light theme (purple accents preserved) — injected ── */
+body.light {
+  --bg: #f4f4f7;
+  --surface: #ffffff;
+  --surface2: #eef0f3;
+  --border: #d6d8de;
+  --accent: #8b15ba;
+  --accent3: #1a9e1a;
+  --warn: #d97500;
+  --text: #1a1a1c;
+  --muted: #8c8c94;
+  --text2: #5a5a62;
+  --text3: #8a8a92;
+  --canvas-bg: #dcdce2;
+}
+</style>
+<script>
+/* Suite-wide theme listener (shell broadcasts + shared localStorage) */
+(function(){
+  var __at=null; function applyTheme(light){ if(!document.body) return; document.documentElement.classList.add('theme-anim'); document.body.classList.add('theme-anim'); document.body.classList.toggle('light', !!light); clearTimeout(__at); __at=setTimeout(function(){document.documentElement.classList.remove('theme-anim'); document.body.classList.remove('theme-anim');},950); }
+  function readLS(){ try { return localStorage.getItem('suite-theme')==='light'; } catch(e){ return false; } }
+  applyTheme(readLS());
+  document.addEventListener('DOMContentLoaded', function(){ applyTheme(readLS()); });
+  window.addEventListener('message', function(ev){
+    if(ev.data && ev.data.type==='suite-theme'){ if(!ev.data.noToggle) applyTheme(ev.data.light); }
+    if(ev.data && ev.data.type==='ti3-tab'){ try { switchTab(parseInt(ev.data.tab, 10)); } catch(e){} }
+  });
+})();
+</script>
+
+</body>
+</html>

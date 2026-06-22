@@ -1,0 +1,3847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LMK2000 · False Color Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #080808;
+  --surface: #0f0f0f;
+  --surface2: #141414;
+  --border:  #1e1e1e;
+  --accent:  #8b15ba;
+  --accent2: #6e10a0;
+  --accent3: #33ff33;
+  --warn:    #ff9100;
+  --danger:  #ff2244;
+  --text:    #e0e0e0;
+  --muted:   #555555;
+  --text2:   #777777;
+  --text3:   #3a3a3a;
+  --mono: 'Share Tech Mono', monospace;
+  --sans: 'Rajdhani', sans-serif;
+  --canvas-bg: #000000;
+  --r: 10px;
+  --fs-xs:   13px;
+  --fs-sm:   15px;
+  --fs-md:   17px;
+  --fs-lg:   19px;
+  --fs-xl:   22px;
+}
+/* ── Light theme — purple accents preserved ── */
+body.light {
+  --bg:      #f4f4f7;
+  --surface: #ffffff;
+  --surface2: #eef0f3;
+  --border:  #d6d8de;
+  --accent:  #8b15ba;
+  --accent2: #6e10a0;
+  --accent3: #1a9e1a;
+  --warn:    #d97500;
+  --danger:  #d11030;
+  --text:    #1a1a1c;
+  --muted:   #8c8c94;
+  --text2:   #62626a;
+  --text3:   #b4b4bc;
+  --canvas-bg: #dcdce2;
+}
+/* ── Theme toggle button ── */
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  margin-left: 14px;
+}
+.theme-toggle:hover { background: var(--accent); color: #fff; }
+.theme-toggle .theme-ico { font-size: 15px; line-height: 1; }
+html { height: 100%; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-size: var(--fs-sm);
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(139,21,186,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,21,186,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── HEADER ── */
+header {
+  flex-shrink: 0;
+  padding: 10px 20px 0;
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 2;
+  background: var(--bg);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 10px;
+}
+
+.logo-icon {
+  width: 44px; height: 44px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 7px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.logo-icon span { border-radius: 2px; display: block; }
+.lr { background: #ff3333; }
+.lg { background: #33ff33; }
+.lb { background: #3333ff; }
+.lw { background: #ffffff; }
+
+.header-text h1 {
+  font-family: var(--mono);
+  font-size: var(--fs-xl);
+  letter-spacing: 5px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.header-sub {
+  font-family: var(--sans);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin-top: 6px;
+}
+
+.header-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+#filename-label {
+  color: var(--accent);
+  font-size: var(--fs-sm);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#img-info { color: var(--muted); font-size: var(--fs-xs); }
+
+/* ── MAIN LAYOUT ── */
+main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 420px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Two-column row layout inside sidebar */
+.sidebar-cols {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sidebar-col:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.section {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: var(--fs-xs);
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+/* File input */
+.file-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.file-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--accent);
+  transform: translateX(-100%);
+  transition: transform 0.18s;
+  z-index: 0;
+}
+.file-btn:hover::before { transform: translateX(0); }
+.file-btn:hover { color: var(--bg); }
+.file-btn span { position: relative; z-index: 1; }
+#file-input { display: none; }
+
+/* Mode buttons */
+.btn-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.mode-btn, .scale-btn {
+  padding: 8px 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .18s, border-color .18s, background .18s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mode-btn:hover, .scale-btn:hover { color: var(--text2); border-color: #2a2a2a; }
+.mode-btn.active, .scale-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(139,21,186,0.06);
+}
+
+/* Select */
+select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.18s;
+  appearance: none;
+}
+select:hover { border-color: var(--accent); }
+
+/* Range inputs */
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.range-label {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  width: 34px;
+  letter-spacing: 1.5px;
+}
+.range-input {
+  flex: 1;
+  padding: 5px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  outline: none;
+  transition: border-color 0.18s;
+  width: 0;
+}
+.range-input:focus { border-color: var(--accent); }
+
+.btn-auto {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--accent3);
+  border-radius: var(--r);
+  color: var(--accent3);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .18s, border-color .18s, background .18s;
+  margin-top: 6px;
+}
+.btn-auto:hover { background: rgba(51,255,51,0.06); }
+
+/* ROI buttons */
+.roi-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.roi-btn {
+  padding: 11px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .18s, border-color .18s, background .18s;
+  white-space: nowrap;
+}
+.roi-btn:hover { border-color: #333; color: var(--text); }
+.roi-btn.active {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: rgba(255,145,0,0.08);
+  box-shadow: 0 0 8px rgba(255,145,0,0.15);
+}
+.roi-btn.clear {
+  border-color: var(--danger);
+  color: var(--danger);
+  grid-column: 1 / -1;
+  padding: 9px 8px;
+  font-size: var(--fs-xs);
+  letter-spacing: 3px;
+}
+.roi-btn.clear:hover { background: rgba(255,34,68,0.07); }
+
+/* Cursor info */
+.cursor-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cursor-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cursor-label { font-size: var(--fs-sm); color: var(--muted); letter-spacing: 2px; }
+.cursor-val { font-size: var(--fs-lg); color: var(--accent); }
+
+/* ROI Stats */
+#roi-panel { min-height: 60px; }
+.roi-title { font-size: var(--fs-sm); color: var(--warn); letter-spacing: 3px; margin-bottom: 8px; text-transform: uppercase; }
+.roi-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.roi-label { font-size: var(--fs-sm); color: var(--muted); letter-spacing: 1.5px; }
+.roi-val { font-size: var(--fs-lg); color: var(--text); }
+.roi-val.accent { color: var(--accent3); }
+.roi-empty { font-size: var(--fs-sm); color: var(--muted); line-height: 1.6; letter-spacing: 1.5px; }
+
+/* Grid ROI controls */
+.grid-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+.grid-row { display: flex; align-items: center; gap: 10px; }
+.grid-label {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  width: 36px;
+}
+/* Hide native spinners */
+.grid-spinner { display: none; }
+
+/* Custom stepper widget */
+.grid-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface2);
+}
+.grid-stepper-btn {
+  width: 32px; height: 36px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s;
+  font-family: var(--mono);
+  flex-shrink: 0;
+}
+.grid-stepper-btn:hover { color: var(--warn); background: rgba(255,145,0,0.08); }
+.grid-stepper-val {
+  min-width: 36px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: var(--fs-lg);
+  color: var(--text);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 0 4px;
+  line-height: 36px;
+  user-select: none;
+}
+.grid-sep {
+  font-size: var(--fs-lg);
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+/* Copy-to-clipboard button */
+.btn-copy {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  margin-top: 6px;
+  width: 100%;
+  justify-content: center;
+}
+.btn-copy:hover { color: var(--accent3); border-color: var(--accent3); }
+.btn-copy.copied { color: var(--accent3); border-color: var(--accent3); }
+
+/* Grid results */
+#grid-results-wrap { overflow-x: auto; margin-top: 4px; }
+#grid-results-wrap::-webkit-scrollbar { height: 3px; }
+#grid-results-wrap::-webkit-scrollbar-thumb { background: var(--border); }
+.grid-table {
+  border-collapse: collapse; font-size: 16px;
+  font-family: var(--mono); color: var(--text); width: 100%;
+}
+.grid-table th {
+  background: var(--surface2); color: var(--muted);
+  letter-spacing: 1px; padding: 5px 7px;
+  border: 1px solid var(--border); text-align: center;
+  font-weight: normal; white-space: nowrap;
+}
+.grid-table td {
+  padding: 4px 7px; border: 1px solid var(--border);
+  text-align: right; white-space: nowrap;
+}
+.grid-table td:first-child { text-align: center; color: var(--muted); letter-spacing: 0; }
+.grid-table tr:hover td { background: rgba(139,21,186,0.08); }
+.cell-mean { color: var(--accent3); }
+.btn-export-grid {
+  width: 100%; margin-top: 5px; padding: 7px 8px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--muted);
+  font-family: var(--mono); font-size: var(--fs-xs); letter-spacing: 2px;
+  text-transform: uppercase; cursor: pointer;
+  transition: color .18s, border-color .18s; text-align: left;
+}
+.btn-export-grid:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Export buttons */
+.export-btns { display: flex; flex-direction: column; gap: 5px; }
+.btn-export {
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .18s, border-color .18s;
+  text-align: left;
+}
+.btn-export:hover { border-color: #2a2a2a; color: var(--text2); }
+
+/* Crop section */
+.crop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.crop-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.crop-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.crop-input {
+  padding: 6px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  outline: none;
+  transition: border-color 0.18s;
+  width: 100%;
+}
+.crop-input:focus { border-color: var(--accent); }
+.crop-preview {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  min-height: 14px;
+}
+.crop-preview span { color: var(--accent); }
+.btn-crop-reset {
+  width: 100%;
+  padding: 7px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .18s, border-color .18s;
+}
+.btn-crop-reset:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Shortcuts */
+.shortcuts { display: flex; flex-direction: column; gap: 4px; }
+.shortcut-row { display: flex; justify-content: space-between; align-items: center; }
+.shortcut-key {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+.shortcut-desc { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+
+/* ── VIEWER CENTER ── */
+.viewer-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--canvas-bg);
+}
+
+#display-canvas { position: absolute; top: 0; left: 0; }
+#overlay-canvas { position: absolute; top: 0; left: 0; cursor: crosshair; }
+
+/* Drop zone */
+#drop-zone {
+  position: absolute; inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 10;
+  background: var(--bg);
+}
+
+.drop-icon {
+  width: 80px; height: 80px;
+  border: 2px dashed var(--muted);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  color: var(--muted);
+  transition: color .18s, border-color .18s;
+}
+#drop-zone.drag-over .drop-icon {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.drop-title {
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.drop-sub {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+/* Progress */
+#load-progress {
+  position: absolute; inset: 0;
+  background: rgba(8,8,8,0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 20;
+  display: none;
+}
+.progress-track {
+  width: 280px; height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  overflow: hidden;
+}
+#progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  border-radius: 1px;
+  transition: width 0.2s;
+  width: 0%;
+}
+#progress-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+
+/* Error */
+#error-msg {
+  position: absolute;
+  bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,34,68,0.12);
+  border: 1px solid var(--danger);
+  border-radius: var(--r);
+  padding: 10px 20px;
+  font-size: 11px;
+  color: var(--danger);
+  letter-spacing: 1px;
+  z-index: 30;
+  display: none;
+  white-space: nowrap;
+}
+
+/* ── LEGEND ── */
+.legend-panel {
+  width: 130px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  align-items: center;
+  gap: 0;
+}
+
+#legend-canvas {
+  flex: 1;
+  width: 98px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ── GLOBAL DRAG OVERLAY ── */
+#global-drop-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(8,8,8,0.88);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  pointer-events: none;
+}
+#global-drop-overlay.active {
+  display: flex;
+  pointer-events: all;
+}
+.gdrop-box {
+  border: 2px dashed var(--accent);
+  border-radius: 20px;
+  padding: 60px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 0 60px rgba(139,21,186,0.25), inset 0 0 40px rgba(139,21,186,0.06);
+  animation: gdrop-pulse 1.2s ease-in-out infinite;
+}
+@keyframes gdrop-pulse {
+  0%, 100% { border-color: var(--accent); box-shadow: 0 0 40px rgba(139,21,186,0.2); }
+  50%       { border-color: #c040f0;      box-shadow: 0 0 70px rgba(139,21,186,0.45); }
+}
+.gdrop-icon {
+  font-size: 52px;
+  line-height: 1;
+  color: var(--accent);
+  filter: drop-shadow(0 0 18px rgba(139,21,186,0.6));
+}
+.gdrop-title {
+  font-family: var(--mono);
+  font-size: 20px;
+  letter-spacing: 5px;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.gdrop-sub {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+/* ── SCAN ANIMATION ── */
+@keyframes scan {
+  0% { transform: translateY(0); opacity: 0.6; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+.scanline {
+  position: absolute; left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scan 2s linear infinite;
+  pointer-events: none;
+  z-index: 5;
+}
+
+html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <div class="logo-icon">
+      <span class="lr"></span>
+      <span class="lg"></span>
+      <span class="lb"></span>
+      <span class="lw"></span>
+    </div>
+    <div class="header-text">
+      <h1>LMK2000 · False Color Viewer</h1>
+      <p class="header-sub">Luminance Measurement · HDF5 · cd/m²</p>
+    </div>
+    <div class="header-meta">
+      <span id="filename-label">No file loaded</span>
+      <span id="img-info"></span>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- File -->
+    <div class="section">
+      <div class="section-title">File</div>
+      <label class="file-btn" onclick="document.getElementById('file-input').click()">
+        <span>⊕ Load .h5 File</span>
+        <input type="file" id="file-input" accept=".h5" style="display:none">
+      </label>
+    </div>
+
+    <!-- Display Mode -->
+    <div class="section">
+      <div class="section-title">Display Mode</div>
+      <div class="btn-group">
+        <button class="mode-btn active" data-mode="falsecolor">False Color</button>
+        <button class="mode-btn" data-mode="rgb">RGB</button>
+        <button class="mode-btn" data-mode="grayscale">Grayscale</button>
+        <button class="mode-btn" data-mode="raw">Raw</button>
+      </div>
+    </div>
+
+    <!-- Colormap -->
+    <div class="section">
+      <div class="section-title">Colormap</div>
+      <select id="colormap-select">
+        <option value="lmk">LMK Style</option>
+        <option value="turbo">Turbo</option>
+        <option value="jet">Jet</option>
+        <option value="viridis">Viridis</option>
+        <option value="inferno">Inferno</option>
+      </select>
+    </div>
+
+    <!-- Scale -->
+    <div class="section">
+      <div class="section-title">Scaling</div>
+      <div class="btn-group">
+        <button class="scale-btn" data-scale="linear">Linear</button>
+        <button class="scale-btn active" data-scale="log">Log</button>
+      </div>
+    </div>
+
+    <!-- Range -->
+    <div class="section">
+      <div class="section-title">Display Range</div>
+      <div class="range-row">
+        <span class="range-label">MIN</span>
+        <input class="range-input" id="range-min" type="number" step="any" value="0">
+      </div>
+      <div class="range-row">
+        <span class="range-label">MAX</span>
+        <input class="range-input" id="range-max" type="number" step="any" value="100">
+      </div>
+      <button class="btn-auto" id="btn-auto-range">⟳ Auto Range</button>
+    </div>
+
+    <!-- Cursor -->
+    <div class="section">
+      <div class="section-title">Cursor</div>
+      <div class="cursor-panel">
+        <div class="cursor-row">
+          <span class="cursor-label">X</span>
+          <span class="cursor-val" id="cursor-x">—</span>
+        </div>
+        <div class="cursor-row">
+          <span class="cursor-label">Y</span>
+          <span class="cursor-val" id="cursor-y">—</span>
+        </div>
+        <div class="cursor-row">
+          <span class="cursor-label">L</span>
+          <span class="cursor-val" id="cursor-l">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROI -->
+    <div class="section">
+      <div class="section-title">ROI Tools</div>
+      <div class="roi-btns">
+        <button class="roi-btn" id="btn-roi-point">Point</button>
+        <button class="roi-btn" id="btn-roi-rect">Rectangle</button>
+        <button class="roi-btn" id="btn-roi-grid">Grid</button>
+        <button class="roi-btn" id="btn-roi-circle">Circle</button>
+        <button class="roi-btn" id="btn-roi-ring">Ring</button>
+        <button class="roi-btn clear" id="btn-roi-clear">⊘ Clear All</button>
+      </div>
+      <div id="grid-config" style="display:none;margin-top:4px;margin-bottom:10px;">
+        <div class="grid-controls">
+          <div class="grid-row">
+            <span class="grid-label">Cols</span>
+            <div class="grid-stepper">
+              <button class="grid-stepper-btn" id="grid-cols-dec">−</button>
+              <span class="grid-stepper-val" id="grid-cols-val">2</span>
+              <button class="grid-stepper-btn" id="grid-cols-inc">+</button>
+            </div>
+            <span class="grid-sep">×</span>
+            <div class="grid-stepper">
+              <button class="grid-stepper-btn" id="grid-rows-dec">−</button>
+              <span class="grid-stepper-val" id="grid-rows-val">2</span>
+              <button class="grid-stepper-btn" id="grid-rows-inc">+</button>
+            </div>
+            <span class="grid-label" style="width:auto;color:var(--text3)">Rows</span>
+          </div>
+          <div style="font-size:10px;color:var(--text3);letter-spacing:1px;">cols × rows &nbsp;|&nbsp; 1×1 = bez siatki</div>
+        </div>
+        <!-- hidden inputs still used by JS logic -->
+        <input class="grid-spinner" id="grid-cols" type="number" min="1" max="64" value="2">
+        <input class="grid-spinner" id="grid-rows" type="number" min="1" max="64" value="2">
+      </div>
+      <div id="ring-config" style="display:none;margin-top:4px;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:1px;line-height:1.7;margin-bottom:8px;">
+          Przeciągnij od środka → pierścień.<br>
+          Przeciągnij <span style="color:#8b15ba">wewnętrzny</span> lub <span style="color:#8b15ba">zewnętrzny</span> okrąg aby zmienić promień.
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:10px;color:var(--text3);letter-spacing:1px;white-space:nowrap;">R wew.</span>
+          <input type="range" id="ring-ratio-slider" min="5" max="90" value="33" step="1"
+            style="flex:1;accent-color:var(--accent);cursor:pointer;"
+            oninput="window._app && window._app._onRingRatioChange(this.value)">
+          <span style="font-size:11px;color:var(--accent);font-family:var(--mono);min-width:34px;text-align:right;" id="ring-ratio-label">33%</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);letter-spacing:1px;">promień wewnętrzny jako % zewnętrznego</div>
+      </div>
+      <div id="roi-panel"></div>
+      <button class="btn-export-grid" id="btn-export-grid-csv" style="display:none;">↓ Export Grid CSV</button>
+    </div>
+
+    <!-- Crop -->
+    <div class="section">
+      <div class="section-title">Crop (stałe dla wszystkich plików)</div>
+      <div class="crop-grid">
+        <div class="crop-field">
+          <span class="crop-label">Top [px]</span>
+          <input class="crop-input" id="crop-top" type="number" min="0" value="0">
+        </div>
+        <div class="crop-field">
+          <span class="crop-label">Bottom [px]</span>
+          <input class="crop-input" id="crop-bottom" type="number" min="0" value="0">
+        </div>
+        <div class="crop-field">
+          <span class="crop-label">Left [px]</span>
+          <input class="crop-input" id="crop-left" type="number" min="0" value="0">
+        </div>
+        <div class="crop-field">
+          <span class="crop-label">Right [px]</span>
+          <input class="crop-input" id="crop-right" type="number" min="0" value="0">
+        </div>
+      </div>
+      <div class="crop-preview" id="crop-preview">brak przycięcia</div>
+      <button class="btn-crop-reset" id="btn-crop-reset">⊘ Reset Crop</button>
+    </div>
+
+    <!-- Export -->
+    <div class="section">
+      <div class="section-title">Export</div>
+      <div class="export-btns">
+        <button class="btn-export" id="btn-export-png">↓ PNG with Legend</button>
+        <button class="btn-export" id="btn-export-csv">↓ CSV Luminance</button>
+      </div>
+    </div>
+
+    <!-- Shortcuts -->
+    <div class="section">
+      <div class="section-title">Shortcuts</div>
+      <div class="shortcuts">
+        <div class="shortcut-row"><span class="shortcut-key">1–4</span><span class="shortcut-desc">Display mode</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">L</span><span class="shortcut-desc">Toggle log/linear</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">A</span><span class="shortcut-desc">Auto range</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">P</span><span class="shortcut-desc">Point ROI</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">R</span><span class="shortcut-desc">Rect ROI</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">G</span><span class="shortcut-desc">Grid ROI</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">Esc</span><span class="shortcut-desc">Clear ROI</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">Wheel</span><span class="shortcut-desc">Zoom</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">Drag</span><span class="shortcut-desc">Pan</span></div>
+        <div class="shortcut-row"><span class="shortcut-key">DblClk</span><span class="shortcut-desc">Reset view</span></div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- VIEWER CENTER -->
+  <div class="viewer-center">
+    <div class="canvas-container" id="canvas-container">
+
+      <!-- Drop zone -->
+      <div id="drop-zone">
+        <div class="drop-icon">⬡</div>
+        <div class="drop-title">Drop HDF5 File Here</div>
+        <div class="drop-sub">or use the Load button · LMK2000 .h5 files</div>
+        <div class="scanline"></div>
+      </div>
+
+      <!-- Progress -->
+      <div id="load-progress">
+        <span id="progress-label" style="font-size:10px;letter-spacing:3px;color:var(--accent);">LOADING</span>
+        <div class="progress-track"><div id="progress-bar"></div></div>
+      </div>
+
+      <canvas id="display-canvas"></canvas>
+      <canvas id="overlay-canvas"></canvas>
+
+      <div id="error-msg"></div>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend-panel">
+    <canvas id="legend-canvas" width="98"></canvas>
+  </div>
+
+</main>
+
+<!-- GLOBAL DROP OVERLAY -->
+<div id="global-drop-overlay">
+  <div class="gdrop-box">
+    <div class="gdrop-icon">⬇</div>
+    <div class="gdrop-title">Upuść plik .h5</div>
+    <div class="gdrop-sub">LMK2000 HDF5 · Luminance Measurement</div>
+  </div>
+</div>
+
+<!-- h5wasm CDN -->
+<script src="https://cdn.jsdelivr.net/npm/h5wasm@0.7.5/dist/iife/h5wasm.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// COLORMAPS
+// ═══════════════════════════════════════════════════════
+const COLORMAPS = {
+  lmk: (() => {
+    // LMK-style: black→violet→blue→cyan→green→yellow→red→white
+    const stops = [
+      [0,    [0,0,0]],
+      [0.1,  [75,0,130]],
+      [0.2,  [0,0,255]],
+      [0.35, [0,200,255]],
+      [0.5,  [0,255,0]],
+      [0.65, [255,255,0]],
+      [0.8,  [255,100,0]],
+      [0.9,  [255,0,0]],
+      [1.0,  [255,255,255]],
+    ];
+    const lut = new Uint8Array(256*3);
+    for (let i=0;i<256;i++) {
+      const t = i/255;
+      let lo=stops[0], hi=stops[stops.length-1];
+      for (let j=0;j<stops.length-1;j++) {
+        if (t >= stops[j][0] && t <= stops[j+1][0]) { lo=stops[j]; hi=stops[j+1]; break; }
+      }
+      const f = (hi[0]-lo[0]) > 0 ? (t-lo[0])/(hi[0]-lo[0]) : 0;
+      lut[i*3]   = Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*f);
+      lut[i*3+1] = Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*f);
+      lut[i*3+2] = Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*f);
+    }
+    return lut;
+  })(),
+
+  turbo: (() => {
+    // Turbo colormap (Google)
+    const kR=[0.13572138,4.61539260,-42.66032258,132.13108234,-152.94239396,59.28637943];
+    const kG=[0.09140261,2.19418839,4.84296658,-14.18503333,4.27729857,2.77209612];
+    const kB=[0.10667330,12.64194608,-60.58204836,110.36276771,-89.90310912,27.34824973];
+    const lut = new Uint8Array(256*3);
+    for (let i=0;i<256;i++) {
+      const x = i/255;
+      const r=kR[0]+kR[1]*x+kR[2]*x*x+kR[3]*x*x*x+kR[4]*x*x*x*x+kR[5]*x*x*x*x*x;
+      const g=kG[0]+kG[1]*x+kG[2]*x*x+kG[3]*x*x*x+kG[4]*x*x*x*x+kG[5]*x*x*x*x*x;
+      const b=kB[0]+kB[1]*x+kB[2]*x*x+kB[3]*x*x*x+kB[4]*x*x*x*x+kB[5]*x*x*x*x*x;
+      lut[i*3]=Math.max(0,Math.min(255,Math.round(r*255)));
+      lut[i*3+1]=Math.max(0,Math.min(255,Math.round(g*255)));
+      lut[i*3+2]=Math.max(0,Math.min(255,Math.round(b*255)));
+    }
+    return lut;
+  })(),
+
+  jet: (() => {
+    const lut=new Uint8Array(256*3);
+    for (let i=0;i<256;i++) {
+      const t=i/255;
+      const r=Math.max(0,Math.min(1,1.5-Math.abs(4*t-3)));
+      const g=Math.max(0,Math.min(1,1.5-Math.abs(4*t-2)));
+      const b=Math.max(0,Math.min(1,1.5-Math.abs(4*t-1)));
+      lut[i*3]=Math.round(r*255); lut[i*3+1]=Math.round(g*255); lut[i*3+2]=Math.round(b*255);
+    }
+    return lut;
+  })(),
+
+  viridis: (() => {
+    const stops=[[0,[68,1,84]],[0.25,[59,82,139]],[0.5,[33,145,140]],[0.75,[94,201,98]],[1,[253,231,37]]];
+    const lut=new Uint8Array(256*3);
+    for (let i=0;i<256;i++) {
+      const t=i/255;
+      let lo=stops[0], hi=stops[stops.length-1];
+      for (let j=0;j<stops.length-1;j++) {
+        if (t>=stops[j][0]&&t<=stops[j+1][0]){lo=stops[j];hi=stops[j+1];break;}
+      }
+      const f=(hi[0]-lo[0])>0?(t-lo[0])/(hi[0]-lo[0]):0;
+      lut[i*3]=Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*f);
+      lut[i*3+1]=Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*f);
+      lut[i*3+2]=Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*f);
+    }
+    return lut;
+  })(),
+
+  inferno: (() => {
+    const stops=[[0,[0,0,4]],[0.25,[87,16,110]],[0.5,[188,55,84]],[0.75,[249,142,9]],[1,[252,255,164]]];
+    const lut=new Uint8Array(256*3);
+    for (let i=0;i<256;i++) {
+      const t=i/255;
+      let lo=stops[0], hi=stops[stops.length-1];
+      for (let j=0;j<stops.length-1;j++) {
+        if (t>=stops[j][0]&&t<=stops[j+1][0]){lo=stops[j];hi=stops[j+1];break;}
+      }
+      const f=(hi[0]-lo[0])>0?(t-lo[0])/(hi[0]-lo[0]):0;
+      lut[i*3]=Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*f);
+      lut[i*3+1]=Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*f);
+      lut[i*3+2]=Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*f);
+    }
+    return lut;
+  })(),
+};
+
+// ═══════════════════════════════════════════════════════
+// HDF5 READER
+// ═══════════════════════════════════════════════════════
+class HDF5Reader {
+  constructor() { this.file = null; this._lumData = null; this._rgbData = null; this._rawData = null; }
+
+  async loadFile(file, onProgress) {
+    onProgress({stage:'Reading', pct:10});
+    const buf = await file.arrayBuffer();
+    onProgress({stage:'Parsing HDF5', pct:30});
+
+    await h5wasm.ready;
+    const H5File = h5wasm.File;
+    if (typeof H5File !== 'function') throw new Error('h5wasm not loaded correctly');
+    // Write to emscripten FS
+    const fname = '/' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    h5wasm.FS.writeFile(fname, new Uint8Array(buf));
+    this.file = new H5File(fname, 'r');
+    onProgress({stage:'Loaded', pct:60});
+  }
+
+  readLuminance() {
+    if (!this.file) return null;
+
+    // ── Strategy 1: _CapturePic.pf/Content (scalar float32, primary luminance) ──
+    try {
+      const ds = this.file.get('Plane/_CapturePic.pf/Content');
+      if (ds) {
+        const shape = ds.shape;
+        const h = shape[0], w = shape[1];
+        const raw = ds.value;
+        let data;
+        if (raw instanceof Float32Array) {
+          data = raw;
+        } else if (ArrayBuffer.isView(raw)) {
+          data = new Float32Array(raw.buffer, raw.byteOffset, raw.length);
+        } else {
+          // flat JS array
+          data = new Float32Array(raw);
+        }
+        this._lumData = {data, width:w, height:h, source:'_CapturePic'};
+        console.log('Luminance source: _CapturePic.pf/Content', w, 'x', h);
+        return this._lumData;
+      }
+    } catch(e) {
+      console.warn('_CapturePic.pf/Content unavailable (truncated file?), trying ColorPic fallback:', e.message);
+    }
+
+    // ── Strategy 2: ColorPic.rgbf/Content — channel 'b' holds luminance in cd/m² ──
+    // In LMK2000 rgbf format: r≈0 (near zero), g≈0 (near zero), b = luminance [cd/m²]
+    // Confirmed from file: b range 0–7.5 cd/m², unit = cd/m²
+    try {
+      const ds = this.file.get('Plane/ColorPic.rgbf/Content');
+      if (!ds) return null;
+      const shape = ds.shape;
+      const h = shape[0], w = shape[1];
+
+      // h5wasm returns structured dtype as interleaved buffer: r(f32), g(f32), b(f32) per pixel
+      const raw = ds.value;
+      let lumData;
+
+      if (raw && raw.buffer) {
+        // Binary buffer: stride = 12 bytes (3 × float32), b is at offset +8
+        const view = new DataView(raw.buffer, raw.byteOffset || 0);
+        lumData = new Float32Array(h * w);
+        const stride = 12; // bytes per pixel: r(4) + g(4) + b(4)
+        for (let i = 0; i < h * w; i++) {
+          lumData[i] = view.getFloat32(i * stride + 8, true); // little-endian, b channel
+        }
+      } else if (Array.isArray(raw) || (raw && typeof raw[0] === 'object')) {
+        // Object array fallback
+        lumData = new Float32Array(h * w);
+        for (let i = 0; i < h * w; i++) {
+          lumData[i] = raw[i] ? (raw[i].b || raw[i][2] || 0) : 0;
+        }
+      } else {
+        // Already flat? Try every 3rd element starting at index 2 (b channel)
+        lumData = new Float32Array(h * w);
+        for (let i = 0; i < h * w; i++) {
+          lumData[i] = raw[i * 3 + 2] || 0;
+        }
+      }
+
+      // Read unit from Basic
+      let unit = 'cd/m²';
+      try {
+        const basic = this.file.get('Plane/ColorPic.rgbf/Basic');
+        if (basic) {
+          const bd = basic.value;
+          const u = bd[0] && bd[0].UnitPic3;
+          if (u) unit = String.fromCharCode(...u.filter(c=>c>0));
+        }
+      } catch(_) {}
+
+      this._lumData = {data: lumData, width: w, height: h, source: 'ColorPic.b', unit};
+      console.log('Luminance source: ColorPic.rgbf/Content channel b', w, 'x', h, 'unit:', unit);
+      return this._lumData;
+    } catch(e) {
+      console.error('readLuminance ColorPic fallback error:', e);
+      return null;
+    }
+  }
+
+  readRGB() {
+    if (!this.file) return null;
+    try {
+      const ds = this.file.get('Plane/ColorPic.rgbf/Content');
+      if (!ds) return null;
+      const shape = ds.shape;
+      const h = shape[0], w = shape[1];
+      const raw = ds.value;
+
+      const r = new Float32Array(h * w);
+      const g = new Float32Array(h * w);
+      const b = new Float32Array(h * w);
+
+      if (raw && raw.buffer) {
+        // Interleaved binary buffer: r(f32), g(f32), b(f32)
+        const view = new DataView(raw.buffer, raw.byteOffset || 0);
+        const stride = 12;
+        for (let i = 0; i < h * w; i++) {
+          r[i] = view.getFloat32(i * stride,     true);
+          g[i] = view.getFloat32(i * stride + 4, true);
+          b[i] = view.getFloat32(i * stride + 8, true);
+        }
+      } else if (Array.isArray(raw) || (raw && typeof raw[0] === 'object')) {
+        for (let i = 0; i < h * w; i++) {
+          if (raw[i]) {
+            r[i] = raw[i].r || raw[i][0] || 0;
+            g[i] = raw[i].g || raw[i][1] || 0;
+            b[i] = raw[i].b || raw[i][2] || 0;
+          }
+        }
+      } else {
+        for (let i = 0; i < h * w; i++) {
+          r[i] = raw[i * 3]     || 0;
+          g[i] = raw[i * 3 + 1] || 0;
+          b[i] = raw[i * 3 + 2] || 0;
+        }
+      }
+
+      // In LMK rgbf: b channel = luminance, r/g ≈ 0
+      // For RGB display, use b as grayscale (luminance image)
+      // Map b→grayscale: treat all 3 channels as b for a luminance-based RGB
+      return {r: b, g: b, b, width: w, height: h};
+    } catch(e) { console.warn('readRGB error:', e); return null; }
+  }
+
+  readRaw() {
+    if (!this.file) return null;
+    try {
+      const ds = this.file.get('Plane/_GrabberShortPic.pus/Content');
+      if (!ds) return null;
+      const shape = ds.shape;
+      return {data: ds.value, width:shape[1], height:shape[0]};
+    } catch(e) { return null; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// FALSE COLOR RENDERER
+// ═══════════════════════════════════════════════════════
+class FalseColorRenderer {
+  constructor() {
+    this.luminance = null;
+    this.width = 0; this.height = 0;
+    this.minL = 0; this.maxL = 1;
+    this.colormap = 'lmk';
+    this.scaleMode = 'log';
+  }
+
+  setData(data, width, height) {
+    this.luminance = data;
+    this.width = width; this.height = height;
+    this.autoRange();
+  }
+
+  autoRange() {
+    if (!this.luminance) return;
+    let mn=Infinity, mx=-Infinity;
+    for (let i=0;i<this.luminance.length;i++) {
+      const v=this.luminance[i];
+      if (isFinite(v)) { if(v<mn)mn=v; if(v>mx)mx=v; }
+    }
+    this.minL = mn; this.maxL = mx;
+  }
+
+  setRange(mn, mx) { this.minL=mn; this.maxL=mx; }
+
+  _normalize(v) {
+    if (this.scaleMode === 'log') {
+      const lv = Math.log10(Math.max(v, 1e-10));
+      const lmn = Math.log10(Math.max(this.minL, 1e-10));
+      const lmx = Math.log10(Math.max(this.maxL, 1e-10));
+      if (lmx <= lmn) return 0;
+      return Math.max(0, Math.min(1, (lv-lmn)/(lmx-lmn)));
+    } else {
+      if (this.maxL <= this.minL) return 0;
+      return Math.max(0, Math.min(1, (v-this.minL)/(this.maxL-this.minL)));
+    }
+  }
+
+  render(canvas) {
+    if (!this.luminance) return;
+    const {width:W, height:H} = this;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(W, H);
+    const pixels = imgData.data;
+    const lut = COLORMAPS[this.colormap] || COLORMAPS.lmk;
+    const lum = this.luminance;
+    for (let i=0;i<W*H;i++) {
+      const n = this._normalize(lum[i]);
+      const idx = Math.min(255, Math.floor(n*255));
+      const p = i*4;
+      pixels[p]   = lut[idx*3];
+      pixels[p+1] = lut[idx*3+1];
+      pixels[p+2] = lut[idx*3+2];
+      pixels[p+3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  renderRGB(canvas, rgb) {
+    const {width:W, height:H} = rgb;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(W, H);
+    const pixels = imgData.data;
+    // Normalize each channel
+    let rMax=0, gMax=0, bMax=0;
+    for (let i=0;i<W*H;i++) {
+      if(rgb.r[i]>rMax) rMax=rgb.r[i];
+      if(rgb.g[i]>gMax) gMax=rgb.g[i];
+      if(rgb.b[i]>bMax) bMax=rgb.b[i];
+    }
+    const maxV = Math.max(rMax, gMax, bMax, 1e-10);
+    for (let i=0;i<W*H;i++) {
+      const p=i*4;
+      pixels[p]   = Math.min(255, Math.round(rgb.r[i]/maxV*255));
+      pixels[p+1] = Math.min(255, Math.round(rgb.g[i]/maxV*255));
+      pixels[p+2] = Math.min(255, Math.round(rgb.b[i]/maxV*255));
+      pixels[p+3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  renderGrayscale(canvas) {
+    if (!this.luminance) return;
+    const {width:W, height:H} = this;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(W, H);
+    const pixels = imgData.data;
+    const lum = this.luminance;
+    for (let i=0;i<W*H;i++) {
+      const n = Math.round(this._normalize(lum[i])*255);
+      const p=i*4;
+      pixels[p]=pixels[p+1]=pixels[p+2]=n; pixels[p+3]=255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  renderRawCamera(canvas, raw) {
+    const {data, width:W, height:H} = raw;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(W, H);
+    const pixels = imgData.data;
+    let mx=0;
+    for (let i=0;i<data.length;i++) if(data[i]>mx)mx=data[i];
+    mx = mx || 65535;
+    for (let i=0;i<W*H;i++) {
+      const v=Math.round(data[i]/mx*255);
+      const p=i*4;
+      pixels[p]=pixels[p+1]=pixels[p+2]=v; pixels[p+3]=255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  getLuminanceAt(x, y) {
+    if (!this.luminance || x<0||y<0||x>=this.width||y>=this.height) return null;
+    return this.luminance[y*this.width+x];
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// VIEWER (pan/zoom)
+// ═══════════════════════════════════════════════════════
+class Viewer {
+  constructor(displayCanvas, overlayCanvas, onHover, onInteract) {
+    this.dc = displayCanvas;
+    this.oc = overlayCanvas;
+    this.onHover = onHover;
+    this.onInteract = onInteract;
+    this.srcCanvas = null;
+    this.imgW = 0; this.imgH = 0;
+    this.tx = 0; this.ty = 0;
+    this.scale = 1;
+    this._dragging = false;
+    this._lastX = 0; this._lastY = 0;
+    this._roiActive = false;
+    this._bindEvents();
+  }
+
+  setImage(src, w, h) {
+    this.srcCanvas = src;
+    this.imgW = w; this.imgH = h;
+    this._fitToView();
+    this.render();
+  }
+
+  _fitToView() {
+    const cw = this.dc.width, ch = this.dc.height;
+    if (!cw||!ch||!this.imgW||!this.imgH) return;
+    const sx = cw/this.imgW, sy = ch/this.imgH;
+    this.scale = Math.min(sx, sy) * 0.95;
+    this.tx = (cw - this.imgW*this.scale)/2;
+    this.ty = (ch - this.imgH*this.scale)/2;
+  }
+
+  resize(w, h) {
+    this.dc.width = w; this.dc.height = h;
+    this.oc.width = w; this.oc.height = h;
+    if (this.srcCanvas) { this._fitToView(); this.render(); }
+  }
+
+  render() {
+    if (!this.srcCanvas) return;
+    const ctx = this.dc.getContext('2d');
+    ctx.clearRect(0,0,this.dc.width,this.dc.height);
+    ctx.save();
+    ctx.translate(this.tx, this.ty);
+    ctx.scale(this.scale, this.scale);
+    ctx.imageSmoothingEnabled = this.scale < 1;
+    ctx.drawImage(this.srcCanvas, 0, 0);
+    ctx.restore();
+  }
+
+  renderOverlay(drawFn) {
+    const ctx = this.oc.getContext('2d');
+    ctx.clearRect(0,0,this.oc.width,this.oc.height);
+    ctx.save();
+    ctx.translate(this.tx, this.ty);
+    ctx.scale(this.scale, this.scale);
+    drawFn(ctx, {tx:this.tx, ty:this.ty, scale:this.scale});
+    ctx.restore();
+  }
+
+  _canvasToImg(cx, cy) {
+    return { x:(cx-this.tx)/this.scale, y:(cy-this.ty)/this.scale };
+  }
+
+  _bindEvents() {
+    // Wheel → zoom
+    this.oc.addEventListener('wheel', e => {
+      e.preventDefault();
+      const rect = this.oc.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+      const newScale = Math.max(0.05, Math.min(50, this.scale*factor));
+      this.tx = mx - (mx-this.tx)*(newScale/this.scale);
+      this.ty = my - (my-this.ty)*(newScale/this.scale);
+      this.scale = newScale;
+      this.render();
+      this._dispatchOverlay();
+    }, {passive:false});
+
+    // Mouse drag / ROI
+    this.oc.addEventListener('mousedown', e => {
+      const rect = this.oc.getBoundingClientRect();
+      const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
+      const imgPos = this._canvasToImg(cx,cy);
+      const consumed = this.onInteract(e, imgPos, 'down');
+      if (!consumed) {
+        this._dragging = true;
+        this._lastX = cx; this._lastY = cy;
+      }
+    });
+
+    this.oc.addEventListener('mousemove', e => {
+      const rect = this.oc.getBoundingClientRect();
+      const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
+      const imgPos = this._canvasToImg(cx,cy);
+      this.onHover(imgPos.x, imgPos.y);
+      this.onInteract(e, imgPos, 'move');
+      if (this._dragging) {
+        this.tx += cx-this._lastX;
+        this.ty += cy-this._lastY;
+        this._lastX=cx; this._lastY=cy;
+        this.render();
+        this._dispatchOverlay();
+      }
+    });
+
+    this.oc.addEventListener('mouseup', e => {
+      this._dragging = false;
+      const rect = this.oc.getBoundingClientRect();
+      const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
+      const imgPos = this._canvasToImg(cx,cy);
+      this.onInteract(e, imgPos, 'up');
+    });
+
+    this.oc.addEventListener('mouseleave', () => {
+      this._dragging = false;
+      this.onHover(null, null);
+    });
+
+    // Double-click → reset
+    this.oc.addEventListener('dblclick', () => {
+      this._fitToView(); this.render(); this._dispatchOverlay();
+    });
+  }
+
+  _dispatchOverlay() {
+    // Trigger overlay redraw via app
+    if (window._app) window._app._rerenderOverlay();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// LEGEND
+// ═══════════════════════════════════════════════════════
+class Legend {
+  constructor(canvas) { this.canvas = canvas; }
+
+  render({colormap, minL, maxL, scaleMode, unit}) {
+    const canvas = this.canvas;
+    const W = canvas.width;
+    const H = canvas.height;
+    if (!H||!W) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,W,H);
+
+    // Layout: bar on right side, labels on left
+    const barW = 16;
+    const barX = W - barW - 4;
+    const topY = 20;
+    const botY = H - 20;
+    const barH = botY - topY;
+    if (barH <= 0) return;
+
+    // Draw gradient bar
+    const lut = COLORMAPS[colormap] || COLORMAPS.lmk;
+    for (let y = topY; y < botY; y++) {
+      const t = 1 - (y - topY) / barH;
+      const idx = Math.min(255, Math.floor(t * 255));
+      ctx.fillStyle = `rgb(${lut[idx*3]},${lut[idx*3+1]},${lut[idx*3+2]})`;
+      ctx.fillRect(barX, y, barW, 1);
+    }
+
+    // Border around bar
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX - 0.5, topY - 0.5, barW + 1, barH + 1);
+
+    // ── Format value with ×10ⁿ notation when needed ──
+    function fmtVal(v) {
+      if (v === 0) return '0';
+      const av = Math.abs(v);
+      const supExp = e => String(e).split('').map(c=>({'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'}[c]||c)).join('');
+      if (av >= 1e5) {
+        const e = Math.floor(Math.log10(av));
+        const m = (v / Math.pow(10, e));
+        return (Math.abs(m - Math.round(m)) < 0.005 ? Math.round(m) : m.toFixed(2).replace(/\.?0+$/,'')) + '×10' + supExp(e);
+      }
+      if (av < 0.001 && av > 0) {
+        const e = Math.floor(Math.log10(av));
+        const m = (v / Math.pow(10, e));
+        return (Math.abs(m - Math.round(m)) < 0.005 ? Math.round(m) : m.toFixed(2).replace(/\.?0+$/,'')) + '×10' + supExp(e);
+      }
+      if (av >= 10000) return v.toFixed(0);
+      if (av >= 1000)  return v.toFixed(0);
+      if (av >= 100)   return v.toFixed(1);
+      if (av >= 10)    return v.toFixed(2);
+      if (av >= 1)     return v.toFixed(3);
+      if (av >= 0.1)   return v.toFixed(4);
+      return v.toFixed(5);
+    }
+
+    // ── Build tick list dynamically from actual data range ──
+    const ticks = []; // [{t: 0..1, val, major}]
+
+    if (scaleMode === 'log') {
+      const safeMn = Math.max(minL, 1e-10);
+      const safeMx = Math.max(maxL, 1e-10);
+      if (safeMx <= safeMn) return;
+      const lmn = Math.log10(safeMn);
+      const lmx = Math.log10(safeMx);
+      const lRange = lmx - lmn;
+
+      // Choose sub-decade multipliers based on available pixel height per decade
+      const decades = lRange; // can be fractional
+      const pxPerDecade = barH / Math.max(decades, 0.01);
+
+      let subMults;
+      if (pxPerDecade >= 80) {
+        subMults = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      } else if (pxPerDecade >= 35) {
+        subMults = [1, 2, 5];
+      } else if (pxPerDecade >= 15) {
+        subMults = [1, 3];
+      } else {
+        subMults = [1];
+      }
+
+      const floorDec = Math.floor(lmn);
+      const ceilDec  = Math.ceil(lmx);
+
+      for (let dec = floorDec; dec <= ceilDec; dec++) {
+        for (const m of subMults) {
+          const val = m * Math.pow(10, dec);
+          if (val < safeMn * 0.9999 || val > safeMx * 1.0001) continue;
+          const t = (Math.log10(val) - lmn) / lRange;
+          if (t < -0.001 || t > 1.001) continue;
+          ticks.push({ t: Math.max(0, Math.min(1, t)), val, major: m === 1 });
+        }
+      }
+
+      // Always ensure min and max are shown
+      const hasMn = ticks.some(tk => Math.abs(tk.t) < 0.005);
+      const hasMx = ticks.some(tk => Math.abs(tk.t - 1) < 0.005);
+      if (!hasMn) ticks.push({ t: 0, val: safeMn, major: true });
+      if (!hasMx) ticks.push({ t: 1, val: safeMx, major: true });
+
+    } else {
+      // ── Linear: generate "nice" ticks covering actual min→max ──
+      const range = maxL - minL;
+      if (range <= 0) return;
+
+      // Target ~7 intervals; find a "nice" step
+      const rawStep = range / 7;
+      const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+      const norm = rawStep / magnitude;
+      let niceStep;
+      if      (norm < 1.5) niceStep = 1   * magnitude;
+      else if (norm < 3.5) niceStep = 2   * magnitude;
+      else if (norm < 7.5) niceStep = 5   * magnitude;
+      else                 niceStep = 10  * magnitude;
+
+      // First nice tick >= minL
+      const firstTick = Math.ceil(minL / niceStep) * niceStep;
+
+      // Always add min/max as anchors
+      ticks.push({ t: 0, val: minL, major: true });
+      ticks.push({ t: 1, val: maxL, major: true });
+
+      // Add evenly spaced nice ticks between
+      for (let v = firstTick; v <= maxL + niceStep * 0.001; v += niceStep) {
+        // Avoid floating-point drift
+        v = Math.round(v / niceStep) * niceStep;
+        if (v <= minL + niceStep * 0.01 || v >= maxL - niceStep * 0.01) continue;
+        const t = (v - minL) / range;
+        if (t < 0.01 || t > 0.99) continue;
+        ticks.push({ t, val: v, major: true });
+      }
+    }
+
+    // Sort top→bottom (high t = top)
+    ticks.sort((a, b) => b.t - a.t);
+
+    // Filter out ticks too close to each other (min 10px apart)
+    const minPx = 10;
+    const filtered = [];
+    // Always keep min (t=0) and max (t=1) — process in two passes
+    const minMaxTicks = ticks.filter(tk => tk.t === 0 || tk.t === 1);
+    const midTicks    = ticks.filter(tk => tk.t > 0 && tk.t < 1);
+
+    // Build filtered list: start from top, skip if too close
+    let lastPy = -Infinity;
+    for (const tk of ticks) {
+      const py = topY + (1 - tk.t) * barH;
+      const isEdge = (tk.t === 0 || tk.t === 1);
+      if (isEdge || py - lastPy >= minPx) {
+        // If edge tick, also check it's not crowding the previous tick
+        if (isEdge && filtered.length > 0) {
+          const prev = filtered[filtered.length - 1];
+          if (Math.abs(py - prev.py) < minPx - 2) {
+            // Remove the previous one if this is the edge (edge wins)
+            filtered.pop();
+          }
+        }
+        filtered.push({...tk, py});
+        lastPy = py;
+      }
+    }
+
+    // Draw ticks and labels
+    ctx.font = '9px "Share Tech Mono"';
+    ctx.textAlign = 'right';
+
+    for (const tk of filtered) {
+      const y = tk.py;
+      const isMajor = tk.major;
+      const isEdge  = (tk.t === 0 || tk.t === 1);
+
+      // Tick mark
+      const tickLen = isEdge ? 6 : (isMajor ? 5 : 3);
+      ctx.fillStyle = isEdge ? '#888' : (isMajor ? '#666' : '#444');
+      ctx.fillRect(barX - tickLen, y - 0.5, tickLen, 1);
+
+      // Label
+      if (isMajor || filtered.length <= 8) {
+        ctx.fillStyle = isEdge ? '#eee' : (isMajor ? '#ccc' : '#777');
+        ctx.fillText(fmtVal(tk.val), barX - tickLen - 2, y + 3);
+      }
+    }
+
+    // Unit label — rotated on left edge
+    ctx.save();
+    ctx.translate(7, H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#666';
+    ctx.font = '7px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(unit, 0, 0);
+    ctx.restore();
+
+    // Scale mode indicator at top
+    ctx.font = '7px "Share Tech Mono"';
+    ctx.fillStyle = '#555';
+    ctx.textAlign = 'center';
+    ctx.fillText(scaleMode.toUpperCase(), W / 2, topY - 6);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// ROI MANAGER
+// ═══════════════════════════════════════════════════════
+class ROIManager {
+  constructor(onUpdate) {
+    this.onUpdate = onUpdate;
+    this.mode = null;   // 'point' | 'rect' | 'grid' | 'circle' | 'ring'
+    this.active = false;
+    this._dragging = false;
+    this._x1=0;this._y1=0;this._x2=0;this._y2=0;
+    this._points = [];  // [{x,y}] — numbered cursors
+    this._rect = null;
+    this._grid = null;        // {x1,y1,x2,y2,cols,rows,cells:[]}
+    this._circle = null;      // {cx,cy,r,stats}
+    this._ring   = null;      // {cx,cy,rInner,rOuter,statsInner,statsOuter,statsRing}
+    this._rectStats = null;
+    this.gridCols = 2;
+    this.gridRows = 2;
+    this.ringRatio = 0.33;   // inner radius as fraction of outer (0.05–0.90)
+  }
+
+  setMode(mode) { this.mode = mode; this.active = !!mode; }
+
+  clear() {
+    this._points=[]; this._rect=null; this._grid=null;
+    this._circle=null; this._ring=null; this._rectStats=null;
+    this._dragging=false;
+    this.onUpdate({type:'clear'});
+  }
+
+  handleMouseDown(x, y) {
+    if (this.mode === 'point') {
+      const pt = {x:Math.floor(x), y:Math.floor(y)};
+      this._points.push(pt);
+      this.onUpdate({type:'all'});
+      return true;
+    } else if (this.mode === 'rect' || this.mode === 'grid' || this.mode === 'circle' || this.mode === 'ring') {
+      this._dragging = true;
+      this._x1=x; this._y1=y; this._x2=x; this._y2=y;
+      return true;
+    }
+    return false;
+  }
+
+  handleMouseMove(x, y) {
+    if ((this.mode === 'rect' || this.mode === 'grid' || this.mode === 'circle' || this.mode === 'ring') && this._dragging) {
+      this._x2=x; this._y2=y;
+      this.onUpdate({type:'rect-preview'});
+      return true;
+    }
+    return false;
+  }
+
+  handleMouseUp(x, y, lum, w, h) {
+    if ((this.mode === 'rect' || this.mode === 'grid' || this.mode === 'circle' || this.mode === 'ring') && this._dragging) {
+      this._dragging = false;
+      this._x2 = x; this._y2 = y;
+
+      if (this.mode === 'circle') {
+        const cx = (this._x1 + x) / 2;
+        const cy = (this._y1 + y) / 2;
+        const r  = Math.sqrt((x - this._x1)**2 + (y - this._y1)**2) / 2;
+        if (r < 2) return true;
+        const stats = this._calcStatsCircle(lum, w, h, cx, cy, r);
+        this._circle = {cx, cy, r, stats};
+        this.onUpdate({type:'all'});
+        return true;
+      }
+
+      if (this.mode === 'ring') {
+        const cx = (this._x1 + x) / 2;
+        const cy = (this._y1 + y) / 2;
+        const rInner = Math.sqrt((x - this._x1)**2 + (y - this._y1)**2) / 2;
+        const rOuter = rInner / this.ringRatio;
+        if (rInner < 2) return true;
+        const statsOuter = this._calcStatsCircle(lum, w, h, cx, cy, rOuter);
+        const statsInner = this._calcStatsCircle(lum, w, h, cx, cy, rInner);
+        const statsRing  = this._calcStatsRing(lum, w, h, cx, cy, rInner, rOuter);
+        this._ring = {cx, cy, rInner, rOuter, statsOuter, statsInner, statsRing};
+        this.onUpdate({type:'all'});
+        return true;
+      }
+
+      const x1=Math.max(0,Math.min(w-1,Math.floor(Math.min(this._x1,this._x2))));
+      const y1=Math.max(0,Math.min(h-1,Math.floor(Math.min(this._y1,this._y2))));
+      const x2=Math.max(0,Math.min(w,Math.ceil(Math.max(this._x1,this._x2))));
+      const y2=Math.max(0,Math.min(h,Math.ceil(Math.max(this._y1,this._y2))));
+
+      if (this.mode === 'grid') {
+        const cols = this.gridCols;
+        const rows = this.gridRows;
+        const cells = [];
+        const cw = (x2-x1)/cols;
+        const ch = (y2-y1)/rows;
+        for (let row=0;row<rows;row++) {
+          for (let col=0;col<cols;col++) {
+            const cx1=Math.floor(x1+col*cw);
+            const cy1=Math.floor(y1+row*ch);
+            const cx2=Math.floor(x1+(col+1)*cw);
+            const cy2=Math.floor(y1+(row+1)*ch);
+            const stats = this._calcStats(lum, w, h, cx1, cy1, cx2, cy2);
+            cells.push({row,col,x1:cx1,y1:cy1,x2:cx2,y2:cy2,stats});
+          }
+        }
+        this._grid = {x1,y1,x2,y2,cols,rows,cells};
+        this.onUpdate({type:'all'});
+      } else {
+        this._rect = {x1,y1,x2,y2};
+        this._rectStats = this._calcStats(lum, w, h, x1, y1, x2, y2);
+        this.onUpdate({type:'all'});
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // Recompute grid stats with new cols/rows on existing area
+  recomputeGrid(lum, w, h) {
+    if (!this._grid) return;
+    const {x1,y1,x2,y2} = this._grid;
+    const cols = this.gridCols;
+    const rows = this.gridRows;
+    const cells = [];
+    const cw = (x2-x1)/cols;
+    const ch = (y2-y1)/rows;
+    for (let row=0;row<rows;row++) {
+      for (let col=0;col<cols;col++) {
+        const cx1=Math.floor(x1+col*cw);
+        const cy1=Math.floor(y1+row*ch);
+        const cx2=Math.floor(x1+(col+1)*cw);
+        const cy2=Math.floor(y1+(row+1)*ch);
+        const stats = this._calcStats(lum, w, h, cx1, cy1, cx2, cy2);
+        cells.push({row,col,x1:cx1,y1:cy1,x2:cx2,y2:cy2,stats});
+      }
+    }
+    this._grid = {x1,y1,x2,y2,cols,rows,cells};
+    this.onUpdate({type:'all'});
+  }
+
+  // Recompute ring stats after radius change
+  _recomputeRing(lum, w, h) {
+    if (!this._ring) return;
+    const {cx, cy, rInner} = this._ring;
+    const rOuter = rInner / this.ringRatio;
+    const statsOuter = this._calcStatsCircle(lum, w, h, cx, cy, rOuter);
+    const statsInner = this._calcStatsCircle(lum, w, h, cx, cy, rInner);
+    const statsRing  = this._calcStatsRing(lum, w, h, cx, cy, rInner, rOuter);
+    this._ring = {...this._ring, rOuter, statsOuter, statsInner, statsRing};
+    this.onUpdate({type:'all'});
+  }
+
+  // Drag-resize: detect which part of ring is near cursor
+  // Returns: 'outer' | 'inner' | null
+  hitTestRing(x, y) {
+    if (!this._ring) return null;
+    const {cx, cy, rInner, rOuter} = this._ring;
+    const d = Math.sqrt((x-cx)**2+(y-cy)**2);
+    const SNAP = Math.max(8, rOuter * 0.08);
+    if (Math.abs(d - rOuter) < SNAP) return 'outer';
+    if (Math.abs(d - rInner) < SNAP) return 'inner';
+    return null;
+  }
+
+  hitTestCircle(x, y) {
+    if (!this._circle) return null;
+    const {cx, cy, r} = this._circle;
+    const d = Math.sqrt((x-cx)**2+(y-cy)**2);
+    const SNAP = Math.max(8, r * 0.08);
+    if (Math.abs(d - r) < SNAP) return 'outer';
+    return null;
+  }
+
+  _calcStats(lum, w, h, x1, y1, x2, y2) {
+    const vals = [];
+    for (let y=y1;y<y2;y++) for (let x=x1;x<x2;x++) {
+      if (x<0||y<0||x>=w||y>=h) continue;
+      const v = lum[y*w+x];
+      if (isFinite(v)) vals.push(v);
+    }
+    if (!vals.length) return null;
+    vals.sort((a,b)=>a-b);
+    const n=vals.length;
+    const sum=vals.reduce((a,b)=>a+b,0);
+    const mean=sum/n;
+    const median=n%2===0?(vals[n/2-1]+vals[n/2])/2:vals[Math.floor(n/2)];
+    const std=Math.sqrt(vals.reduce((a,v)=>a+(v-mean)*(v-mean),0)/n);
+    return {min:vals[0], max:vals[n-1], mean, median, std, count:n};
+  }
+
+  _calcStatsCircle(lum, w, h, cx, cy, r) {
+    const vals = [];
+    const x1=Math.max(0,Math.floor(cx-r)), x2=Math.min(w,Math.ceil(cx+r));
+    const y1=Math.max(0,Math.floor(cy-r)), y2=Math.min(h,Math.ceil(cy+r));
+    const r2=r*r;
+    for (let y=y1;y<y2;y++) for (let x=x1;x<x2;x++) {
+      if ((x-cx)**2+(y-cy)**2>r2) continue;
+      const v=lum[y*w+x];
+      if (isFinite(v)) vals.push(v);
+    }
+    if (!vals.length) return null;
+    vals.sort((a,b)=>a-b);
+    const n=vals.length, sum=vals.reduce((a,b)=>a+b,0), mean=sum/n;
+    const median=n%2===0?(vals[n/2-1]+vals[n/2])/2:vals[Math.floor(n/2)];
+    const std=Math.sqrt(vals.reduce((a,v)=>a+(v-mean)*(v-mean),0)/n);
+    return {min:vals[0], max:vals[n-1], mean, median, std, count:n};
+  }
+
+  _calcStatsRing(lum, w, h, cx, cy, rInner, rOuter) {
+    const vals = [];
+    const x1=Math.max(0,Math.floor(cx-rOuter)), x2=Math.min(w,Math.ceil(cx+rOuter));
+    const y1=Math.max(0,Math.floor(cy-rOuter)), y2=Math.min(h,Math.ceil(cy+rOuter));
+    const ri2=rInner*rInner, ro2=rOuter*rOuter;
+    for (let y=y1;y<y2;y++) for (let x=x1;x<x2;x++) {
+      const d2=(x-cx)**2+(y-cy)**2;
+      if (d2<ri2||d2>ro2) continue;
+      const v=lum[y*w+x];
+      if (isFinite(v)) vals.push(v);
+    }
+    if (!vals.length) return null;
+    vals.sort((a,b)=>a-b);
+    const n=vals.length, sum=vals.reduce((a,b)=>a+b,0), mean=sum/n;
+    const median=n%2===0?(vals[n/2-1]+vals[n/2])/2:vals[Math.floor(n/2)];
+    const std=Math.sqrt(vals.reduce((a,v)=>a+(v-mean)*(v-mean),0)/n);
+    return {min:vals[0], max:vals[n-1], mean, median, std, count:n};
+  }
+
+  drawOverlay(ctx) {
+    // Numbered point cursors
+    for (let i = 0; i < this._points.length; i++) {
+      const {x, y} = this._points[i];
+      const num = String(i + 1);
+      const R = 8;
+
+      // Crosshair lines
+      ctx.strokeStyle = '#8b15ba';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x - 14, y); ctx.lineTo(x - R, y);
+      ctx.moveTo(x + R,  y); ctx.lineTo(x + 14, y);
+      ctx.moveTo(x, y - 14); ctx.lineTo(x, y - R);
+      ctx.moveTo(x, y + R);  ctx.lineTo(x, y + 14);
+      ctx.stroke();
+
+      // Circle
+      ctx.beginPath();
+      ctx.arc(x, y, R, 0, Math.PI * 2);
+      ctx.strokeStyle = '#8b15ba';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Number badge — top-right of circle
+      const bx = x + R + 1;
+      const by = y - R - 1;
+      ctx.font = 'bold 10px "Share Tech Mono"';
+      const tw = ctx.measureText(num).width;
+      const bw = tw + 5, bh = 13;
+      ctx.fillStyle = 'rgba(139,21,186,0.90)';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(bx, by - bh + 2, bw, bh, 3) : ctx.rect(bx, by - bh + 2, bw, bh);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(num, bx + 2, by - bh + 3);
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    // Rect ROI (no grid) — show if data exists OR currently dragging in rect mode
+    if (this._rect || (this.mode==='rect' && this._dragging)) {
+      let x1, y1, x2, y2;
+      if (this._dragging && this.mode==='rect') {
+        x1 = Math.floor(Math.min(this._x1, this._x2));
+        y1 = Math.floor(Math.min(this._y1, this._y2));
+        x2 = Math.ceil(Math.max(this._x1, this._x2));
+        y2 = Math.ceil(Math.max(this._y1, this._y2));
+      } else {
+        ({x1, y1, x2, y2} = this._rect);
+      }
+      ctx.strokeStyle = '#8b15ba';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4,4]);
+      ctx.strokeRect(x1, y1, x2-x1, y2-y1);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(139,21,186,0.06)';
+      ctx.fillRect(x1, y1, x2-x1, y2-y1);
+      // label at centre of rect
+      if (this._rect && !this._dragging) {
+        const rcx = (x1+x2)/2, rcy = (y1+y2)/2;
+        const availR = Math.min(x2-x1, y2-y1) * 0.28;
+        // stats are recalculated on demand via lum ref — show if we can get them from onUpdate
+        if (this._rectStats) {
+          drawValueLabel(ctx, rcx, rcy, this._rectStats.mean, availR,
+            { color: '#00e5ff', unitColor: 'rgba(0,229,255,0.80)', minFont: 18 });
+        }
+      }
+    }
+
+    // Grid ROI — show if data exists OR currently dragging in grid mode
+    if (this._grid || (this.mode==='grid' && this._dragging)) {
+      let gx1, gy1, gx2, gy2, cols, rows;
+      if (this._dragging && this.mode==='grid') {
+        gx1=Math.floor(Math.min(this._x1,this._x2));
+        gy1=Math.floor(Math.min(this._y1,this._y2));
+        gx2=Math.ceil(Math.max(this._x1,this._x2));
+        gy2=Math.ceil(Math.max(this._y1,this._y2));
+        cols=this.gridCols; rows=this.gridRows;
+      } else if (this._grid) {
+        ({x1:gx1,y1:gy1,x2:gx2,y2:gy2,cols,rows}=this._grid);
+      }
+      const gw=gx2-gx1, gh=gy2-gy1;
+
+      // Fill background
+      ctx.fillStyle='rgba(139,21,186,0.05)';
+      ctx.fillRect(gx1,gy1,gw,gh);
+
+      // Outer border
+      ctx.strokeStyle='rgba(139,21,186,0.9)';
+      ctx.lineWidth=1.5;
+      ctx.setLineDash([]);
+      ctx.strokeRect(gx1,gy1,gw,gh);
+
+      // Inner grid lines
+      ctx.strokeStyle='rgba(139,21,186,0.5)';
+      ctx.lineWidth=0.75;
+      ctx.setLineDash([3,3]);
+      const cw=gw/cols, ch=gh/rows;
+      for (let c=1;c<cols;c++) {
+        const lx=gx1+c*cw;
+        ctx.beginPath(); ctx.moveTo(lx,gy1); ctx.lineTo(lx,gy2); ctx.stroke();
+      }
+      for (let r=1;r<rows;r++) {
+        const ly=gy1+r*ch;
+        ctx.beginPath(); ctx.moveTo(gx1,ly); ctx.lineTo(gx2,ly); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // Cell labels — mean luminance, centered in each cell
+      if (this._grid && !this._dragging) {
+        let cellIdx = 0;
+        for (let r=0;r<rows;r++) {
+          for (let c=0;c<cols;c++) {
+            const cx=gx1+c*cw, cy=gy1+r*ch;
+            const cell = this._grid.cells[cellIdx++];
+            if (cell && cell.stats) {
+              const txt = cell.stats.mean.toFixed(2);
+              const unit = 'cd/m²';
+              const cellCx = cx + cw/2;
+              const cellCy = cy + ch/2;
+
+              // Adaptive font size — proportional to cell, capped to stay compact (+15%)
+              const fontSize = Math.min(cw / 5.65, ch / 3.48, 25);
+              const unitSize = Math.max(8, fontSize * 0.55);
+
+              if (fontSize < 5) {
+                // Cell too tiny — just draw a dot
+                ctx.fillStyle = '#00e5ff';
+                ctx.beginPath(); ctx.arc(cellCx, cellCy, 2, 0, Math.PI*2); ctx.fill();
+              } else {
+                // Measure text with correct fonts
+                ctx.font = `bold ${fontSize}px "Share Tech Mono"`;
+                const tw = ctx.measureText(txt).width;
+                ctx.font = `${unitSize}px "Share Tech Mono"`;
+                const uw = ctx.measureText(unit).width;
+                const totalW = Math.max(tw, uw);
+                const padX = Math.max(4, fontSize * 0.3);
+                const padY = Math.max(3, fontSize * 0.2);
+                const boxH = fontSize + unitSize + padY * 2 + 2;
+                const boxW = totalW + padX * 2;
+
+                // Strong dark pill for guaranteed contrast on any background
+                ctx.fillStyle = 'rgba(0,0,0,0.80)';
+                const bx = cellCx - boxW/2, by = cellCy - boxH/2;
+                if (ctx.roundRect) {
+                  ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, Math.min(5, fontSize * 0.3)); ctx.fill();
+                } else {
+                  ctx.fillRect(bx, by, boxW, boxH);
+                }
+
+                // Value — white
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `bold ${fontSize}px "Share Tech Mono"`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillText(txt, cellCx, by + padY + fontSize);
+
+                // Unit — cyan
+                ctx.fillStyle = 'rgba(0,229,255,0.85)';
+                ctx.font = `${unitSize}px "Share Tech Mono"`;
+                ctx.fillText(unit, cellCx, by + padY + fontSize + 2 + unitSize);
+
+                ctx.textBaseline = 'alphabetic';
+              }
+            }
+          }
+        }
+        ctx.textBaseline = 'alphabetic';
+        ctx.textAlign = 'left';
+      }
+    }
+    // Circle ROI
+    const circlePreview = this.mode==='circle' && this._dragging;
+    if (this._circle || circlePreview) {
+      let cx, cy, r;
+      if (circlePreview) {
+        cx = (this._x1+this._x2)/2; cy = (this._y1+this._y2)/2;
+        r  = Math.sqrt((this._x2-this._x1)**2+(this._y2-this._y1)**2)/2;
+      } else {
+        ({cx,cy,r} = this._circle);
+      }
+      ctx.strokeStyle = '#8b15ba'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(139,21,186,0.06)';
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+      // center crosshair
+      ctx.strokeStyle = '#8b15ba'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx-10,cy); ctx.lineTo(cx+10,cy); ctx.moveTo(cx,cy-10); ctx.lineTo(cx,cy+10); ctx.stroke();
+      // label
+      if (this._circle && this._circle.stats) {
+        drawValueLabel(ctx, cx, cy, this._circle.stats.mean, r * 0.50,
+          { color: '#ffffff', unitColor: 'rgba(255,255,255,0.75)', minFont: 18 });
+      }
+    }
+
+    // Ring ROI
+    const ringPreview = this.mode==='ring' && this._dragging;
+    if (this._ring || ringPreview) {
+      let cx, cy, rInner, rOuter;
+      if (ringPreview) {
+        cx = (this._x1+this._x2)/2; cy = (this._y1+this._y2)/2;
+        rInner = Math.sqrt((this._x2-this._x1)**2+(this._y2-this._y1)**2)/2;
+        rOuter = rInner / this.ringRatio;
+      } else {
+        ({cx,cy,rInner,rOuter} = this._ring);
+      }
+      // Outer ring
+      ctx.strokeStyle = '#8b15ba'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI*2); ctx.stroke();
+      // Inner ring
+      ctx.strokeStyle = 'rgba(139,21,186,0.60)'; ctx.lineWidth = 1; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.arc(cx, cy, rInner, 0, Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+      // Fill ring area
+      ctx.fillStyle = 'rgba(139,21,186,0.06)';
+      ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI*2); ctx.arc(cx, cy, rInner, 0, Math.PI*2, true); ctx.fill();
+      // center crosshair
+      ctx.strokeStyle = '#8b15ba'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx-10,cy); ctx.lineTo(cx+10,cy); ctx.moveTo(cx,cy-10); ctx.lineTo(cx,cy+10); ctx.stroke();
+      // labels: centre (white) and ring annulus (cyan), both large & legible
+      if (this._ring) {
+        const ringMidR = (rInner + rOuter) / 2;
+        const IW = this._imgW || 0;
+        const IH = this._imgH || 0;
+        // Centre disc value — white, sized to the inner disc
+        drawValueLabel(ctx, cx, cy,
+          this._ring.statsInner ? this._ring.statsInner.mean : null,
+          rInner * 0.55,
+          { color: '#ffffff', unitColor: 'rgba(255,255,255,0.75)', minFont: 18,
+            bounds: IW > 0 ? {x:0, y:0, w:IW, h:IH} : null });
+        // Annulus value — try 4 positions (top-right, bottom-right, top-left, bottom-left)
+        // pick the first fully inside the image
+        const annVal = this._ring.statsRing ? this._ring.statsRing.mean : null;
+        if (annVal !== null) {
+          const angles = [
+            { ax: cx + ringMidR * 0.707, ay: cy - ringMidR * 0.707 },
+            { ax: cx + ringMidR * 0.707, ay: cy + ringMidR * 0.707 },
+            { ax: cx - ringMidR * 0.707, ay: cy - ringMidR * 0.707 },
+            { ax: cx - ringMidR * 0.707, ay: cy + ringMidR * 0.707 },
+          ];
+          // Rough pill size estimate
+          const estW = 100, estH = 50;
+          const fits = (ax, ay) => IW <= 0 || (
+            ax - estW/2 >= 0 && ax + estW/2 <= IW &&
+            ay - estH/2 >= 0 && ay + estH/2 <= IH
+          );
+          const pos = angles.find(p => fits(p.ax, p.ay)) || angles[0];
+          drawValueLabel(ctx, pos.ax, pos.ay, annVal,
+            rInner * 0.46,
+            { color: '#00e5ff', unitColor: 'rgba(0,229,255,0.80)', minFont: 16,
+              bounds: IW > 0 ? {x:0, y:0, w:IW, h:IH} : null });
+        }
+      }
+    }
+  }
+}
+
+// ── Shared label renderer ─────────────────────────────────────────────────────
+// availR: approximate radius of the containing area — drives font sizing
+// opts: { color, unitColor, minFont, maxFont }
+function drawValueLabel(ctx, cx, cy, meanVal, availR, opts) {
+  if (meanVal === null || meanVal === undefined) return;
+  opts = opts || {};
+  const color     = opts.color     || '#ffffff';
+  const unitColor = opts.unitColor || 'rgba(255,255,255,0.75)';
+  const minFont   = opts.minFont   || 16;
+  const maxFont   = opts.maxFont   || 54;
+  const bounds    = opts.bounds    || null;
+
+  const txt  = meanVal.toFixed(2);
+  const unit = 'cd/m²';
+
+  const fz = Math.max(minFont, Math.min(maxFont, availR * 1.4));
+  const uz = Math.max(11, fz * 0.55);
+  const PAD_X = Math.max(12, fz * 0.45);
+  const PAD_Y = Math.max(7, fz * 0.28);
+  const LINE_GAP = Math.max(4, fz * 0.12);
+
+  ctx.font = `bold ${fz}px "Share Tech Mono"`;
+  const tw = ctx.measureText(txt).width;
+  ctx.font = `${uz}px "Share Tech Mono"`;
+  const uw = ctx.measureText(unit).width;
+
+  const contentW = Math.max(tw, uw);
+  const boxW = contentW + PAD_X * 2;
+  const boxH = fz + uz + LINE_GAP + PAD_Y * 2;
+
+  // Clamp centre to keep pill inside bounds
+  let acx = cx, acy = cy;
+  if (bounds) {
+    acx = Math.max(bounds.x + boxW/2 + 2, Math.min(bounds.x + bounds.w - boxW/2 - 2, acx));
+    acy = Math.max(bounds.y + boxH/2 + 2, Math.min(bounds.y + bounds.h - boxH/2 - 2, acy));
+  }
+
+  const bx = acx - boxW / 2;
+  const by = acy - boxH / 2;
+  const radius = Math.max(6, fz * 0.22);
+
+  // Strong dark pill — guarantees contrast regardless of background colour
+  ctx.fillStyle = 'rgba(0,0,0,0.82)';
+  if (ctx.roundRect) {
+    ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, radius); ctx.fill();
+  } else {
+    ctx.fillRect(bx, by, boxW, boxH);
+  }
+  // Coloured border matching the text (helps distinguish white vs cyan labels)
+  ctx.strokeStyle = color; ctx.lineWidth = Math.max(1.5, fz * 0.045);
+  if (ctx.roundRect) {
+    ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, radius); ctx.stroke();
+  } else {
+    ctx.strokeRect(bx, by, boxW, boxH);
+  }
+
+  // Value
+  ctx.fillStyle = color;
+  ctx.font = `bold ${fz}px "Share Tech Mono"`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(txt, acx, by + PAD_Y + fz);
+
+  // Unit
+  ctx.fillStyle = unitColor;
+  ctx.font = `${uz}px "Share Tech Mono"`;
+  ctx.fillText(unit, acx, by + PAD_Y + fz + LINE_GAP + uz);
+
+  ctx.textAlign = 'left';
+}
+
+// ═══════════════════════════════════════════════════════
+class Exporter {
+  exportPNG(imgCanvas, legendCanvas, filename, legendParams, roi, renderer, crop) {
+    const IW = imgCanvas.width;
+    const IH = imgCanvas.height;
+    // ── Measure legend height first, then build canvas ──
+    const LEGEND_H = this._measureLegendH(legendParams);
+
+    // ── Apply crop ──
+    const cropT = (crop && crop.top    > 0) ? Math.min(crop.top,    IH - 1) : 0;
+    const cropB = (crop && crop.bottom > 0) ? Math.min(crop.bottom, IH - 1 - cropT) : 0;
+    const cropL = (crop && crop.left   > 0) ? Math.min(crop.left,   IW - 1) : 0;
+    const cropR = (crop && crop.right  > 0) ? Math.min(crop.right,  IW - 1 - cropL) : 0;
+    const srcX = cropL;
+    const srcY = cropT;
+    const srcW = Math.max(1, IW - cropL - cropR);
+    const srcH = Math.max(1, IH - cropT - cropB);
+
+    const W = srcW;
+    const H = srcH + LEGEND_H;
+    const out = document.createElement('canvas');
+    out.width = W; out.height = H;
+    const ctx = out.getContext('2d');
+
+    // Background — white for document embedding
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw cropped region of main image
+    ctx.drawImage(imgCanvas, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+
+    // ── Draw all ROI overlays at full image resolution, offset by crop ──
+    if (roi) {
+      ctx.save();
+      ctx.translate(-srcX, -srcY);
+      ctx.beginPath();
+      ctx.rect(srcX, srcY, srcW, srcH);
+      ctx.clip();
+      if (roi._points && roi._points.length > 0 && renderer) {
+        this._drawPointsOverlay(ctx, roi._points, renderer);
+      }
+      if (roi._rect) {
+        this._drawRectOverlay(ctx, roi._rect, roi._rectStats);
+      }
+      if (roi._grid) {
+        this._drawGridOverlay(ctx, roi._grid, IW, IH);
+      }
+      if (roi._circle) {
+        this._drawCircleOverlay(ctx, roi._circle);
+      }
+      if (roi._ring) {
+        this._drawRingOverlay(ctx, roi._ring, {x:srcX, y:srcY, w:srcW, h:srcH});
+      }
+      ctx.restore();
+    }
+
+    // Draw horizontal legend below the image
+    if (legendParams) {
+      this._drawHorizontalLegend(ctx, 0, srcH, W, LEGEND_H, legendParams);
+    }
+
+    out.toBlob(blob => {
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=filename; a.click();
+    }, 'image/png');
+  }
+
+  _drawGridOverlay(ctx, grid, imgW, imgH) {
+    const {x1,y1,x2,y2,cols,rows,cells} = grid;
+    const gw = x2-x1, gh = y2-y1;
+    const cw = gw/cols, ch = gh/rows;
+
+    // Outer border
+    ctx.strokeStyle = 'rgba(180,60,255,0.95)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.strokeRect(x1, y1, gw, gh);
+
+    // Inner grid lines
+    ctx.strokeStyle = 'rgba(180,60,255,0.6)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 4]);
+    for (let c=1;c<cols;c++) {
+      const lx = x1+c*cw;
+      ctx.beginPath(); ctx.moveTo(lx,y1); ctx.lineTo(lx,y2); ctx.stroke();
+    }
+    for (let r=1;r<rows;r++) {
+      const ly = y1+r*ch;
+      ctx.beginPath(); ctx.moveTo(x1,ly); ctx.lineTo(x2,ly); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Cell labels — mean luminance centered in each cell
+    let cellIdx = 0;
+    for (let r=0;r<rows;r++) {
+      for (let c=0;c<cols;c++) {
+        const cx = x1+c*cw, cy = y1+r*ch;
+        const cell = cells[cellIdx++];
+        if (!cell || !cell.stats) continue;
+
+        const txt  = this._fmtL(cell.stats.mean);
+        const unit = 'cd/m²';
+        const cellCx = cx + cw/2;
+        const cellCy = cy + ch/2;
+
+        // Font size: ~13% of cell width (+15%), bounded 13–32px
+        const fontSize = Math.max(13, Math.min(32, cw * 0.13, ch * 0.23));
+        const unitSize = Math.max(7, fontSize * 0.55);
+
+        ctx.font = `bold ${fontSize}px "Arial", sans-serif`;
+        const tw = ctx.measureText(txt).width;
+        ctx.font = `${unitSize}px "Arial", sans-serif`;
+        const uw = ctx.measureText(unit).width;
+        const totalW = Math.max(tw, uw);
+        const padX = Math.max(3, fontSize * 0.28), padY = Math.max(2, fontSize * 0.20);
+        const boxW = totalW + padX*2;
+        const boxH = fontSize + unitSize + padY*2 + 2;
+
+        if (cw < boxW + 8 || ch < boxH + 8) {
+          // Tiny fallback
+          ctx.font = `bold ${Math.max(13, fontSize*0.7)}px Arial`;
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(txt, cellCx, cellCy);
+          continue;
+        }
+
+        // Background pill — strong dark for guaranteed contrast
+        const bx = cellCx - boxW/2, by = cellCy - boxH/2;
+        ctx.fillStyle = 'rgba(0,0,0,0.80)';
+        if (ctx.roundRect) {
+          ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, 6); ctx.fill();
+        } else {
+          ctx.fillRect(bx, by, boxW, boxH);
+        }
+
+        // Thin cyan border
+        ctx.strokeStyle = 'rgba(0,229,255,0.7)';
+        ctx.lineWidth = 1.5;
+        if (ctx.roundRect) {
+          ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, 6); ctx.stroke();
+        } else {
+          ctx.strokeRect(bx, by, boxW, boxH);
+        }
+
+        // Value — white
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(txt, cellCx, cellCy - unitSize/2 - 1);
+
+        // Unit — cyan
+        ctx.fillStyle = 'rgba(0,229,255,0.85)';
+        ctx.font = `${unitSize}px Arial`;
+        ctx.fillText(unit, cellCx, cellCy + fontSize/2 + 1);
+      }
+    }
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+  }
+
+  // ── shared value formatter for overlays (×10ⁿ superscript) ──
+  _fmtL(v) {
+    if (v === null || v === undefined || !isFinite(v)) return '—';
+    const av = Math.abs(v);
+    const supExp = e => String(e).split('').map(c=>({'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'}[c]||c)).join('');
+    if (av >= 1e5) { const e=Math.floor(Math.log10(av)); const m=v/Math.pow(10,e); return (Math.abs(m-Math.round(m))<0.005?Math.round(m):m.toFixed(2).replace(/\.?0+$/,''))+'×10'+supExp(e); }
+    if (av < 0.001 && av > 0) { const e=Math.floor(Math.log10(av)); const m=v/Math.pow(10,e); return (Math.abs(m-Math.round(m))<0.005?Math.round(m):m.toFixed(2).replace(/\.?0+$/,''))+'×10'+supExp(e); }
+    if (av >= 1000) return v.toFixed(1);
+    if (av >= 100)  return v.toFixed(2);
+    if (av >= 10)   return v.toFixed(3);
+    if (av >= 1)    return v.toFixed(4);
+    return v.toFixed(5);
+  }
+
+  // ── shared pill label renderer ──
+  _pillSize(ctx, lines, {fs=22, unitFs=15}={}) {
+    const PAD = 10, GAP = 4;
+    const widths = lines.map((l,i) => { ctx.font = (i===0?`bold ${fs}px`:`${unitFs}px`)+' Arial,sans-serif'; return ctx.measureText(l).width; });
+    const boxW = Math.max(...widths) + PAD*2;
+    const boxH = lines.map((l,i)=>i===0?fs:unitFs).reduce((a,b)=>a+b,0) + GAP*(lines.length-1) + PAD*2;
+    return {boxW, boxH};
+  }
+
+  _drawPill(ctx, cx, cy, lines, {border='rgba(0,229,255,0.85)', bg='rgba(0,0,0,0.82)', fs=22, unitFs=15, bounds=null}={}) {
+    const PAD = 10, GAP = 4;
+    ctx.save();
+    const heights = lines.map((l,i) => i===0 ? fs : unitFs);
+    const widths  = lines.map((l,i) => { ctx.font = (i===0?`bold ${fs}px`:`${unitFs}px`)+' Arial,sans-serif'; return ctx.measureText(l).width; });
+    const boxW = Math.max(...widths) + PAD*2;
+    const boxH = heights.reduce((a,b)=>a+b,0) + GAP*(lines.length-1) + PAD*2;
+    // Clamp centre to keep pill inside bounds
+    let acx = cx, acy = cy;
+    if (bounds) {
+      acx = Math.max(bounds.x + boxW/2 + 2, Math.min(bounds.x + bounds.w - boxW/2 - 2, acx));
+      acy = Math.max(bounds.y + boxH/2 + 2, Math.min(bounds.y + bounds.h - boxH/2 - 2, acy));
+    }
+    const bx = acx - boxW/2, by = acy - boxH/2;
+    ctx.fillStyle = bg;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, 8); ctx.fill(); }
+    else { ctx.fillRect(bx, by, boxW, boxH); }
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 2;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, 8); ctx.stroke(); }
+    else { ctx.strokeRect(bx, by, boxW, boxH); }
+    let ty = by + PAD;
+    lines.forEach((l, i) => {
+      const h = i===0 ? fs : unitFs;
+      ctx.font = (i===0?`bold ${fs}px`:`${unitFs}px`)+' Arial,sans-serif';
+      ctx.fillStyle = i===0 ? '#ffffff' : 'rgba(0,229,255,0.9)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(l, acx, ty);
+      ty += h + GAP;
+    });
+    ctx.restore();
+  }
+
+  _drawPointsOverlay(ctx, points, renderer) {
+    const R = 18;
+    points.forEach((pt, i) => {
+      const {x, y} = pt;
+      const l = renderer.getLuminanceAt(x, y);
+      const label = this._fmtL(l);
+      // Cross marker
+      ctx.save();
+      ctx.strokeStyle = '#ff9100';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x-R,y); ctx.lineTo(x+R,y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x,y-R); ctx.lineTo(x,y+R); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2);
+      ctx.fillStyle = '#ff9100'; ctx.fill();
+      ctx.font = 'bold 18px Arial,sans-serif';
+      ctx.fillStyle = '#ff9100';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+      ctx.fillText(`#${i+1}`, x+R+4, y-4);
+      ctx.restore();
+      // Single-value pill: just the luminance
+      this._drawPill(ctx, x, y - R - 36, [label, 'cd/m²'], {border:'rgba(255,145,0,0.9)', fs:22, unitFs:14});
+    });
+  }
+
+  _drawRectOverlay(ctx, rect, stats) {
+    const {x1,y1,x2,y2} = rect;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,229,255,0.9)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([12,6]);
+    ctx.strokeRect(x1, y1, x2-x1, y2-y1);
+    ctx.setLineDash([]);
+    ctx.restore();
+    if (!stats) return;
+    const cx = (x1+x2)/2, cy = (y1+y2)/2;
+    this._drawPill(ctx, cx, cy, [this._fmtL(stats.mean), 'cd/m²'], {border:'rgba(0,229,255,0.85)', fs:30, unitFs:18});
+  }
+
+  _drawCircleOverlay(ctx, circle) {
+    const {cx, cy, r, stats} = circle;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,229,255,0.9)';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,229,255,0.5)';
+    ctx.lineWidth = 1.5;
+    const CR = 12;
+    ctx.beginPath(); ctx.moveTo(cx-CR,cy); ctx.lineTo(cx+CR,cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,cy-CR); ctx.lineTo(cx,cy+CR); ctx.stroke();
+    ctx.restore();
+    if (!stats) return;
+    this._drawPill(ctx, cx, cy, [this._fmtL(stats.mean), 'cd/m²'], {border:'rgba(0,229,255,0.85)', fs:26, unitFs:16});
+  }
+
+  _drawRingOverlay(ctx, ring, bounds) {
+    const {cx, cy, rInner, rOuter, statsInner, statsRing} = ring;
+    const IW = bounds ? bounds.w : ctx.canvas.width;
+    const IH = bounds ? bounds.h : ctx.canvas.height;
+    const bx0 = bounds ? bounds.x : 0;
+    const by0 = bounds ? bounds.y : 0;
+
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(139,21,186,0.95)';
+    ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(139,21,186,0.6)';
+    ctx.setLineDash([8,5]);
+    ctx.beginPath(); ctx.arc(cx, cy, rInner, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    const pillOpts = {border:'rgba(139,21,186,0.9)', fs:24, unitFs:15};
+    const lines    = [this._fmtL(statsRing ? statsRing.mean : null), 'cd/m²'];
+
+    // Centre pill — inside inner circle, clamped to image
+    if (statsInner) {
+      this._drawPill(ctx, cx, cy, [this._fmtL(statsInner.mean), 'cd/m²'],
+        {border:'rgba(255,255,255,0.7)', fs:26, unitFs:16,
+         bounds:{x:bx0, y:by0, w:IW, h:IH}});
+    }
+
+    // Annulus pill — try 4 sides: top, bottom, right, left; pick first that fits inside bounds
+    if (statsRing) {
+      const {boxW, boxH} = this._pillSize(ctx, lines, pillOpts);
+      const GAP_RING = 20; // gap between circle edge and pill edge
+
+      const candidates = [
+        // above
+        { px: cx,          py: cy - rOuter - GAP_RING - boxH/2,  lx: cx, ly: cy - rOuter, dir:'v' },
+        // below
+        { px: cx,          py: cy + rOuter + GAP_RING + boxH/2,  lx: cx, ly: cy + rOuter, dir:'v' },
+        // right
+        { px: cx + rOuter + GAP_RING + boxW/2, py: cy,           lx: cx + rOuter, ly: cy, dir:'h' },
+        // left
+        { px: cx - rOuter - GAP_RING - boxW/2, py: cy,           lx: cx - rOuter, ly: cy, dir:'h' },
+      ];
+
+      // Pick first candidate fully inside image bounds (with 4px margin)
+      const M = 4;
+      const fits = c =>
+        c.px - boxW/2 >= bx0 + M &&
+        c.px + boxW/2 <= bx0 + IW - M &&
+        c.py - boxH/2 >= by0 + M &&
+        c.py + boxH/2 <= by0 + IH - M;
+
+      let chosen = candidates.find(fits) || candidates[0]; // fallback: top
+
+      // Draw connector line from chosen pill edge to circle edge
+      ctx.save();
+      ctx.strokeStyle = 'rgba(139,21,186,0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(chosen.lx, chosen.ly);
+      if (chosen.dir === 'v') {
+        ctx.lineTo(chosen.px, chosen.py + (chosen.py < cy ? boxH/2 : -boxH/2));
+      } else {
+        ctx.lineTo(chosen.px + (chosen.px > cx ? -boxW/2 : boxW/2), chosen.py);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      this._drawPill(ctx, chosen.px, chosen.py, lines,
+        {...pillOpts, bounds:{x:bx0, y:by0, w:IW, h:IH}});
+    }
+  }
+
+  _measureLegendH(legendParams) {
+    // Dry-run: compute tight height without drawing
+    const PAD_TOP = 8;
+    const barH    = 28;
+    const tickH   = 10;
+    const labelH  = 16; // font 13px, horizontal → straight height
+    const PAD_BOT = 8;
+    return PAD_TOP + barH + tickH + labelH + PAD_BOT;
+  }
+
+    _drawHorizontalLegend(ctx, x0, y0, W, H, {colormap, minL, maxL, scaleMode, unit}) {
+    const lut = COLORMAPS[colormap] || COLORMAPS.lmk;
+
+    const PAD_L   = 60;
+    const PAD_R   = 70;
+    const PAD_TOP = 8;
+    const barH    = 28;
+    const barY    = y0 + PAD_TOP;
+    const barX    = x0 + PAD_L;
+    const barW    = W - PAD_L - PAD_R;
+
+    // White legend area
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x0, y0, W, H);
+
+    // Draw gradient bar (horizontal)
+    for (let i = 0; i < barW; i++) {
+      const t = i / (barW - 1);
+      const idx = Math.min(255, Math.floor(t * 255));
+      ctx.fillStyle = `rgb(${lut[idx*3]},${lut[idx*3+1]},${lut[idx*3+2]})`;
+      ctx.fillRect(barX + i, barY, 1, barH);
+    }
+
+    // Border around bar
+    ctx.strokeStyle = '#888888';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
+
+    // ── Format value ──
+    function fmtVal(v) {
+      if (v === 0) return '0';
+      const av = Math.abs(v);
+      const supExp = e => String(e).split('').map(c=>({'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'}[c]||c)).join('');
+      if (av >= 1e5 || (av < 0.001 && av > 0)) {
+        const e = Math.floor(Math.log10(av));
+        const m = v / Math.pow(10, e);
+        return (Math.abs(m - Math.round(m)) < 0.005 ? Math.round(m) : m.toFixed(2).replace(/\.?0+$/,'')) + '×10' + supExp(e);
+      }
+      if (av >= 1000) return v.toFixed(0);
+      if (av >= 100)  return v.toFixed(1);
+      if (av >= 10)   return v.toFixed(2);
+      if (av >= 1)    return v.toFixed(3);
+      if (av >= 0.1)  return v.toFixed(4);
+      return v.toFixed(5);
+    }
+
+    // ── Build ticks ──
+    const ticks = [];
+    if (scaleMode === 'log') {
+      const safeMn = Math.max(minL, 1e-10);
+      const safeMx = Math.max(maxL, 1e-10);
+      if (safeMx <= safeMn) return;
+      const lmn = Math.log10(safeMn), lmx = Math.log10(safeMx);
+      const lRange = lmx - lmn;
+      const pxPerDecade = barW / Math.max(lRange, 0.01);
+      const subMults = pxPerDecade >= 120 ? [1,2,3,5,7] : pxPerDecade >= 60 ? [1,2,5] : [1];
+      for (let dec = Math.floor(lmn); dec <= Math.ceil(lmx); dec++) {
+        for (const m of subMults) {
+          const val = m * Math.pow(10, dec);
+          if (val < safeMn * 0.9999 || val > safeMx * 1.0001) continue;
+          const t = (Math.log10(val) - lmn) / lRange;
+          if (t < -0.001 || t > 1.001) continue;
+          ticks.push({ t: Math.max(0, Math.min(1, t)), val, major: m === 1 });
+        }
+      }
+      if (!ticks.some(tk => Math.abs(tk.t) < 0.005))     ticks.push({ t: 0, val: safeMn, major: true });
+      if (!ticks.some(tk => Math.abs(tk.t - 1) < 0.005)) ticks.push({ t: 1, val: safeMx, major: true });
+    } else {
+      const range = maxL - minL;
+      if (range <= 0) return;
+      const rawStep  = range / 8;
+      const mag      = Math.pow(10, Math.floor(Math.log10(rawStep)));
+      const norm     = rawStep / mag;
+      const niceStep = norm < 1.5 ? mag : norm < 3.5 ? 2*mag : norm < 7.5 ? 5*mag : 10*mag;
+      ticks.push({ t: 0, val: minL, major: true });
+      ticks.push({ t: 1, val: maxL, major: true });
+      for (let v = Math.ceil(minL / niceStep) * niceStep; v <= maxL + niceStep * 0.001; v += niceStep) {
+        v = Math.round(v / niceStep) * niceStep;
+        if (v <= minL + niceStep * 0.01 || v >= maxL - niceStep * 0.01) continue;
+        const t = (v - minL) / range;
+        if (t < 0.01 || t > 0.99) continue;
+        ticks.push({ t, val: v, major: true });
+      }
+    }
+
+    // Sort and filter crowded ticks
+    ticks.sort((a, b) => a.t - b.t);
+    const fontSize = 11;
+    ctx.font = `${fontSize}px Arial, sans-serif`;
+    const minPx = 50;
+    const filtered = [];
+    let lastPx = -Infinity;
+    for (const tk of ticks) {
+      const px = barX + tk.t * barW;
+      const isEdge = (tk.t === 0 || tk.t === 1);
+      if (isEdge || px - lastPx >= minPx) {
+        if (isEdge && filtered.length > 0) {
+          const prev = filtered[filtered.length - 1];
+          if (Math.abs(px - prev.px) < minPx - 4) filtered.pop();
+        }
+        filtered.push({...tk, px});
+        lastPx = px;
+      }
+    }
+
+    // Draw ticks and horizontal labels
+    const tickBotY = barY + barH;
+    const tickH    = 10;
+    const labelY   = tickBotY + tickH + 2;
+
+    ctx.textBaseline = 'top';
+    for (const tk of filtered) {
+      const px      = tk.px;
+      const isEdge  = (tk.t === 0 || tk.t === 1);
+      const isMajor = tk.major;
+
+      // Tick mark
+      ctx.fillStyle = isEdge ? '#222' : (isMajor ? '#444' : '#888');
+      ctx.fillRect(px - 1, tickBotY, 2, isEdge ? tickH : (isMajor ? tickH - 2 : tickH - 4));
+
+      // Label — horizontal, centred on tick
+      if (isMajor || filtered.length <= 14) {
+        const label = fmtVal(tk.val);
+        ctx.fillStyle = '#111';
+        ctx.font = isEdge ? `bold ${fontSize}px Arial, sans-serif` : `${fontSize}px Arial, sans-serif`;
+        ctx.textAlign = isEdge && tk.t === 0 ? 'left'
+                      : isEdge && tk.t === 1 ? 'right'
+                      : 'center';
+        // clamp so label doesn't overflow bar edges
+        const lw   = ctx.measureText(label).width;
+        const rawX = px;
+        const clampedX = Math.max(barX, Math.min(barX + barW, rawX));
+        ctx.fillText(label, clampedX, labelY);
+      }
+    }
+
+    // Unit label — right of bar
+    ctx.font      = 'bold 12px Arial, sans-serif';
+    ctx.fillStyle = '#333';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('[' + unit + ']', barX + barW + 8, barY + barH / 2);
+
+    // Scale mode — left of bar
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#666';
+    ctx.font      = '11px Arial, sans-serif';
+    ctx.fillText(scaleMode === 'log' ? 'LOG' : 'LIN', barX - 6, barY + barH / 2);
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  exportCSV(lum, w, h, filename) {
+    const SEP = ';';
+    const rows = [`x${SEP}y${SEP}luminance`];
+    for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
+      rows.push(`${x}${SEP}${y}${SEP}${lum[y*w+x].toFixed(6).replace('.',',')}`);
+    }
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + rows.join('\r\n')], {type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=filename; a.click();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// APP
+// ═══════════════════════════════════════════════════════
+class App {
+  constructor() {
+    this.reader = new FalseColorRenderer.__proto__.constructor(); // placeholder
+    this.reader = new HDF5Reader();
+    this.renderer = new FalseColorRenderer();
+    this.exporter = new Exporter();
+
+    this.state = {
+      loaded: false,
+      displayMode: 'falsecolor',
+      colormap: 'lmk',
+      scaleMode: 'log',
+      minL: 0, maxL: 1,
+      rgbData: null, rawData: null,
+      filename: '',
+      crop: { top: 0, bottom: 0, left: 0, right: 0 },
+    };
+
+    this.sourceCanvas = document.createElement('canvas');
+    this._init();
+  }
+
+  _init() {
+    this._setupDOM();
+    this._setupEvents();
+    this._updateLegend();
+  }
+
+  _setupDOM() {
+    this.displayCanvas = document.getElementById('display-canvas');
+    this.overlayCanvas = document.getElementById('overlay-canvas');
+    this.legendCanvas  = document.getElementById('legend-canvas');
+
+    this.viewer = new Viewer(
+      this.displayCanvas, this.overlayCanvas,
+      this._onHover.bind(this),
+      this._onCanvasInteraction.bind(this)
+    );
+
+    this.legend = new Legend(this.legendCanvas);
+    this.roi = new ROIManager(this._onROIUpdate.bind(this));
+
+    this._resizeCanvases();
+    window.addEventListener('resize', () => this._resizeCanvases());
+  }
+
+  _setupEvents() {
+    document.getElementById('file-input').addEventListener('change', e => {
+      const f = e.target.files?.[0]; if(f) this.loadFile(f);
+    });
+
+    const dz = document.getElementById('drop-zone');
+    dz.style.cursor = 'pointer';
+    dz.addEventListener('click', () => document.getElementById('file-input').click());
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('drag-over');
+      const f = e.dataTransfer.files?.[0]; if(f) this.loadFile(f);
+    });
+
+    // ── Global drag-and-drop (anywhere on the window) ──
+    const globalOverlay = document.getElementById('global-drop-overlay');
+    let dragCounter = 0;
+
+    window.addEventListener('dragenter', e => {
+      e.preventDefault();
+      // Only activate if dragging a file
+      if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+        dragCounter++;
+        globalOverlay.classList.add('active');
+      }
+    });
+
+    window.addEventListener('dragleave', e => {
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        globalOverlay.classList.remove('active');
+      }
+    });
+
+    window.addEventListener('dragover', e => {
+      e.preventDefault();
+    });
+
+    window.addEventListener('drop', e => {
+      e.preventDefault();
+      dragCounter = 0;
+      globalOverlay.classList.remove('active');
+      dz.classList.remove('drag-over');
+      const f = e.dataTransfer?.files?.[0];
+      if (f) this.loadFile(f);
+    });
+
+    document.querySelectorAll('[data-mode]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        this.state.displayMode = btn.dataset.mode;
+        this._renderCurrent();
+      });
+    });
+
+    document.getElementById('colormap-select').addEventListener('change', e => {
+      this.state.colormap = e.target.value;
+      this.renderer.colormap = e.target.value;
+      this._renderCurrent();
+      this._updateLegend();
+    });
+
+    document.querySelectorAll('[data-scale]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-scale]').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        this.state.scaleMode = btn.dataset.scale;
+        this.renderer.scaleMode = btn.dataset.scale;
+        this._renderCurrent();
+        this._updateLegend();
+      });
+    });
+
+    const minI = document.getElementById('range-min');
+    const maxI = document.getElementById('range-max');
+    minI.addEventListener('change', () => {
+      const v=parseFloat(minI.value);
+      if(!isNaN(v)){this.state.minL=v;this.renderer.setRange(v,this.state.maxL);this._renderCurrent();this._updateLegend();}
+    });
+    maxI.addEventListener('change', () => {
+      const v=parseFloat(maxI.value);
+      if(!isNaN(v)){this.state.maxL=v;this.renderer.setRange(this.state.minL,v);this._renderCurrent();this._updateLegend();}
+    });
+
+    document.getElementById('btn-auto-range').addEventListener('click', () => {
+      this.renderer.autoRange();
+      this.state.minL=this.renderer.minL; this.state.maxL=this.renderer.maxL;
+      minI.value=this.state.minL.toFixed(4); maxI.value=this.state.maxL.toFixed(4);
+      this._renderCurrent(); this._updateLegend();
+    });
+
+    document.getElementById('btn-roi-point').addEventListener('click', () => this._setROIMode('point'));
+    document.getElementById('btn-roi-rect').addEventListener('click', () => this._setROIMode('rect'));
+    document.getElementById('btn-roi-grid').addEventListener('click', () => this._setROIMode('grid'));
+    document.getElementById('btn-roi-circle').addEventListener('click', () => this._setROIMode('circle'));
+    document.getElementById('btn-roi-ring').addEventListener('click', () => this._setROIMode('ring'));
+    document.getElementById('btn-roi-clear').addEventListener('click', () => {
+      this.roi.clear(); this._clearROIStats(); this._rerenderOverlay();
+      document.getElementById('btn-export-grid-csv').style.display='none';
+    });
+
+    // Grid steppers — custom +/− buttons wired to hidden inputs
+    const gridColsEl = document.getElementById('grid-cols');
+    const gridRowsEl = document.getElementById('grid-rows');
+    const colsVal = document.getElementById('grid-cols-val');
+    const rowsVal = document.getElementById('grid-rows-val');
+
+    const onGridChange = () => {
+      this.roi.gridCols = Math.max(1, parseInt(gridColsEl.value)||1);
+      this.roi.gridRows = Math.max(1, parseInt(gridRowsEl.value)||1);
+      gridColsEl.value = this.roi.gridCols;
+      gridRowsEl.value = this.roi.gridRows;
+      colsVal.textContent = this.roi.gridCols;
+      rowsVal.textContent = this.roi.gridRows;
+      if (this.roi._grid && this.renderer.luminance) {
+        this.roi.recomputeGrid(this.renderer.luminance, this.renderer.width, this.renderer.height);
+        this._rerenderOverlay();
+        this._showAllROIStats();
+      }
+    };
+
+    document.getElementById('grid-cols-dec').addEventListener('click', () => {
+      gridColsEl.value = Math.max(1, parseInt(gridColsEl.value||2) - 1); onGridChange();
+    });
+    document.getElementById('grid-cols-inc').addEventListener('click', () => {
+      gridColsEl.value = Math.max(1, parseInt(gridColsEl.value||2) + 1); onGridChange();
+    });
+    document.getElementById('grid-rows-dec').addEventListener('click', () => {
+      gridRowsEl.value = Math.max(1, parseInt(gridRowsEl.value||2) - 1); onGridChange();
+    });
+    document.getElementById('grid-rows-inc').addEventListener('click', () => {
+      gridRowsEl.value = Math.max(1, parseInt(gridRowsEl.value||2) + 1); onGridChange();
+    });
+
+    document.getElementById('btn-export-png').addEventListener('click', () => {
+      const base = this.state.filename.replace('.h5','') || 'lmk';
+      this.exporter.exportPNG(this.sourceCanvas, this.legendCanvas, `${base}-falsecolor.png`, {
+        colormap: this.state.colormap,
+        minL: this.state.minL,
+        maxL: this.state.maxL,
+        scaleMode: this.state.scaleMode,
+        unit: 'cd/m²',
+      }, this.roi, this.renderer, this.state.crop);
+    });
+
+    // ── Theme: follow the suite-wide setting (shell broadcasts + localStorage) ──
+    let __at=null; const applyTheme = (light) => { document.documentElement.classList.add('theme-anim'); document.body.classList.add('theme-anim'); document.body.classList.toggle('light', !!light); clearTimeout(__at); __at=setTimeout(()=>{document.documentElement.classList.remove('theme-anim'); document.body.classList.remove('theme-anim');},950); };
+    try { applyTheme(localStorage.getItem('suite-theme') === 'light'); } catch(e) {}
+    window.addEventListener('message', (ev) => {
+      if (ev.data && ev.data.type === 'suite-theme') if(!ev.data.noToggle) applyTheme(ev.data.light);
+    });
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+      if(!this.renderer.luminance) return;
+      const base = this.state.filename.replace('.h5','') || 'lmk';
+      this.exporter.exportCSV(this.renderer.luminance, this.renderer.width, this.renderer.height, `${base}-luminance.csv`);
+    });
+
+    // ── Crop controls ──
+    const _updateCrop = () => {
+      const IW = this.renderer ? this.renderer.width  : 0;
+      const IH = this.renderer ? this.renderer.height : 0;
+      const t = Math.max(0, parseInt(document.getElementById('crop-top').value)    || 0);
+      const b = Math.max(0, parseInt(document.getElementById('crop-bottom').value) || 0);
+      const l = Math.max(0, parseInt(document.getElementById('crop-left').value)   || 0);
+      const r = Math.max(0, parseInt(document.getElementById('crop-right').value)  || 0);
+      this.state.crop = { top: t, bottom: b, left: l, right: r };
+      const preview = document.getElementById('crop-preview');
+      if (IW > 0 && IH > 0) {
+        const cw = Math.max(0, IW - l - r);
+        const ch = Math.max(0, IH - t - b);
+        preview.innerHTML = `wynik: <span>${cw} × ${ch} px</span> (z ${IW}×${IH})`;
+      } else if (t || b || l || r) {
+        preview.innerHTML = `przytnij: <span>T${t} B${b} L${l} R${r}</span>`;
+      } else {
+        preview.textContent = 'brak przycięcia';
+      }
+    };
+    ['crop-top','crop-bottom','crop-left','crop-right'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => { _updateCrop(); this._rerenderOverlay(); });
+      document.getElementById(id).addEventListener('change', () => { _updateCrop(); this._rerenderOverlay(); });
+    });
+    document.getElementById('btn-crop-reset').addEventListener('click', () => {
+      ['crop-top','crop-bottom','crop-left','crop-right'].forEach(id => document.getElementById(id).value = 0);
+      _updateCrop(); this._rerenderOverlay();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (!this.state.loaded) return;
+      const tag = document.activeElement.tagName;
+      if (tag==='INPUT'||tag==='SELECT') return;
+      switch(e.key) {
+        case '1': this._setDisplayMode('falsecolor'); break;
+        case '2': this._setDisplayMode('rgb'); break;
+        case '3': this._setDisplayMode('grayscale'); break;
+        case '4': this._setDisplayMode('raw'); break;
+        case 'l': case 'L': this._toggleScale(); break;
+        case 'a': case 'A': document.getElementById('btn-auto-range').click(); break;
+        case 'Escape': this.roi.clear(); this._clearROIStats(); this._rerenderOverlay(); break;
+        case 'p': case 'P': this._setROIMode('point'); break;
+        case 'r': case 'R': this._setROIMode('rect'); break;
+        case 'g': case 'G': this._setROIMode('grid'); break;
+        case 'c': case 'C': this._setROIMode('circle'); break;
+        case 'i': case 'I': this._setROIMode('ring'); break;
+      }
+    });
+  }
+
+  _setROIMode(mode) {
+    const wasActive = this.roi.mode === mode && this.roi.active;
+    if (wasActive) {
+      this.roi.setMode(null);
+      ['point','rect','grid','circle','ring'].forEach(m => {
+        const b = document.getElementById('btn-roi-'+m);
+        if (b) b.classList.remove('active');
+      });
+      document.getElementById('grid-config').style.display = 'none';
+      document.getElementById('ring-config').style.display = 'none';
+      this.overlayCanvas.style.cursor = 'default';
+    } else {
+      this.roi.setMode(mode);
+      ['point','rect','grid','circle','ring'].forEach(m => {
+        const b = document.getElementById('btn-roi-'+m);
+        if (b) b.classList.toggle('active', m===mode);
+      });
+      document.getElementById('grid-config').style.display = mode==='grid'   ? 'block' : 'none';
+      document.getElementById('ring-config').style.display = (mode==='circle'||mode==='ring') ? 'block' : 'none';
+      this.overlayCanvas.style.cursor = 'crosshair';
+    }
+    this._rerenderOverlay();
+  }
+
+  _setDisplayMode(mode) {
+    document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
+    this.state.displayMode = mode;
+    this._renderCurrent();
+  }
+
+  _toggleScale() {
+    const ns = this.state.scaleMode==='log'?'linear':'log';
+    document.querySelectorAll('[data-scale]').forEach(b=>b.classList.toggle('active', b.dataset.scale===ns));
+    this.state.scaleMode = ns; this.renderer.scaleMode = ns;
+    this._renderCurrent(); this._updateLegend();
+  }
+
+  async loadFile(file) {
+    this.state.filename = file.name;
+    document.getElementById('filename-label').textContent = file.name;
+    const progressEl = document.getElementById('load-progress');
+    const progressBar = document.getElementById('progress-bar');
+    progressEl.style.display = 'flex';
+
+    try {
+      await this.reader.loadFile(file, ({stage, pct}) => {
+        progressBar.style.width = pct + '%';
+        document.getElementById('progress-label').textContent = stage.toUpperCase();
+      });
+
+      progressBar.style.width = '70%';
+      document.getElementById('progress-label').textContent = 'READING DATA';
+
+      const lum = this.reader.readLuminance();
+      if (!lum) throw new Error('Luminance dataset not found in file');
+
+      this.renderer.setData(lum.data, lum.width, lum.height);
+      this.roi._imgW = lum.width;
+      this.roi._imgH = lum.height;
+      this.state.minL = this.renderer.minL;
+      this.state.maxL = this.renderer.maxL;
+      document.getElementById('range-min').value = this.state.minL.toFixed(4);
+      document.getElementById('range-max').value = this.state.maxL.toFixed(4);
+
+      progressBar.style.width = '80%';
+      document.getElementById('progress-label').textContent = 'READING RGB';
+      this.state.rgbData = this.reader.readRGB();
+
+      progressBar.style.width = '90%';
+      document.getElementById('progress-label').textContent = 'RENDERING';
+
+      const srcLabel = lum.source === 'ColorPic.b' ? ' · src: ColorPic.b [truncated file]' : '';
+      document.getElementById('img-info').textContent =
+        `${lum.width} × ${lum.height} px · ${(file.size/1024/1024).toFixed(1)} MB${srcLabel}`;
+
+      this._renderCurrent();
+      this._refreshROIAfterLoad();
+      this.state.loaded = true;
+
+      // Update crop preview with real image dimensions
+      ['crop-top','crop-bottom','crop-left','crop-right'].forEach(id => {
+        document.getElementById(id).dispatchEvent(new Event('input'));
+      });
+
+      progressBar.style.width = '100%';
+      setTimeout(() => {
+        progressEl.style.display = 'none';
+        document.getElementById('drop-zone').style.display = 'none';
+      }, 300);
+
+    } catch(err) {
+      console.error('Load error:', err);
+      progressEl.style.display = 'none';
+      this._showError(err.message);
+    }
+  }
+
+  _refreshROIAfterLoad() {
+    const lum = this.renderer.luminance;
+    const w   = this.renderer.width;
+    const h   = this.renderer.height;
+    if (!lum) return;
+
+    // Rect
+    if (this.roi._rect) {
+      const {x1,y1,x2,y2} = this.roi._rect;
+      this.roi._rectStats = this.roi._calcStats(lum, w, h, x1, y1, x2, y2);
+    }
+
+    // Grid
+    if (this.roi._grid) {
+      this.roi.recomputeGrid(lum, w, h);
+    }
+
+    // Circle
+    if (this.roi._circle) {
+      const {cx, cy, r} = this.roi._circle;
+      this.roi._circle.stats = this.roi._calcStatsCircle(lum, w, h, cx, cy, r);
+    }
+
+    // Ring
+    if (this.roi._ring) {
+      this.roi._recomputeRing(lum, w, h);
+    }
+
+    // Punkty — wartosci czytane na bieząco z renderer
+
+    this._rerenderOverlay();
+    this._showAllROIStats();
+  }
+
+  _renderCurrent() {
+    const {displayMode, rgbData, rawData} = this.state;
+    switch(displayMode) {
+      case 'falsecolor': this.renderer.render(this.sourceCanvas); break;
+      case 'rgb':
+        if(rgbData) this.renderer.renderRGB(this.sourceCanvas, rgbData);
+        else this.renderer.render(this.sourceCanvas);
+        break;
+      case 'grayscale': this.renderer.renderGrayscale(this.sourceCanvas); break;
+      case 'raw':
+        if(rawData) this.renderer.renderRawCamera(this.sourceCanvas, rawData);
+        else this.renderer.render(this.sourceCanvas);
+        break;
+    }
+    this.viewer.setImage(this.sourceCanvas, this.renderer.width, this.renderer.height);
+    this._updateLegend();
+    this._rerenderOverlay();
+  }
+
+  _updateLegend() {
+    if (!this.legendCanvas) return;
+    this.legend.render({
+      colormap: this.state.colormap,
+      minL: this.state.minL, maxL: this.state.maxL,
+      scaleMode: this.state.scaleMode,
+      unit: 'cd/m²',
+    });
+  }
+
+  _onHover(imgX, imgY) {
+    const xEl=document.getElementById('cursor-x');
+    const yEl=document.getElementById('cursor-y');
+    const lEl=document.getElementById('cursor-l');
+    if (imgX===null) { xEl.textContent='—'; yEl.textContent='—'; lEl.textContent='—'; return; }
+    const xi=Math.floor(imgX), yi=Math.floor(imgY);
+    xEl.textContent=xi; yEl.textContent=yi;
+    const l=this.renderer.getLuminanceAt(xi,yi);
+    lEl.textContent = l!==null ? l.toFixed(4)+' cd/m²' : '—';
+  }
+
+  _onCanvasInteraction(e, imgPos, phase) {
+    const {x,y} = imgPos;
+    let consumed = false;
+
+    // ── Drag-resize for ring/circle edges (takes priority over new ROI drawing) ──
+    if (phase === 'down') {
+      const ringHit   = this.roi.hitTestRing(x, y);
+      const circleHit = this.roi._circle ? this.roi.hitTestCircle(x, y) : null;
+      if (ringHit) {
+        this._resizeDrag = { target: 'ring', part: ringHit };
+        consumed = true;
+      } else if (circleHit) {
+        this._resizeDrag = { target: 'circle', part: circleHit };
+        consumed = true;
+      }
+    } else if (phase === 'move' && this._resizeDrag) {
+      const lum = this.renderer.luminance;
+      const w = this.renderer.width, h = this.renderer.height;
+      if (this._resizeDrag.target === 'ring' && this.roi._ring) {
+        const {cx, cy} = this.roi._ring;
+        const d = Math.max(4, Math.sqrt((x-cx)**2+(y-cy)**2));
+        if (this._resizeDrag.part === 'inner') {
+          // Drag inner edge → rInner changes, rOuter derived from ratio
+          const rInner = d;
+          const rOuter = rInner / Math.max(0.05, this.roi.ringRatio);
+          this.roi._ring.rInner = rInner;
+          this.roi._ring.rOuter = rOuter;
+        } else {
+          // Drag outer edge → rOuter changes, update ratio (rInner stays fixed)
+          const rOuter = Math.max(d, this.roi._ring.rInner * 1.05);
+          const newRatio = this.roi._ring.rInner / rOuter;
+          this.roi.ringRatio = Math.max(0.05, Math.min(0.95, newRatio));
+          this.roi._ring.rOuter = rOuter;
+          this._updateRatioSlider(this.roi.ringRatio);
+        }
+        if (lum) this.roi._recomputeRing(lum, w, h);
+      } else if (this._resizeDrag.target === 'circle' && this.roi._circle) {
+        const {cx, cy} = this.roi._circle;
+        const r = Math.max(4, Math.sqrt((x-cx)**2+(y-cy)**2));
+        this.roi._circle.r = r;
+        if (lum) {
+          this.roi._circle.stats = this.roi._calcStatsCircle(lum, w, h, cx, cy, r);
+          this.roi.onUpdate({type:'all'});
+        }
+      }
+      this._rerenderOverlay();
+      consumed = true;
+    } else if (phase === 'up' && this._resizeDrag) {
+      this._resizeDrag = null;
+      this._showAllROIStats();
+      consumed = true;
+    }
+
+    // ── Cursor feedback on hover (no drag active) ──
+    if (phase === 'move' && !this._resizeDrag) {
+      if (!this.roi.active || this.roi.mode === 'point') {
+        const ringHit   = this.roi.hitTestRing(x, y);
+        const circleHit = this.roi.hitTestCircle ? this.roi.hitTestCircle(x, y) : null;
+        if (ringHit || circleHit) {
+          this.overlayCanvas.style.cursor = ringHit === 'inner' ? 'ew-resize' : 'nwse-resize';
+        } else {
+          this.overlayCanvas.style.cursor = this.roi.active ? 'crosshair' : 'default';
+        }
+      }
+    }
+
+    if (!consumed) {
+      if (phase==='down' && this.roi.active) consumed=this.roi.handleMouseDown(x,y,e.button);
+      else if (phase==='move' && this.roi.active) consumed=this.roi.handleMouseMove(x,y);
+      else if (phase==='up' && this.roi.active)
+        consumed=this.roi.handleMouseUp(x,y,this.renderer.luminance,this.renderer.width,this.renderer.height);
+    }
+
+    this._rerenderOverlay();
+    return consumed;
+  }
+
+  _updateRatioSlider(ratio) {
+    const pct = Math.round(ratio * 100);
+    const sl = document.getElementById('ring-ratio-slider');
+    const lb = document.getElementById('ring-ratio-label');
+    if (sl) sl.value = pct;
+    if (lb) lb.textContent = pct + '%';
+  }
+
+  _onRingRatioChange(val) {
+    const ratio = Math.max(0.05, Math.min(0.90, parseInt(val) / 100));
+    this.roi.ringRatio = ratio;
+    document.getElementById('ring-ratio-label').textContent = Math.round(ratio*100) + '%';
+    if (this.roi._ring && this.renderer.luminance) {
+      this.roi._recomputeRing(this.renderer.luminance, this.renderer.width, this.renderer.height);
+      this._rerenderOverlay();
+    }
+  }
+
+  _rerenderOverlay() {
+    const crop = this.state.crop;
+    const IW = this.renderer ? this.renderer.width  : 0;
+    const IH = this.renderer ? this.renderer.height : 0;
+    const hasCrop = IW > 0 && IH > 0 && (crop.top || crop.bottom || crop.left || crop.right);
+
+    this.viewer.renderOverlay((ctx, transform) => {
+      // ── Draw ROI tools ──
+      this.roi.drawOverlay(ctx, transform);
+
+      // ── Draw crop overlay ──
+      if (!hasCrop) return;
+      const t = Math.min(crop.top,    IH);
+      const b = Math.min(crop.bottom, IH);
+      const l = Math.min(crop.left,   IW);
+      const r = Math.min(crop.right,  IW);
+
+      const SHADE = 'rgba(0,0,0,0.52)';
+      const EDGE  = 'rgba(255,80,0,0.90)';
+      const EDGE_W = 2 / transform.scale; // always 2px on screen
+
+      ctx.save();
+      ctx.fillStyle = SHADE;
+
+      // Top strip
+      if (t > 0) ctx.fillRect(0, 0, IW, t);
+      // Bottom strip
+      if (b > 0) ctx.fillRect(0, IH - b, IW, b);
+      // Left strip (between top/bottom)
+      if (l > 0) ctx.fillRect(0, t, l, IH - t - b);
+      // Right strip (between top/bottom)
+      if (r > 0) ctx.fillRect(IW - r, t, r, IH - t - b);
+
+      // Orange edge lines at the crop boundary
+      ctx.strokeStyle = EDGE;
+      ctx.lineWidth   = EDGE_W;
+      ctx.setLineDash([8 / transform.scale, 4 / transform.scale]);
+
+      if (t > 0) { ctx.beginPath(); ctx.moveTo(0, t); ctx.lineTo(IW, t); ctx.stroke(); }
+      if (b > 0) { ctx.beginPath(); ctx.moveTo(0, IH - b); ctx.lineTo(IW, IH - b); ctx.stroke(); }
+      if (l > 0) { ctx.beginPath(); ctx.moveTo(l, t); ctx.lineTo(l, IH - b); ctx.stroke(); }
+      if (r > 0) { ctx.beginPath(); ctx.moveTo(IW - r, t); ctx.lineTo(IW - r, IH - b); ctx.stroke(); }
+
+      ctx.setLineDash([]);
+
+      // Labels showing px cut on each edge
+      const labelFs = Math.max(11, Math.min(22, 14 / transform.scale));
+      ctx.font = `bold ${labelFs}px "Share Tech Mono", monospace`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+
+      const _label = (text, x, y) => {
+        const pad = labelFs * 0.4;
+        const tw  = ctx.measureText(text).width;
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.fillRect(x - tw/2 - pad, y - labelFs*0.65, tw + pad*2, labelFs*1.3);
+        ctx.fillStyle = '#ff7020';
+        ctx.fillText(text, x, y);
+      };
+
+      if (t > 0) _label(`▲ ${t} px`, IW / 2, t / 2);
+      if (b > 0) _label(`▼ ${b} px`, IW / 2, IH - b / 2);
+      if (l > 0) _label(`◀ ${l}`, l / 2, IH / 2);
+      if (r > 0) _label(`▶ ${r}`, IW - r / 2, IH / 2);
+
+      ctx.restore();
+    });
+  }
+
+  _onROIUpdate(data) {
+    if (data.type==='clear') {
+      this._clearROIStats();
+      document.getElementById('btn-export-grid-csv').style.display='none';
+    } else if (data.type==='rect-preview') {
+      // no panel update on drag preview
+    } else {
+      // 'all' — rebuild panel from all active ROI data
+      this._showAllROIStats();
+    }
+  }
+
+  _showAllROIStats() {
+    const roi = this.roi;
+    const hasPoints = roi._points && roi._points.length > 0;
+    const hasRect   = !!roi._rect;
+    const hasGrid   = !!roi._grid;
+    const hasCircle = !!roi._circle;
+    const hasRing   = !!roi._ring;
+
+    if (!hasPoints && !hasRect && !hasGrid && !hasCircle && !hasRing) {
+      this._clearROIStats();
+      document.getElementById('btn-export-grid-csv').style.display='none';
+      return;
+    }
+
+    // num() → Excel-ready: comma as decimal separator
+    const num  = v => (v !== null && v !== undefined) ? v.toFixed(6).replace('.', ',') : '';
+    const num4 = v => (v !== null && v !== undefined) ? v.toFixed(4).replace('.', ',') : '—';
+    const TAB  = '\t';
+    const NL   = '\r\n';
+
+    let html = '';
+
+    // helper: flash "Skopiowano!" on a button
+    const flashCopy = (btn) => {
+      btn.textContent = '✓ Skopiowano!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '⎘ Kopiuj do Excela'; btn.classList.remove('copied'); }, 1800);
+    };
+
+    // ── Points ──
+    if (hasPoints) {
+      html += `<div class="roi-title">Cursors</div>`;
+      for (let i = 0; i < roi._points.length; i++) {
+        const {x, y} = roi._points[i];
+        const l = this.renderer.getLuminanceAt(x, y);
+        const lStr = l !== null ? num4(l) + ' cd/m²' : '—';
+        html += `<div class="roi-row">
+          <span class="roi-label" style="color:var(--warn);min-width:22px;">#${i+1}</span>
+          <span class="roi-val accent">${lStr}</span>
+        </div>`;
+      }
+      html += `<button class="btn-copy" id="btn-copy-points">⎘ Kopiuj do Excela</button>`;
+    }
+
+    // ── Rect ──
+    if (hasRect) {
+      if (html) html += `<div style="border-top:1px solid var(--border);margin:8px 0 6px;"></div>`;
+      const {x1,y1,x2,y2} = roi._rect;
+      const s = this.roi._calcStats(this.renderer.luminance, this.renderer.width, this.renderer.height, x1, y1, x2, y2);
+      html += `<div class="roi-title">Rect ROI</div>`;
+      html += `<div class="roi-row"><span class="roi-label">SIZE</span><span class="roi-val">${x2-x1}×${y2-y1}px</span></div>`;
+      if (s) {
+        html += `
+          <div class="roi-row"><span class="roi-label">MIN</span><span class="roi-val">${num4(s.min)}</span></div>
+          <div class="roi-row"><span class="roi-label">MAX</span><span class="roi-val">${num4(s.max)}</span></div>
+          <div class="roi-row"><span class="roi-label">MEAN</span><span class="roi-val accent">${num4(s.mean)}</span></div>
+          <div class="roi-row"><span class="roi-label">MED</span><span class="roi-val">${num4(s.median)}</span></div>
+          <div class="roi-row"><span class="roi-label">STD</span><span class="roi-val">${num4(s.std)}</span></div>
+          <div class="roi-row"><span class="roi-label">N</span><span class="roi-val">${s.count.toLocaleString()} px</span></div>`;
+        html += `<button class="btn-copy" id="btn-copy-rect">⎘ Kopiuj do Excela</button>`;
+      }
+    }
+
+    // ── Grid ──
+    if (hasGrid) {
+      if (html) html += `<div style="border-top:1px solid var(--border);margin:8px 0 6px;"></div>`;
+      const {x1,y1,x2,y2,cols,rows,cells} = roi._grid;
+      const noGrid = cols===1 && rows===1;
+      html += `<div class="roi-title">Grid ROI · ${cols}×${rows}</div>`;
+      html += `<div class="roi-row"><span class="roi-label">AREA</span><span class="roi-val">${x2-x1}×${y2-y1}px</span></div>`;
+      if (noGrid) {
+        const cell = cells[0];
+        const s = cell && cell.stats;
+        if (s) {
+          html += `
+            <div class="roi-row"><span class="roi-label">MIN</span><span class="roi-val">${num4(s.min)}</span></div>
+            <div class="roi-row"><span class="roi-label">MAX</span><span class="roi-val">${num4(s.max)}</span></div>
+            <div class="roi-row"><span class="roi-label">MEAN</span><span class="roi-val accent">${num4(s.mean)}</span></div>
+            <div class="roi-row"><span class="roi-label">MED</span><span class="roi-val">${num4(s.median)}</span></div>
+            <div class="roi-row"><span class="roi-label">STD</span><span class="roi-val">${num4(s.std)}</span></div>
+            <div class="roi-row"><span class="roi-label">N</span><span class="roi-val">${s.count.toLocaleString()} px</span></div>`;
+          html += `<button class="btn-copy" id="btn-copy-grid">⎘ Kopiuj do Excela</button>`;
+        }
+      } else {
+        html += `<div id="grid-results-wrap"><table class="grid-table"><thead><tr><th>R\\C</th>`;
+        for (let c=0;c<cols;c++) html += `<th>C${c+1}</th>`;
+        html += `</tr></thead><tbody>`;
+        for (let r=0;r<rows;r++) {
+          html += `<tr><td>R${r+1}</td>`;
+          for (let c=0;c<cols;c++) {
+            const cell = cells[r*cols+c];
+            const s = cell && cell.stats;
+            const tip = s ? `min:${num4(s.min)} max:${num4(s.max)} med:${num4(s.median)} std:${num4(s.std)} n:${s.count}` : 'no data';
+            html += `<td class="cell-mean" title="${tip}">${s ? num4(s.mean) : '—'}</td>`;
+          }
+          html += `</tr>`;
+        }
+        html += `</tbody></table></div>`;
+        html += `<div style="font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:1px;">wartości: średnia [cd/m²] · hover = szczegóły</div>`;
+        html += `<button class="btn-copy" id="btn-copy-grid">⎘ Kopiuj do Excela</button>`;
+      }
+      document.getElementById('btn-export-grid-csv').style.display = 'block';
+
+      // Wire CSV export
+      document.getElementById('btn-export-grid-csv').onclick = () => {
+        const SEP = ';';
+        const rows2 = [`row${SEP}col${SEP}x1${SEP}y1${SEP}x2${SEP}y2${SEP}mean${SEP}min${SEP}max${SEP}median${SEP}std${SEP}count`];
+        for (const cell of cells) {
+          const s = cell.stats;
+          if (s) rows2.push(`${cell.row+1}${SEP}${cell.col+1}${SEP}${cell.x1}${SEP}${cell.y1}${SEP}${cell.x2}${SEP}${cell.y2}${SEP}${num(s.mean)}${SEP}${num(s.min)}${SEP}${num(s.max)}${SEP}${num(s.median)}${SEP}${num(s.std)}${SEP}${s.count}`);
+          else rows2.push(`${cell.row+1}${SEP}${cell.col+1}${SEP}${cell.x1}${SEP}${cell.y1}${SEP}${cell.x2}${SEP}${cell.y2}${SEP}${SEP}${SEP}${SEP}${SEP}${SEP}0`);
+        }
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + rows2.join('\r\n')], {type:'text/csv;charset=utf-8'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        const base = this.state.filename.replace('.h5','') || 'lmk';
+        a.download = `${base}-grid-${cols}x${rows}.csv`; a.click();
+      };
+    } else {
+      document.getElementById('btn-export-grid-csv').style.display = 'none';
+    }
+
+    // ── Circle ──
+    if (hasCircle) {
+      if (html) html += `<div style="border-top:1px solid var(--border);margin:8px 0 6px;"></div>`;
+      const {cx, cy, r, stats: sC} = roi._circle;
+      html += `<div class="roi-title" style="color:#8b15ba">Circle ROI</div>`;
+      html += `<div class="roi-row"><span class="roi-label">R</span><span class="roi-val">${r.toFixed(1)} px</span></div>`;
+      html += `<div class="roi-row"><span class="roi-label">CX/CY</span><span class="roi-val">${Math.round(cx)}, ${Math.round(cy)}</span></div>`;
+      if (sC) {
+        html += `
+          <div class="roi-row"><span class="roi-label">MIN</span><span class="roi-val">${num4(sC.min)}</span></div>
+          <div class="roi-row"><span class="roi-label">MAX</span><span class="roi-val">${num4(sC.max)}</span></div>
+          <div class="roi-row"><span class="roi-label">MEAN</span><span class="roi-val accent">${num4(sC.mean)}</span></div>
+          <div class="roi-row"><span class="roi-label">MED</span><span class="roi-val">${num4(sC.median)}</span></div>
+          <div class="roi-row"><span class="roi-label">STD</span><span class="roi-val">${num4(sC.std)}</span></div>
+          <div class="roi-row"><span class="roi-label">N</span><span class="roi-val">${sC.count.toLocaleString()} px</span></div>`;
+        html += `<button class="btn-copy" id="btn-copy-circle">⎘ Kopiuj do Excela</button>`;
+      }
+    }
+
+    // ── Ring ──
+    if (hasRing) {
+      if (html) html += `<div style="border-top:1px solid var(--border);margin:8px 0 6px;"></div>`;
+      const {cx:rcx, cy:rcy, rInner, rOuter, statsInner, statsOuter, statsRing} = roi._ring;
+      html += `<div class="roi-title" style="color:#8b15ba">Ring ROI</div>`;
+      html += `<div class="roi-row"><span class="roi-label">R OUT</span><span class="roi-val">${rOuter.toFixed(1)} px</span></div>`;
+      html += `<div class="roi-row"><span class="roi-label">R IN</span><span class="roi-val">${rInner.toFixed(1)} px</span></div>`;
+      const sections = [
+        {label: '● Centre', s: statsInner, color: '#8b15ba'},
+        {label: '○ Ring',   s: statsRing,  color: '#8b15ba'},
+        {label: '◉ Full',   s: statsOuter, color: 'var(--text2)'},
+      ];
+      sections.forEach(sec => {
+        if (!sec.s) return;
+        html += `<div class="roi-row" style="margin-top:5px"><span class="roi-label" style="color:${sec.color};letter-spacing:0.5px">${sec.label}</span></div>`;
+        html += `
+          <div class="roi-row"><span class="roi-label">MEAN</span><span class="roi-val accent">${num4(sec.s.mean)}</span></div>
+          <div class="roi-row"><span class="roi-label">MIN</span><span class="roi-val">${num4(sec.s.min)}</span></div>
+          <div class="roi-row"><span class="roi-label">MAX</span><span class="roi-val">${num4(sec.s.max)}</span></div>
+          <div class="roi-row"><span class="roi-label">STD</span><span class="roi-val">${num4(sec.s.std)}</span></div>
+          <div class="roi-row"><span class="roi-label">N</span><span class="roi-val">${sec.s.count.toLocaleString()} px</span></div>`;
+      });
+      if (statsInner && statsRing) {
+        const ratio = statsRing.mean > 0 ? (statsInner.mean / statsRing.mean) : null;
+        if (ratio !== null) html += `<div class="roi-row" style="margin-top:4px"><span class="roi-label" style="color:#8b15ba">HALO ×</span><span class="roi-val accent">${ratio.toFixed(3)}</span></div>`;
+      }
+      html += `<button class="btn-copy" id="btn-copy-ring">⎘ Kopiuj do Excela</button>`;
+    }
+
+    document.getElementById('roi-panel').innerHTML = html;
+
+    // ── Wire copy buttons ──
+    // Points → tabbed table: #\tX\tY\tL[cd/m²]
+    const btnCopyPts = document.getElementById('btn-copy-points');
+    if (btnCopyPts) {
+      btnCopyPts.onclick = () => {
+        let tsv = `#${TAB}X${TAB}Y${TAB}L [cd/m²]${NL}`;
+        for (let i = 0; i < roi._points.length; i++) {
+          const {x, y} = roi._points[i];
+          const l = this.renderer.getLuminanceAt(x, y);
+          tsv += `${i+1}${TAB}${x}${TAB}${y}${TAB}${l !== null ? num(l) : ''}${NL}`;
+        }
+        navigator.clipboard.writeText(tsv).then(() => flashCopy(btnCopyPts));
+      };
+    }
+
+    // Rect → tabbed key-value table
+    const btnCopyRect = document.getElementById('btn-copy-rect');
+    if (btnCopyRect) {
+      btnCopyRect.onclick = () => {
+        const {x1,y1,x2,y2} = roi._rect;
+        const s = this.roi._calcStats(this.renderer.luminance, this.renderer.width, this.renderer.height, x1, y1, x2, y2);
+        if (!s) return;
+        const tsv =
+          `Parametr${TAB}Wartość [cd/m²]${NL}` +
+          `MIN${TAB}${num(s.min)}${NL}` +
+          `MAX${TAB}${num(s.max)}${NL}` +
+          `MEAN${TAB}${num(s.mean)}${NL}` +
+          `MEDIAN${TAB}${num(s.median)}${NL}` +
+          `STD${TAB}${num(s.std)}${NL}` +
+          `N [px]${TAB}${s.count}${NL}` +
+          `X1${TAB}${x1}${NL}Y1${TAB}${y1}${NL}X2${TAB}${x2}${NL}Y2${TAB}${y2}${NL}`;
+        navigator.clipboard.writeText(tsv).then(() => flashCopy(btnCopyRect));
+      };
+    }
+
+    // Grid → tabbed matrix (mean values) + full stats below
+    const btnCopyGrid = document.getElementById('btn-copy-grid');
+    if (btnCopyGrid) {
+      btnCopyGrid.onclick = () => {
+        const {cols, rows, cells} = roi._grid;
+        // Header row
+        let tsv = `R\\C${TAB}` + Array.from({length:cols},(_,c)=>`C${c+1}`).join(TAB) + NL;
+        for (let r=0;r<rows;r++) {
+          tsv += `R${r+1}${TAB}`;
+          tsv += Array.from({length:cols},(_,c)=>{
+            const s = cells[r*cols+c]?.stats;
+            return s ? num(s.mean) : '';
+          }).join(TAB);
+          tsv += NL;
+        }
+        // Full stats block below
+        tsv += NL + `row${TAB}col${TAB}x1${TAB}y1${TAB}x2${TAB}y2${TAB}mean${TAB}min${TAB}max${TAB}median${TAB}std${TAB}count${NL}`;
+        for (const cell of cells) {
+          const s = cell.stats;
+          if (s) tsv += `${cell.row+1}${TAB}${cell.col+1}${TAB}${cell.x1}${TAB}${cell.y1}${TAB}${cell.x2}${TAB}${cell.y2}${TAB}${num(s.mean)}${TAB}${num(s.min)}${TAB}${num(s.max)}${TAB}${num(s.median)}${TAB}${num(s.std)}${TAB}${s.count}${NL}`;
+        }
+        navigator.clipboard.writeText(tsv).then(() => flashCopy(btnCopyGrid));
+      };
+    }
+
+    // Circle → tabbed key-value
+    const btnCopyCircle = document.getElementById('btn-copy-circle');
+    if (btnCopyCircle) {
+      btnCopyCircle.onclick = () => {
+        const {cx, cy, r, stats: s} = roi._circle;
+        if (!s) return;
+        const tsv =
+          `Parametr${TAB}Wartość [cd/m²]${NL}` +
+          `MIN${TAB}${num(s.min)}${NL}MAX${TAB}${num(s.max)}${NL}` +
+          `MEAN${TAB}${num(s.mean)}${NL}MEDIAN${TAB}${num(s.median)}${NL}` +
+          `STD${TAB}${num(s.std)}${NL}N [px]${TAB}${s.count}${NL}` +
+          `CX${TAB}${cx.toFixed(1)}${NL}CY${TAB}${cy.toFixed(1)}${NL}R${TAB}${r.toFixed(1)}${NL}`;
+        navigator.clipboard.writeText(tsv).then(() => flashCopy(btnCopyCircle));
+      };
+    }
+
+    // Ring → tabbed table with Centre / Ring / Full sections
+    const btnCopyRing = document.getElementById('btn-copy-ring');
+    if (btnCopyRing) {
+      btnCopyRing.onclick = () => {
+        const {cx: rcx, cy: rcy, rInner, rOuter, statsInner, statsOuter, statsRing} = roi._ring;
+        const sRow = (label, s) => s ?
+          `${label}${TAB}${num(s.mean)}${TAB}${num(s.min)}${TAB}${num(s.max)}${TAB}${num(s.median)}${TAB}${num(s.std)}${TAB}${s.count}${NL}` : '';
+        const header = `Strefa${TAB}MEAN${TAB}MIN${TAB}MAX${TAB}MEDIAN${TAB}STD${TAB}N [px]${NL}`;
+        const ratio = statsInner && statsRing && statsRing.mean > 0 ? (statsInner.mean / statsRing.mean).toFixed(6).replace('.',',') : '';
+        const tsv = header +
+          sRow('Centre (inner)', statsInner) +
+          sRow('Ring (annulus)', statsRing) +
+          sRow('Full (outer)', statsOuter) +
+          `${NL}CX${TAB}${rcx.toFixed(1)}${NL}CY${TAB}${rcy.toFixed(1)}${NL}R_inner${TAB}${rInner.toFixed(1)}${NL}R_outer${TAB}${rOuter.toFixed(1)}${NL}` +
+          (ratio ? `Halo ratio (centre/ring)${TAB}${ratio}${NL}` : '');
+        navigator.clipboard.writeText(tsv).then(() => flashCopy(btnCopyRing));
+      };
+    }
+  }
+
+  _showGridStats(data) {
+    const {x1,y1,x2,y2,cols,rows,cells} = data;
+    const f=v=>v!==null&&v!==undefined?v.toFixed(4):'—';
+    const noGrid = cols===1&&rows===1;
+
+    let html = `<div class="roi-title">GRID ROI · ${cols}×${rows}</div>`;
+    html += `<div class="roi-row"><span class="roi-label">AREA</span><span class="roi-val">${x2-x1}×${y2-y1}px</span></div>`;
+
+    if (noGrid) {
+      // Show as simple rect
+      const cell = cells[0];
+      const s = cell&&cell.stats;
+      if (s) {
+        html += `
+          <div class="roi-row"><span class="roi-label">MIN</span><span class="roi-val">${f(s.min)}</span></div>
+          <div class="roi-row"><span class="roi-label">MAX</span><span class="roi-val">${f(s.max)}</span></div>
+          <div class="roi-row"><span class="roi-label">MEAN</span><span class="roi-val accent">${f(s.mean)}</span></div>
+          <div class="roi-row"><span class="roi-label">MED</span><span class="roi-val">${f(s.median)}</span></div>
+          <div class="roi-row"><span class="roi-label">STD</span><span class="roi-val">${f(s.std)}</span></div>
+          <div class="roi-row"><span class="roi-label">N</span><span class="roi-val">${s.count.toLocaleString()} px</span></div>`;
+      }
+    } else {
+      // Build table: rows = grid rows, cols = grid cols
+      // Header: row label + col labels
+      html += `<div id="grid-results-wrap"><table class="grid-table"><thead><tr><th>R\\C</th>`;
+      for (let c=0;c<cols;c++) html += `<th>C${c+1}</th>`;
+      html += `</tr></thead><tbody>`;
+
+      for (let r=0;r<rows;r++) {
+        html += `<tr><td>R${r+1}</td>`;
+        for (let c=0;c<cols;c++) {
+          const cell = cells[r*cols+c];
+          const s = cell&&cell.stats;
+          html += `<td class="cell-mean" title="${s?`min:${f(s.min)} max:${f(s.max)} med:${f(s.median)} std:${f(s.std)} n:${s?s.count:'—'}`:'no data'}">${s?f(s.mean):'—'}</td>`;
+        }
+        html += `</tr>`;
+      }
+      html += `</tbody></table></div>`;
+      html += `<div style="font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:1px;">wartości: średnia [cd/m²] · hover = szczegóły</div>`;
+    }
+
+    document.getElementById('roi-panel').innerHTML = html;
+
+    // Wire up CSV export for this grid
+    document.getElementById('btn-export-grid-csv').onclick = () => {
+      const rows2 = ['row,col,x1,y1,x2,y2,mean,min,max,median,std,count'];
+      for (const cell of cells) {
+        const s=cell.stats;
+        if (s) rows2.push(`${cell.row+1},${cell.col+1},${cell.x1},${cell.y1},${cell.x2},${cell.y2},${s.mean.toFixed(6)},${s.min.toFixed(6)},${s.max.toFixed(6)},${s.median.toFixed(6)},${s.std.toFixed(6)},${s.count}`);
+        else rows2.push(`${cell.row+1},${cell.col+1},${cell.x1},${cell.y1},${cell.x2},${cell.y2},,,,,, 0`);
+      }
+      const blob=new Blob([rows2.join('\n')],{type:'text/csv'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      const base=this.state.filename.replace('.h5','')||'lmk';
+      a.download=`${base}-grid-${cols}x${rows}.csv`; a.click();
+    };
+  }
+
+  _showPointCursors(points) {
+    if (!points.length) { this._clearROIStats(); return; }
+    let html = `<div class="roi-title">CURSORS</div>`;
+    for (let i = 0; i < points.length; i++) {
+      const {x, y} = points[i];
+      const l = this.renderer.getLuminanceAt(x, y);
+      const lStr = l !== null ? l.toFixed(4) + ' cd/m²' : '—';
+      html += `<div class="roi-row">
+        <span class="roi-label" style="color:var(--warn);min-width:22px;">#${i+1}</span>
+        <span class="roi-val accent">${lStr}</span>
+      </div>`;
+    }
+    document.getElementById('roi-panel').innerHTML = html;
+  }
+
+  _showRectStats(x1,y1,x2,y2,stats) {
+    const f=v=>v.toFixed(4);
+    document.getElementById('roi-panel').innerHTML=`
+      <div class="roi-title">RECT ROI</div>
+      <div class="roi-row"><span class="roi-label">SIZE</span><span class="roi-val">${x2-x1}×${y2-y1}px</span></div>
+      <div class="roi-row"><span class="roi-label">MIN</span><span class="roi-val">${f(stats.min)}</span></div>
+      <div class="roi-row"><span class="roi-label">MAX</span><span class="roi-val">${f(stats.max)}</span></div>
+      <div class="roi-row"><span class="roi-label">MEAN</span><span class="roi-val accent">${f(stats.mean)}</span></div>
+      <div class="roi-row"><span class="roi-label">MED</span><span class="roi-val">${f(stats.median)}</span></div>
+      <div class="roi-row"><span class="roi-label">STD</span><span class="roi-val">${f(stats.std)}</span></div>
+      <div class="roi-row"><span class="roi-label">N</span><span class="roi-val">${stats.count.toLocaleString()} px</span></div>
+    `;
+  }
+
+  _clearROIStats() {
+    document.getElementById('roi-panel').innerHTML='';
+  }
+
+  _resizeCanvases() {
+    const container = document.getElementById('canvas-container');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const W = Math.max(100, Math.floor(rect.width));
+    const H = Math.max(100, Math.floor(rect.height));
+    if (this.viewer) this.viewer.resize(W, H);
+    if (this.legendCanvas) {
+      this.legendCanvas.height = H;
+      this._updateLegend();
+    }
+  }
+
+  _showError(msg) {
+    const el=document.getElementById('error-msg');
+    if(el){ el.textContent=msg; el.style.display='block'; setTimeout(()=>el.style.display='none',6000); }
+  }
+}
+
+// ── BOOT ──
+window.addEventListener('DOMContentLoaded', async () => {
+  // Wait for h5wasm WASM to be ready
+  try {
+    await h5wasm.ready;
+  } catch(e) {
+    console.error('h5wasm init failed:', e);
+  }
+  window._app = new App();
+});
+</script>
+</body>
+</html>
