@@ -143,7 +143,9 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 <div class="sec">Tryb pomiaru</div>
 <div class="mode-row">
   <div class="mc on" id="btn8" onclick="setMode(8)"><div class="cm">8 pkt</div><div class="cs">Szybki pomiar</div></div>
+  <div class="mc" id="btn10" onclick="setMode(10)"><div class="cm">10 pkt</div><div class="cs">Skala 10</div></div>
   <div class="mc" id="btn16" onclick="setMode(16)"><div class="cm">16 pkt</div><div class="cs">Precyzyjny pomiar</div></div>
+  <div class="mc" id="btn32" onclick="setMode(32)"><div class="cm">32 pkt</div><div class="cs">Pełna skala</div></div>
 </div>
 
 
@@ -267,6 +269,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 let mode=8, chart=null, fitResult=null, targetGamma=null, targetActive=false, wzorGamma=2.2;
+const SUPPORTED_MODES = [8, 10, 16, 32];
 const KNOWN=[
   {name:"sRGB / γ 2.2",gamma:2.2,tol:0.08,desc:"Standard PC/Monitor"},
   {name:"γ 2.4 BT.1886",gamma:2.4,tol:0.08,desc:"Standard HD TV"},
@@ -329,9 +332,12 @@ function onWzorSlider(val){
 }
 
 function setMode(n){
+  n = SUPPORTED_MODES.includes(Number(n)) ? Number(n) : 8;
   mode=n;
-  document.getElementById('btn8').classList.toggle('on',n===8);
-  document.getElementById('btn16').classList.toggle('on',n===16);
+  SUPPORTED_MODES.forEach(function(m){
+    var b = document.getElementById('btn' + m);
+    if (b) b.classList.toggle('on', n === m);
+  });
   buildInputs();
 }
 
@@ -734,10 +740,12 @@ function importData() {
     return;
   }
 
-  // Auto-select mode: 8 rows → 8 pkt, >8 rows → 16 pkt
-  // levels(8)  = [0, 36, 73, 109, 146, 182, 219, 255]       — 8 poziomów
-  // levels(16) = [0, 17, 34, ..., 255]                       — 16 poziomów
-  const targetMode = luminances.length <= 8 ? 8 : 16;
+  // Auto-select mode: exact 8 / 10 / 16 / 32 rows.
+  if (!SUPPORTED_MODES.includes(luminances.length)) {
+    showImportStatus('err', `Gamma Analyzer obsługuje dokładnie 8, 10, 16 albo 32 wiersze. Wykryto ${luminances.length}.`);
+    return;
+  }
+  const targetMode = luminances.length;
   if (targetMode !== mode) setMode(targetMode);
 
   const targetLvls = levels(targetMode); // includes level 0
@@ -842,6 +850,40 @@ refImg.onload = () => {
   updateRefCanvas();
   updatePreviewCanvas();
 };
+
+
+
+/* ── Import danych ze Spectral Analyzer ───────────────────────────── */
+(function(){
+  var lastTs = null;
+  function fromLS(){ try { return JSON.parse(localStorage.getItem('spectral_incoming_gamma') || localStorage.getItem('spectral_incoming') || 'null'); } catch(e) { return null; } }
+  function rowsTextFromPayload(p){
+    if (p && p.rowsText) return p.rowsText;
+    if (!p || !Array.isArray(p.rows)) return '';
+    return p.rows.map(function(r){
+      var x = r.x != null ? r.x : '';
+      var y = r.y != null ? r.y : '';
+      var Y = r.Y != null ? r.Y : '';
+      return [x,y,Y].join('\t');
+    }).join('\n');
+  }
+  function consume(p){
+    if (!p || p.target !== 'gammaAnalyzer' || p.ts === lastTs) return;
+    if (String(p.channel || '').toUpperCase() !== 'W') return;
+    lastTs = p.ts;
+    var text = rowsTextFromPayload(p).trim();
+    if (!text) return;
+    var ta = document.getElementById('import-textarea');
+    if (!ta) return;
+    ta.value = text;
+    try { importData(); } catch(e) {}
+    try { if (getPoints().length >= 3) calculate(); } catch(e) {}
+  }
+  window.addEventListener('message', function(ev){ if (ev.data && ev.data.type === 'spectral-incoming') consume(ev.data.payload || fromLS()); });
+  window.addEventListener('storage', function(ev){ if (ev.key === 'spectral_incoming' || ev.key === 'spectral_incoming_gamma') consume(fromLS()); });
+  document.addEventListener('DOMContentLoaded', function(){ consume(fromLS()); });
+  consume(fromLS());
+})();
 
 const _origOnWzorSlider = onWzorSlider;
 onWzorSlider = function(val) {

@@ -930,7 +930,142 @@
   @keyframes fadeIn { from { opacity:0; transform: translateY(-3px); } to { opacity:1; transform: translateY(0); } }
 
 html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
-</style>
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
 </head>
 <body>
 
@@ -3838,7 +3973,142 @@ body.light {
   --muted: #8c8c94;
   --canvas-bg: #dcdce2;
 }
-</style>
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
 <script>
 /* Suite-wide theme listener (shell broadcasts + shared localStorage) */
 (function(){
@@ -3878,6 +4148,19 @@ body.light {
   transition: background .2s, box-shadow .2s;
 }
 #pass-data-btn:hover { background: var(--accent, #8b15ba); color: #fff; box-shadow: 0 0 18px -4px var(--accent, #8b15ba); }
+#auto-export-toggle {
+  position: fixed; bottom: 68px; right: 22px; z-index: 9000;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 1.3px;
+  text-transform: uppercase; border: 1px solid var(--border, #1e1e1e);
+  background: var(--surface, #0f0f0f); color: var(--muted, #555);
+  transition: background .2s, box-shadow .2s, color .2s, border-color .2s;
+}
+#auto-export-toggle.active { border-color: #5fc9aa; color: #5fc9aa; background: rgba(95,201,170,.10); box-shadow: 0 0 14px -6px #5fc9aa; }
+#auto-export-toggle .dot { width: 8px; height: 8px; border-radius: 99px; background: currentColor; opacity: .55; }
+#auto-export-toggle.active .dot { opacity: 1; }
+
 #pass-data-modal {
   display: none; position: fixed; inset: 0; z-index: 9100;
   background: rgba(0,0,0,0.65); align-items: center; justify-content: center;
@@ -3942,7 +4225,7 @@ body.light {
   font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: .5px;
   cursor: pointer; appearance: auto;
 }
-#pass-cda-row { display: none; }
+#pass-cda-row, #pass-precision-row, #pass-cal-side-row { display: none; }
 #pass-data-toast {
   display: none; position: fixed; bottom: 80px; right: 22px; z-index: 9200;
   padding: 12px 20px; background: var(--surface, #0f0f0f);
@@ -3950,8 +4233,144 @@ body.light {
   font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 1px;
   color: var(--accent, #8b15ba);
 }
-</style>
 
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
+
+<button id="auto-export-toggle" type="button" onclick="toggleAutoExportMode()"><span class="dot"></span><span id="auto-export-label">AUTO OFF</span></button>
 <button id="pass-data-btn" onclick="openPassDataModal()">→ Przekaż dane do...</button>
 
 <div id="pass-data-modal">
@@ -3965,19 +4384,36 @@ body.light {
       <button class="pass-ch-btn" data-ch="B" onclick="selectPassChannel('B')">B</button>
       <button class="pass-ch-btn" data-ch="W" onclick="selectPassChannel('W')">W</button>
     </div>
+    <div class="pass-level-row" id="pass-precision-row">
+      <span class="pass-level-label">Skala (CDA):</span>
+      <select class="pass-level-select" id="pass-precision-select" onchange="updatePassLevelOptions()">
+        <option value="8">8 pomiarów</option>
+        <option value="10">10 pomiarów</option>
+        <option value="16">16 pomiarów</option>
+        <option value="32">32 pomiary</option>
+      </select>
+    </div>
     <div class="pass-level-row" id="pass-cda-row">
-      <span class="pass-level-label">Slot (CDA):</span>
+      <span class="pass-level-label">Slot CDA (1 punkt):</span>
       <select class="pass-level-select" id="pass-level-select">
-        <option value="">— wybierz poziom —</option>
+        <option value="">— slot tylko dla 1 punktu —</option>
+      </select>
+    </div>
+    <div class="pass-level-row" id="pass-cal-side-row">
+      <span class="pass-level-label">Preview PRZED/PO:</span>
+      <select class="pass-level-select" id="pass-cal-side-select">
+        <option value="before">PRZED</option>
+        <option value="after">PO</option>
       </select>
     </div>
     <div class="pass-target-list">
-      <button class="pass-target-btn" onclick="passDataTo('chromaticAnalyzer')">Chromatic Data Analyzer</button>
-      <button class="pass-target-btn" onclick="passDataTo('gammaAnalyzer')">Gamma Analyzer</button>
-      <button class="pass-target-btn" onclick="passDataTo('ti3')">TI3 · Argyll Profiler</button>
-      <button class="pass-target-btn" onclick="passDataTo('gamutScope')">Gamut Scope</button>
-      <button class="pass-target-btn" onclick="passDataTo('colorCalculator')">Color Calculator</button>
-      <button class="pass-target-btn" onclick="passDataTo('calibrationPreview')">Calibration Preview</button>
+      <button class="pass-target-btn" onclick="passDataTo('chromaticAnalyzer')">Chromatic Data Analyzer · RGBW 8/10/16/32</button>
+      <button class="pass-target-btn" onclick="passDataTo('colorCheckerBoth')">ColorChecker 24 → CDA + TI3</button>
+      <button class="pass-target-btn" onclick="passDataTo('gammaAnalyzer')">Gamma Analyzer · W 8/10/16/32</button>
+      <button class="pass-target-btn" onclick="passDataTo('ti3')">TI3 · RGBW 8/10/16/32</button>
+      <button class="pass-target-btn" onclick="passDataTo('gamutScope')">Gamut Scope · ostatni punkt</button>
+      <button class="pass-target-btn" onclick="passDataTo('colorCalculator')">Color Calculator · ostatni punkt</button>
+      <button class="pass-target-btn" onclick="passDataTo('calibrationPreview')">Calibration Preview · W max</button>
     </div>
     <button class="pass-cancel" onclick="closePassDataModal()">Anuluj</button>
   </div>
@@ -3988,30 +4424,49 @@ body.light {
 <script>
 (function(){
   const SINGLE_TARGETS = ['gamutScope','colorCalculator','calibrationPreview'];
+  const SERIES_PRECISIONS = [8, 10, 16, 32];
+  const SA_AUTO_KEY = 'spectral_auto_export_enabled';
   let selectedChannel = null;
+  let lastAutoSignature = '';
 
-  const CDA_LEVELS = {
-    8:  ['0','36','73','109','146','182','219','255'],
-    10: ['0','28','57','85','113','142','170','198','227','255'],
-    16: ['0','17','34','51','68','85','102','119','136','153','170','187','204','221','238','255']
-  };
+  const CDA_PRECISIONS = SERIES_PRECISIONS.slice();
+  const makeCdaLevels = n => Array.from({ length: n }, (_, i) => String(Math.round(i * 255 / (n - 1))));
+  const CDA_LEVELS = Object.fromEntries(CDA_PRECISIONS.map(n => [n, makeCdaLevels(n)]));
 
   function getCdaPrecisionAndLevels() {
     try {
       const saved = JSON.parse(localStorage.getItem('wba_data_v1') || '{}');
-      const p = saved.precision || 8;
+      const p = CDA_PRECISIONS.includes(Number(saved.precision)) ? Number(saved.precision) : 8;
       return { precision: p, levels: CDA_LEVELS[p] || CDA_LEVELS[8] };
     } catch(e) { return { precision: 8, levels: CDA_LEVELS[8] }; }
   }
 
+  function populatePassLevelOptions(precision) {
+    const p = CDA_PRECISIONS.includes(Number(precision)) ? Number(precision) : 8;
+    const levels = CDA_LEVELS[p] || CDA_LEVELS[8];
+    const levelSel = document.getElementById('pass-level-select');
+    if (!levelSel) return;
+    levelSel.innerHTML = '<option value="">— slot tylko dla 1 punktu —</option>' +
+      levels.map((lv, i) => `<option value="${i}">Poziom ${lv} (${i+1}/${levels.length})</option>`).join('');
+  }
+
+  window.updatePassLevelOptions = function() {
+    const precisionSel = document.getElementById('pass-precision-select');
+    populatePassLevelOptions(precisionSel ? precisionSel.value : 8);
+    refreshPassSelectorVisibility();
+  };
+
   /* Write one measurement point to the correct slot in wba_data_v1 (CDA's storage format) */
-  function writeToCdaSlot(ch, levelIdx, point) {
+  function writeToCdaSlot(ch, levelIdx, point, precisionOverride) {
     try {
       let saved = JSON.parse(localStorage.getItem('wba_data_v1') || '{}');
-      const precision = saved.precision || 8;
+      const precision = CDA_PRECISIONS.includes(Number(precisionOverride)) ? Number(precisionOverride)
+        : (CDA_PRECISIONS.includes(Number(saved.precision)) ? Number(saved.precision) : 8);
       const levels = CDA_LEVELS[precision] || CDA_LEVELS[8];
-      // Normalize to canonical {data:{R,G,B,W}, precision} shape
-      const savedData = (saved.data && typeof saved.data === 'object') ? saved.data : {};
+      if (levelIdx < 0 || levelIdx >= levels.length) return null;
+      // Normalize to canonical {data:{R,G,B,W}, precision} shape. When the selected scale changes,
+      // arrays are rebuilt so old data from a different 8/10/16-point format cannot pollute the current export.
+      const savedData = (saved.data && typeof saved.data === 'object' && Number(saved.precision) === precision) ? saved.data : {};
       ['R','G','B','W'].forEach(c => {
         if (!Array.isArray(savedData[c]) || savedData[c].length !== levels.length) {
           savedData[c] = levels.map(() => ({x:'',y:'',Y:''}));
@@ -4024,11 +4479,33 @@ body.light {
     } catch(e) { return null; }
   }
 
+  /* Write a full 8/10/16/32-row series into one CDA channel. This is the default path
+     for MMG / multi-file exports; slot selection is used only for a single point. */
+  function writeToCdaSeries(ch, rows, precisionOverride) {
+    try {
+      const precision = CDA_PRECISIONS.includes(Number(precisionOverride)) ? Number(precisionOverride) : 8;
+      const levels = CDA_LEVELS[precision] || CDA_LEVELS[8];
+      if (!Array.isArray(rows) || rows.length !== levels.length) return false;
+      let saved = JSON.parse(localStorage.getItem('wba_data_v1') || '{}');
+      const savedData = (saved.data && typeof saved.data === 'object' && Number(saved.precision) === precision) ? saved.data : {};
+      ['R','G','B','W'].forEach(c => {
+        if (!Array.isArray(savedData[c]) || savedData[c].length !== levels.length) {
+          savedData[c] = levels.map(() => ({x:'',y:'',Y:''}));
+        }
+      });
+      const toStr = v => (v !== null && v !== undefined && !isNaN(v)) ? String(v) : '';
+      savedData[ch] = rows.map(r => ({ x: toStr(r.x), y: toStr(r.y), Y: toStr(r.Y) }));
+      localStorage.setItem('wba_data_v1', JSON.stringify({ data: savedData, precision }));
+      return true;
+    } catch(e) { return false; }
+  }
+
   window.selectPassChannel = function(ch) {
     selectedChannel = ch;
     document.querySelectorAll('.pass-ch-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.ch === ch);
     });
+    refreshPassSelectorVisibility();
   };
 
   function getActiveTab() {
@@ -4048,10 +4525,124 @@ body.light {
     return { valid, x: isNaN(xv)?null:xv, y: isNaN(yv)?null:yv, Y: isNaN(Yv)?null:Yv, rgb:{r,g,b} };
   }
 
+  function fmtPassValue(v, dec) {
+    if (v === null || v === undefined || isNaN(Number(v))) return '';
+    const n = Number(v);
+    return dec == null ? String(n) : n.toFixed(dec).replace(/\.?0+$/, '');
+  }
+
+  function getLumModeValue(xy) {
+    const lumModeEl = document.getElementById('luminanceMode');
+    const lumMode = lumModeEl ? lumModeEl.value : 'Y_rel';
+    if (lumMode === 'Y_raw') return xy.Y_raw;
+    if (lumMode === 'integ') return null;
+    return xy.Y_rel;
+  }
+
+  function rowsFromSpectrumFiles(files) {
+    if (!files || !files.length || typeof computeCIExyY !== 'function') return [];
+    return files.map(f => {
+      const xy = computeCIExyY(f.points || []);
+      const integ = parseFloat((f.meta || {})['integration_time'] || '');
+      const L = getLumModeValue(xy);
+      return {
+        x: xy.cx,
+        y: xy.cy,
+        Y: L != null && !isNaN(L) ? L : (!isNaN(integ) ? integ : xy.Y_rel),
+        channel: detectChannel(f.name || '') || null,
+        name: f.name || '',
+        ts: (f.meta || {})['measurement_date'] || (f.meta || {})['name'] || ''
+      };
+    }).filter(r => r.x != null && r.y != null && !isNaN(r.x) && !isNaN(r.y) && r.x > 0 && r.y > 0);
+  }
+
+  function rowsFromMmgFiles(files) {
+    if (!files || !files.length) return [];
+    return files.map(f => ({
+      x: f.data ? f.data.x2 : null,
+      y: f.data ? f.data.y2 : null,
+      Y: f.data ? f.data.Y2 : null,
+      channel: detectChannel(f.name || '') || null,
+      name: f.name || '',
+      ts: f.data ? (f.data.date || '') : ''
+    })).filter(r => r.x != null && r.y != null && !isNaN(r.x) && !isNaN(r.y));
+  }
+
+  function rowsFromMmgGroup() {
+    if (typeof mmgGroupRows === 'undefined' || !mmgGroupRows.length) return [];
+    return mmgGroupRows.map(r => ({
+      x: r.x2,
+      y: r.y2,
+      Y: r.Y2,
+      channel: detectChannel(r.name || '') || null,
+      name: r.name || ('Pomiar ' + (r.idx + 1)),
+      ts: r.date || ''
+    })).filter(r => r.x != null && r.y != null && !isNaN(r.x) && !isNaN(r.y));
+  }
+
+  function pickPointForChannel(rows) {
+    if (!rows || !rows.length) return null;
+    const ch = (selectedChannel || '').toUpperCase();
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if ((rows[i].channel || '').toUpperCase() === ch) return rows[i];
+    }
+    return rows[rows.length - 1]; // fallback: ostatnia / maksymalna dostępna wartość
+  }
+
   function collectMultiData() {
-    if (typeof multiFiles === 'undefined' || !multiFiles.length) return { valid: false };
-    const last = multiFiles[multiFiles.length - 1];
-    return { valid: true, filesCount: multiFiles.length, lastName: last.name };
+    const rows = rowsFromSpectrumFiles(typeof multiFiles !== 'undefined' ? multiFiles : []);
+    const point = pickPointForChannel(rows);
+    return { valid: !!point, rows, point, filesCount: rows.length, lastName: point ? point.name : '' };
+  }
+
+  function collectMmgData() {
+    const rows = rowsFromMmgFiles(typeof mmgFiles !== 'undefined' ? mmgFiles : []);
+    const point = pickPointForChannel(rows);
+    return { valid: !!point, rows, point, filesCount: rows.length, lastName: point ? point.name : '' };
+  }
+
+  function collectMmgGroupData() {
+    const rows = rowsFromMmgGroup();
+    const point = pickPointForChannel(rows);
+    return { valid: !!point, rows, point, filesCount: rows.length, lastName: point ? point.name : '' };
+  }
+
+  function collectActiveTransferData(tab) {
+    if (tab === 'single') {
+      const d = collectSingleData();
+      if (!d.valid) return { valid:false, rows:[], point:null };
+      const row = { x:d.x, y:d.y, Y:d.Y, channel:selectedChannel, name:'Pojedynczy pomiar', rgb:d.rgb };
+      return { valid:true, rows:[row], point:row, rgb:d.rgb, filesCount:1, lastName:row.name };
+    }
+    if (tab === 'multi') return collectMultiData();
+    if (tab === 'mmg') return collectMmgData();
+    if (tab === 'mmggroup') return collectMmgGroupData();
+    return { valid:false, rows:[], point:null };
+  }
+
+  function buildRowsText(rows) {
+    return (rows || []).map(r => [fmtPassValue(r.x,4), fmtPassValue(r.y,4), fmtPassValue(r.Y,4)].join('\t')).join('\n');
+  }
+
+  function rowsForSelectedChannel(rows, ch) {
+    const clean = (rows || []).filter(r => r && r.x != null && r.y != null && !isNaN(r.x) && !isNaN(r.y));
+    const filtered = clean.filter(r => ((r.channel || '').toUpperCase() === (ch || '').toUpperCase()));
+    // If filenames do not contain channel markers, keep the current sorted list.
+    return filtered.length ? filtered : clean;
+  }
+
+  function refreshPassSelectorVisibility() {
+    try {
+      const precisionSel = document.getElementById('pass-precision-select');
+      const selectedPrecision = precisionSel ? parseInt(precisionSel.value, 10) : 8;
+      const cdaRow = document.getElementById('pass-cda-row');
+      if (!cdaRow) return;
+      const tab = getActiveTab();
+      const transfer = collectActiveTransferData(tab);
+      const seriesRows = selectedChannel ? rowsForSelectedChannel((transfer && transfer.rows) || [], selectedChannel) : [];
+      // When a complete 8/10/16 series is available for the selected channel, CDA does not need a slot.
+      cdaRow.style.display = (selectedChannel && seriesRows.length === selectedPrecision) ? 'none' : 'flex';
+    } catch(e) {}
   }
 
   window.openPassDataModal = function() {
@@ -4060,16 +4651,20 @@ body.light {
     document.querySelectorAll('.pass-ch-btn').forEach(btn => btn.classList.remove('active'));
     const labels = { single:'Pojedynczy plik', multi:'Wiele plików', mmg:'Pliki MMG', mmggroup:'MMG grupowy' };
     document.getElementById('pass-modal-sub').textContent =
-      'Aktywna zakładka: ' + (labels[tab]||tab) + '. Wybierz kanał RGBW, poziom i aplikację docelową.';
+      'Aktywna zakładka: ' + (labels[tab]||tab) + '. Wybierz kanał RGBW i aplikację docelową. CDA: pełna seria 8/10/16/32 wysyła się bez slotu; slot służy tylko dla pojedynczego punktu. PRZED/PO dotyczy tylko Calibration Preview.';
 
-    // Populate level select from CDA's current precision (reads from shared localStorage)
-    const { levels } = getCdaPrecisionAndLevels();
-    const levelSel = document.getElementById('pass-level-select');
-    levelSel.innerHTML = '<option value="">— wybierz poziom —</option>' +
-      levels.map((lv, i) => `<option value="${i}">Poziom ${lv} (${i+1}/${levels.length})</option>`).join('');
+    // CDA RGBW export supports 8 / 10 / 16 / 32 points. ColorChecker uses a separate 24-row import.
+    const { precision } = getCdaPrecisionAndLevels();
+    const precisionSel = document.getElementById('pass-precision-select');
+    if (precisionSel) precisionSel.value = String(precision);
+    populatePassLevelOptions(precision);
 
-    // Show CDA slot row only for single-file tab (others don't map to CDA levels)
-    document.getElementById('pass-cda-row').style.display = tab === 'single' ? 'flex' : 'none';
+    // Selectors are visible because the target is chosen with action buttons: CDA uses precision/slot,
+    // Calibration Preview uses PRZED/PO, other targets ignore those selectors.
+    document.getElementById('pass-precision-row').style.display = 'flex';
+    const calRow = document.getElementById('pass-cal-side-row');
+    if (calRow) calRow.style.display = 'flex';
+    refreshPassSelectorVisibility();
 
     document.getElementById('pass-data-modal').classList.add('open');
   };
@@ -4078,81 +4673,339 @@ body.light {
     document.getElementById('pass-data-modal').classList.remove('open');
   };
 
+  const COLORCHECKER_TARGETS = ['colorCheckerBoth','cdaColorChecker','ti3ColorChecker'];
+  function isColorCheckerTarget(targetId) { return COLORCHECKER_TARGETS.includes(targetId); }
+  function rowsForColorChecker(transfer) {
+    return (transfer && Array.isArray(transfer.rows)) ? transfer.rows.filter(r => r && r.x != null && r.y != null && !isNaN(r.x) && !isNaN(r.y)) : [];
+  }
+  function sendColorCheckerPayload(targetId, transfer) {
+    const rows = rowsForColorChecker(transfer);
+    if (rows.length !== 24) {
+      alert('ColorChecker wymaga dokładnie 24 wierszy danych x y Y. Wczytaj/sortuj 24 pomiary ColorCheckera w Spectral Analyzer.');
+      return false;
+    }
+    const payload = {
+      source: 'spectral',
+      tab: getActiveTab(),
+      target: targetId,
+      channel: 'CC24',
+      ts: Date.now(),
+      rows,
+      rowsText: buildRowsText(rows),
+      filesCount: rows.length,
+      lastName: rows[rows.length - 1].name || 'ColorChecker 24'
+    };
+    try { localStorage.setItem('spectral_incoming', JSON.stringify(payload)); } catch(e) { alert('Błąd zapisu danych: ' + e.message); return false; }
+    try { window.parent.postMessage({ type: 'spectral-incoming', payload: payload, openTarget: 'chromaticAnalyzer' }, '*'); } catch(e) {}
+    closePassDataModal();
+    showToast('✓ ColorChecker 24 przekazany do CDA + TI3');
+    return true;
+  }
+
   window.passDataTo = function(targetId) {
+    const tab = getActiveTab();
+    const transfer = collectActiveTransferData(tab);
+
+    if (isColorCheckerTarget(targetId)) {
+      sendColorCheckerPayload(targetId, transfer);
+      return;
+    }
+
     if (!selectedChannel) {
       alert('Wybierz kanał (R / G / B / W) przed przekazaniem danych.');
       return;
     }
-    const tab = getActiveTab();
 
-    // For CDA target on single tab, require a level slot selection
-    let levelIdx = -1;
-    if (targetId === 'chromaticAnalyzer' && tab === 'single') {
-      const sel = document.getElementById('pass-level-select');
-      levelIdx = sel && sel.value !== '' ? parseInt(sel.value, 10) : -1;
-      if (levelIdx < 0) {
-        alert('Wybierz poziom (slot) przed wysłaniem do Chromatic Data Analyzer.');
+    if (!transfer.valid || !transfer.point) {
+      alert('Brak danych pomiarowych w aktywnej zakładce. Wczytaj plik/pomiary przed przekazaniem danych.');
+      return;
+    }
+
+    const point = transfer.point;
+    let payload = {
+      source: 'spectral',
+      tab,
+      target: targetId,
+      channel: selectedChannel,
+      ts: Date.now(),
+      x: point.x,
+      y: point.y,
+      Y: point.Y,
+      rgb: point.rgb || transfer.rgb || null,
+      rows: transfer.rows || [],
+      rowsText: buildRowsText(transfer.rows || []),
+      filesCount: transfer.filesCount || (transfer.rows ? transfer.rows.length : 1),
+      lastName: transfer.lastName || point.name || ''
+    };
+
+
+    // For channel-based series targets use only rows for the selected RGBW channel
+    // when channel markers are available. This prevents mixed RGBW batches from
+    // being counted as one channel. If no markers are present, the current sorted
+    // rows are used as-is.
+    const selectedSeriesRows = rowsForSelectedChannel(payload.rows || [], selectedChannel);
+
+    if (['gamutScope','colorCalculator','calibrationPreview'].includes(targetId)) {
+      if (point.x == null || point.y == null || isNaN(point.x) || isNaN(point.y)) {
+        alert('Aplikacja docelowa wymaga współrzędnych CIE xyY. Wczytaj poprawny pomiar.');
         return;
       }
     }
 
-    let payload = { source: 'spectral', tab, target: targetId, channel: selectedChannel, ts: Date.now() };
+    if (targetId === 'gammaAnalyzer') {
+      if (selectedChannel !== 'W') {
+        alert('Gamma Analyzer przyjmuje wyłącznie kanał W (luminancja bieli). Wybierz W i wyślij ponownie.');
+        return;
+      }
+      payload.rows = selectedSeriesRows;
+      payload.rowsText = buildRowsText(selectedSeriesRows);
+      payload.filesCount = selectedSeriesRows.length;
+      if (!payload.rows || payload.rows.length < 3) {
+        alert('Gamma Analyzer wymaga serii co najmniej 3 wartości luminancji. Użyj zakładki z wieloma pomiarami albo pliku MMG grupowego.');
+        return;
+      }
+      if (SERIES_PRECISIONS.indexOf(payload.rows.length) === -1) {
+        alert('Gamma Analyzer obsługuje serie 8, 10, 16 albo 32 punkty dla kanału W. Aktualnie wykryto ' + payload.rows.length + ' wierszy.');
+        return;
+      }
+    }
 
-    if (tab === 'single') {
-      const d = collectSingleData();
-      if (!d.valid) {
-        alert('Brak danych pomiarowych w zakładce Pojedynczy plik.\nWczytaj plik spektralny.');
+    if (targetId === 'ti3') {
+      payload.rows = selectedSeriesRows;
+      payload.rowsText = buildRowsText(selectedSeriesRows);
+      payload.filesCount = selectedSeriesRows.length;
+      if (!payload.rows || payload.rows.length < 3) {
+        alert('TI3 / Argyll Profiler wymaga serii pomiarów kanału. Użyj zakładki z wieloma pomiarami albo pliku MMG grupowego.');
         return;
       }
-      payload.x = d.x; payload.y = d.y; payload.Y = d.Y; payload.rgb = d.rgb;
-      if (SINGLE_TARGETS.includes(targetId) && (d.x == null || d.y == null)) {
-        alert('Aplikacja ' + targetId + ' wymaga współrzędnych CIE xyY.\nWczytaj plik aby uzyskać dane chromatyczności.');
+      if (SERIES_PRECISIONS.indexOf(payload.rows.length) === -1) {
+        alert('TI3 obsługuje serie 8, 10, 16 albo 32 punkty dla wybranego kanału. Aktualnie wykryto ' + payload.rows.length + ' wierszy.');
         return;
       }
-      if (targetId === 'chromaticAnalyzer') {
-        if (d.x === null || d.y === null) {
-          alert('Brak współrzędnych CIE x/y. Wczytaj plik spektralny przed przekazaniem danych.');
+    }
+
+    // CDA supports two paths:
+    // 1) full series: 8 / 10 / 16 / 32 rows for the chosen RGBW channel → no slot required,
+    // 2) single point: user must choose a CDA slot manually.
+    if (targetId === 'chromaticAnalyzer') {
+      const precisionSel = document.getElementById('pass-precision-select');
+      const selectedPrecision = precisionSel ? parseInt(precisionSel.value, 10) : 8;
+      if (!CDA_PRECISIONS.includes(selectedPrecision)) {
+        alert('Wybierz skalę pomiarową CDA: 8, 10, 16 albo 32.');
+        return;
+      }
+
+      const cdaSeriesRows = selectedSeriesRows;
+      if (cdaSeriesRows.length === selectedPrecision) {
+        const ok = writeToCdaSeries(selectedChannel, cdaSeriesRows, selectedPrecision);
+        if (!ok) {
+          alert('Błąd zapisu pełnej serii do Chromatic Data Analyzer. Sprawdź konsolę.');
           return;
         }
-        const levelVal = writeToCdaSlot(selectedChannel, levelIdx, { x: d.x, y: d.y, Y: d.Y });
-        if (!levelVal && levelVal !== '0') {
-          alert('Błąd zapisu danych do Chromatic Data Analyzer. Sprawdź konsolę.');
-          return;
-        }
-        payload.levelIdx = levelIdx;
-        // Notify CDA in-memory state via parent relay (also fires storage event as backup)
+        payload.rows = cdaSeriesRows;
+        payload.rowsText = buildRowsText(cdaSeriesRows);
+        payload.filesCount = cdaSeriesRows.length;
+        payload.precision = selectedPrecision;
+        payload.batch = true;
+        try { localStorage.setItem('spectral_incoming_cda', JSON.stringify(payload)); } catch(e) {}
+        try { localStorage.setItem('spectral_incoming', JSON.stringify(payload)); } catch(e) {}
         try {
           window.parent.postMessage({
             type: 'spectral-to-cda',
+            openTarget: 'chromaticAnalyzer',
             channel: selectedChannel,
-            levelIdx,
-            point: {
-              x: d.x !== null ? String(d.x) : '',
-              y: d.y !== null ? String(d.y) : '',
-              Y: d.Y !== null ? String(d.Y) : ''
-            }
+            precision: selectedPrecision,
+            rows: cdaSeriesRows.map(r => ({
+              x: fmtPassValue(r.x,4),
+              y: fmtPassValue(r.y,4),
+              Y: fmtPassValue(r.Y,4)
+            }))
           }, '*');
         } catch(e) {}
         closePassDataModal();
-        showToast('✓ [' + selectedChannel + '] poziom ' + levelVal + ' zapisany w CDA');
+        showToast('✓ [' + selectedChannel + '] pełna seria ' + selectedPrecision + ' pkt zapisana w CDA');
         return;
       }
-    } else if (tab === 'multi') {
-      const d = collectMultiData();
-      if (!d.valid) { alert('Brak wczytanych plików w zakładce Wiele plików.'); return; }
-      payload.filesCount = d.filesCount; payload.lastName = d.lastName;
-    } else {
-      payload.note = 'Dane z zakładki ' + tab;
+
+      const sel = document.getElementById('pass-level-select');
+      const levelIdx = sel && sel.value !== '' ? parseInt(sel.value, 10) : -1;
+      if (levelIdx < 0) {
+        alert('Dla pojedynczego punktu wybierz slot CDA. Pełna seria wysyła się bez slotu tylko wtedy, gdy liczba wierszy wynosi dokładnie ' + selectedPrecision + '. Aktualnie wykryto ' + cdaSeriesRows.length + ' wierszy dla kanału ' + selectedChannel + '.');
+        return;
+      }
+      if (point.x == null || point.y == null || isNaN(point.x) || isNaN(point.y)) {
+        alert('Brak współrzędnych CIE x/y. Wczytaj poprawny pomiar przed przekazaniem danych do CDA.');
+        return;
+      }
+      const levelVal = writeToCdaSlot(selectedChannel, levelIdx, { x: point.x, y: point.y, Y: point.Y }, selectedPrecision);
+      if (!levelVal && levelVal !== '0') {
+        alert('Błąd zapisu danych do Chromatic Data Analyzer. Sprawdź konsolę.');
+        return;
+      }
+      payload.levelIdx = levelIdx;
+      payload.precision = selectedPrecision;
+      payload.batch = false;
+      try { localStorage.setItem('spectral_incoming_cda', JSON.stringify(payload)); } catch(e) {}
+      try { localStorage.setItem('spectral_incoming', JSON.stringify(payload)); } catch(e) {}
+      try {
+        window.parent.postMessage({
+          type: 'spectral-to-cda',
+          openTarget: 'chromaticAnalyzer',
+          channel: selectedChannel,
+          levelIdx,
+          precision: selectedPrecision,
+          point: {
+            x: fmtPassValue(point.x,4),
+            y: fmtPassValue(point.y,4),
+            Y: fmtPassValue(point.Y,4)
+          }
+        }, '*');
+      } catch(e) {}
+      closePassDataModal();
+      showToast('✓ [' + selectedChannel + '] skala ' + selectedPrecision + ' · poziom ' + levelVal + ' zapisany w CDA');
+      return;
     }
 
-    try { localStorage.setItem('spectral_incoming', JSON.stringify(payload)); } catch(e) {
+    if (targetId === 'calibrationPreview') {
+      if (selectedChannel !== 'W') {
+        alert('Calibration Preview przyjmuje tylko kanał W i tylko maksymalny/ostatni punkt bieli. Wybierz W i wyślij ponownie.');
+        return;
+      }
+      const sideSel = document.getElementById('pass-cal-side-select');
+      payload.calSide = sideSel && sideSel.value === 'after' ? 'after' : 'before';
+    }
+
+    try {
+      if (targetId === 'gammaAnalyzer') localStorage.setItem('spectral_incoming_gamma', JSON.stringify(payload));
+      if (targetId === 'ti3') localStorage.setItem('spectral_incoming_ti3', JSON.stringify(payload));
+      localStorage.setItem('spectral_incoming', JSON.stringify(payload));
+    } catch(e) {
       alert('Błąd zapisu danych: ' + e.message); return;
     }
-    // Live relay through the shell so an already-open target imports immediately
-    try { window.parent.postMessage({ type: 'spectral-incoming', payload: payload }, '*'); } catch(e) {}
+    // Live relay through the shell so an already-open target imports immediately;
+    // openTarget makes the shell switch to the selected tool after saving the payload.
+    try { window.parent.postMessage({ type: 'spectral-incoming', payload: payload, openTarget: targetId }, '*'); } catch(e) {}
     closePassDataModal();
     showToast('✓ Dane przekazane [' + selectedChannel + '] → ' + targetId);
   };
+
+
+  function classifyChannelFromXY(point) {
+    if (!point || point.x == null || point.y == null || isNaN(point.x) || isNaN(point.y)) return null;
+    const x = Number(point.x), y = Number(point.y);
+    // Najpierw bezpieczne reguły obszarowe, żeby żółty/cyan/magenta nie wpadały przypadkiem jako RGBW.
+    if (Math.hypot(x - 0.3127, y - 0.3290) <= 0.085) return 'W';
+    if (x >= 0.50 && y >= 0.20 && y <= 0.46) return 'R';
+    if (y >= 0.45 && x <= 0.38) return 'G';
+    if (x <= 0.25 && y <= 0.22) return 'B';
+    // Fallback: najbliższy punkt referencyjny, ale tylko przy wysokiej pewności.
+    const targets = {
+      R: {x:0.6400,y:0.3300,max:0.16},
+      G: {x:0.3000,y:0.6000,max:0.24},
+      B: {x:0.1500,y:0.0600,max:0.16},
+      W: {x:0.3127,y:0.3290,max:0.085}
+    };
+    const ranked = Object.keys(targets).map(ch => ({ ch, d: Math.hypot(x - targets[ch].x, y - targets[ch].y), max: targets[ch].max })).sort((a,b) => a.d - b.d);
+    if (ranked[0] && ranked[0].d <= ranked[0].max && (!ranked[1] || ranked[0].d < ranked[1].d * 0.72)) return ranked[0].ch;
+    return null;
+  }
+
+  function setAutoExportUI(on) {
+    const btn = document.getElementById('auto-export-toggle');
+    const lab = document.getElementById('auto-export-label');
+    if (btn) btn.classList.toggle('active', !!on);
+    if (lab) lab.textContent = on ? 'AUTO ON' : 'AUTO OFF';
+  }
+
+  function autoExportEnabled() {
+    try { return localStorage.getItem(SA_AUTO_KEY) === '1'; } catch(e) { return false; }
+  }
+
+  window.toggleAutoExportMode = function() {
+    const on = !autoExportEnabled();
+    try { localStorage.setItem(SA_AUTO_KEY, on ? '1' : '0'); } catch(e) {}
+    setAutoExportUI(on);
+    if (on) {
+      lastAutoSignature = '';
+      runAutoExport(true);
+    } else {
+      showToast('AUTO eksport wyłączony');
+    }
+  };
+
+  function makeSeriesPayload(targetId, ch, rows, tab, point) {
+    return {
+      source: 'spectral',
+      mode: 'auto',
+      tab,
+      target: targetId,
+      channel: ch,
+      ts: Date.now(),
+      x: point ? point.x : null,
+      y: point ? point.y : null,
+      Y: point ? point.Y : null,
+      rows,
+      rowsText: buildRowsText(rows),
+      filesCount: rows.length,
+      lastName: point ? (point.name || '') : '',
+      precision: rows.length,
+      batch: true
+    };
+  }
+
+  function runAutoExport(force) {
+    if (!autoExportEnabled() && !force) return;
+    const tab = getActiveTab();
+    const transfer = collectActiveTransferData(tab);
+    const rows = (transfer && Array.isArray(transfer.rows)) ? transfer.rows.filter(r => r && r.x != null && r.y != null && !isNaN(r.x) && !isNaN(r.y)) : [];
+    if (!SERIES_PRECISIONS.includes(rows.length)) {
+      if (force) showToast('AUTO: liczba danych musi wynosić 8, 10, 16 albo 32');
+      return;
+    }
+    const lastPoint = rows[rows.length - 1]; // punkt na samym dole listy / sygnał maksymalny
+    const autoCh = classifyChannelFromXY(lastPoint);
+    if (!autoCh) {
+      if (force) showToast('AUTO: nie rozpoznano kanału RGBW z ostatniego punktu');
+      return;
+    }
+    const signature = [tab, rows.length, autoCh, rows.map(r => [fmtPassValue(r.x,5), fmtPassValue(r.y,5), fmtPassValue(r.Y,5)].join(',')).join('|')].join('::');
+    if (!force && signature === lastAutoSignature) return;
+    lastAutoSignature = signature;
+
+    // 1) Chromatic Data Analyzer — każdy kanał RGBW, 8/10/16/32, zapis bez wyboru slotu.
+    let cdaOK = false;
+    try {
+      cdaOK = writeToCdaSeries(autoCh, rows, rows.length);
+      const cdaPayload = makeSeriesPayload('chromaticAnalyzer', autoCh, rows, tab, lastPoint);
+      try { localStorage.setItem('spectral_incoming_cda', JSON.stringify(cdaPayload)); } catch(e) {}
+      try { localStorage.setItem('spectral_incoming', JSON.stringify(cdaPayload)); } catch(e) {}
+      window.parent.postMessage({
+        type: 'spectral-to-cda',
+        channel: autoCh,
+        precision: rows.length,
+        rows: rows.map(r => ({ x: fmtPassValue(r.x,4), y: fmtPassValue(r.y,4), Y: fmtPassValue(r.Y,4) }))
+      }, '*');
+    } catch(e) {}
+
+    // 2) Gamma Analyzer — tylko kanał W, 8/10/16/32.
+    if (autoCh === 'W') {
+      const gammaPayload = makeSeriesPayload('gammaAnalyzer', autoCh, rows, tab, lastPoint);
+      try { localStorage.setItem('spectral_incoming_gamma', JSON.stringify(gammaPayload)); } catch(e) {}
+      try { localStorage.setItem('spectral_incoming', JSON.stringify(gammaPayload)); } catch(e) {}
+      try { window.parent.postMessage({ type:'spectral-incoming', payload: gammaPayload }, '*'); } catch(e) {}
+    }
+
+    // 3) TI3 — RGBW, 8/10/16/32; W trafia do Gray ramp.
+    const ti3Payload = makeSeriesPayload('ti3', autoCh, rows, tab, lastPoint);
+    try { localStorage.setItem('spectral_incoming_ti3', JSON.stringify(ti3Payload)); } catch(e) {}
+    try { localStorage.setItem('spectral_incoming', JSON.stringify(ti3Payload)); } catch(e) {}
+    try { window.parent.postMessage({ type:'spectral-incoming', payload: ti3Payload }, '*'); } catch(e) {}
+
+    showToast('AUTO: ' + autoCh + ' · ' + rows.length + ' pkt → CDA' + (autoCh === 'W' ? ' + Gamma' : '') + ' + TI3');
+  }
+
+  setAutoExportUI(autoExportEnabled());
+  setInterval(function(){ try { runAutoExport(false); } catch(e) {} }, 1200);
 
   function showToast(msg) {
     const t = document.getElementById('pass-data-toast');
@@ -4163,6 +5016,15 @@ body.light {
   document.getElementById('pass-data-modal').addEventListener('click', function(e) {
     if (e.target === this) closePassDataModal();
   });
+
+  window.addEventListener('message', function(ev){
+    if (ev.data && ev.data.type === 'suite-reset') {
+      try { localStorage.removeItem(SA_AUTO_KEY); } catch(e) {}
+      lastAutoSignature = '';
+      setAutoExportUI(false);
+    }
+  });
+
 })();
 </script>
 

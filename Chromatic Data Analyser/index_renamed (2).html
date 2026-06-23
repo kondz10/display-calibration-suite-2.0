@@ -848,7 +848,142 @@ button.danger:hover { background: rgba(255,51,51,.06); border-color: rgba(255,51
 
 
 html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
-</style>
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
 </head>
 <body>
 <div class="app">
@@ -874,7 +1009,6 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     <div class="tab" onclick="switchMain('grayscale')">Grayscale</div>
     <div class="tab" onclick="switchMain('apl')">APL Brightness</div>
     <div class="tab" onclick="switchMain('colorchecker')">Colour Checker</div>
-    <div class="tab" onclick="switchMain('export')">Eksport</div>
   </div>
 
   <!-- INPUT VIEW -->
@@ -892,6 +1026,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
         <button id="btn8"  class="prec-btn prec-active" onclick="setPrecision(8)">8 pomiarów</button>
         <button id="btn10" class="prec-btn"             onclick="setPrecision(10)">10 pomiarów</button>
         <button id="btn16" class="prec-btn"             onclick="setPrecision(16)">16 pomiarów</button>
+        <button id="btn32" class="prec-btn"             onclick="setPrecision(32)">32 pomiary</button>
       </div>
       <div class="paste-hint" id="precHint">8 punktów: poziomy 0 · 36 · 73 · 109 · 146 · 182 · 219 · 255</div>
     </div>
@@ -1185,15 +1320,19 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
   </div>
 
 <script>
-const LEVELS_8  = ['0','36','73','109','146','182','219','255'];
-const LEVELS_10 = ['0','28','57','85','113','142','170','198','227','255'];
-const LEVELS_16 = ['0','17','34','51','68','85','102','119','136','153','170','187','204','221','238','255'];
-const LEVEL_PCT_8  = [0, 6.7, 13.3, 20.0, 26.7, 33.3, 40.0, 46.7, 53.3, 60.0, 66.7, 73.3, 80.0, 86.7, 93.3, 100];
-const LEVEL_PCT_16 = [0, 6.7, 13.3, 20.0, 26.7, 33.3, 40.0, 46.7, 53.3, 60.0, 66.7, 73.3, 80.0, 86.7, 93.3, 100];
+const SUPPORTED_PRECISIONS = [8, 10, 16, 32];
+const makeLevels = n => Array.from({ length: n }, (_, i) => String(Math.round(i * 255 / (n - 1))));
+const LEVELS_8  = makeLevels(8);
+const LEVELS_10 = makeLevels(10);
+const LEVELS_16 = makeLevels(16);
+const LEVELS_32 = makeLevels(32);
+const LEVELS_MAP = { 8: LEVELS_8, 10: LEVELS_10, 16: LEVELS_16, 32: LEVELS_32 };
+const levelsForPrecision = n => (LEVELS_MAP[n] || LEVELS_8).slice();
+const percentForLevels = levels => levels.map(v => Math.round(Number(v) / 255 * 1000) / 10);
 
 let precision = 8;
-let LEVELS    = LEVELS_8.slice();
-let LEVEL_PCT = [0,14.1,28.6,42.7,57.3,71.4,85.9,100];
+let LEVELS    = levelsForPrecision(8);
+let LEVEL_PCT = percentForLevels(LEVELS);
 
 const CHANNELS = ['R','G','B','W'];
 const D65 = { x: 0.3127, y: 0.3290 };
@@ -1224,6 +1363,7 @@ const STORAGE_KEY = 'wba_data_v1';
 function saveToStorage() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, precision }));
+    try { window.parent.postMessage({ type:'cda-rgb-tracking-updated' }, '*'); } catch(e) {}
     const badge = document.getElementById('storageBadge');
     if (badge) badge.style.display = 'flex';
   } catch(e) {}
@@ -1238,12 +1378,12 @@ function loadFromStorage() {
     const savedData      = saved.data || saved;
     const savedPrecision = saved.precision || 8;
 
-    if (savedPrecision !== 8 && savedPrecision !== 10 && savedPrecision !== 16) return false;
+    if (!SUPPORTED_PRECISIONS.includes(Number(savedPrecision))) return false;
 
     // Apply precision first (silently, no confirm)
-    precision = savedPrecision;
-    LEVELS    = savedPrecision === 16 ? LEVELS_16.slice() : savedPrecision === 10 ? LEVELS_10.slice() : LEVELS_8.slice();
-    LEVEL_PCT = LEVELS.map(v => Math.round(Number(v) / 255 * 1000) / 10);
+    precision = Number(savedPrecision);
+    LEVELS    = levelsForPrecision(precision);
+    LEVEL_PCT = percentForLevels(LEVELS);
 
     CHANNELS.forEach(ch => {
       if (savedData[ch] && Array.isArray(savedData[ch]) && savedData[ch].length === LEVELS.length) {
@@ -1406,7 +1546,7 @@ function deAssessment(de) {
 
 function switchMain(v) {
   currentMain = v;
-  const ids = ['input','chroma','rgbtrack','de','grayscale','apl','colorchecker','export'];
+  const ids = ['input','chroma','rgbtrack','de','grayscale','apl','colorchecker'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === v));
   ids.forEach(id => {
     const el = document.getElementById('view-'+id);
@@ -1414,7 +1554,6 @@ function switchMain(v) {
   });
   setTimeout(() => {
     if (['chroma','de'].includes(v)) renderCharts();
-    if (v === 'export') { initAPLGrid(); initColorChecker(); renderExport(); }
     if (v === 'grayscale') renderGrayscale();
     if (v === 'rgbtrack') renderRGBTracking();
     if (v === 'apl') initAPLGrid();
@@ -1444,7 +1583,7 @@ function renderInputs() {
   const container = document.getElementById('chInputs');
   container.innerHTML = '';
   const grid = document.createElement('div');
-  grid.className = 'grid8' + (precision === 16 ? ' grid16' : '');
+  grid.className = 'grid8' + (precision >= 16 ? ' grid16' : '');
   LEVELS.forEach((lv, i) => {
     const d = data[ch][i];
     const hasDat = d.x !== '' || d.y !== '' || d.Y !== '';
@@ -1486,16 +1625,17 @@ function setPrecision(n) {
     if (!confirm(`Zmiana dokładności na ${n} pomiarów wyczyści wszystkie wpisane dane. Kontynuować?`)) return;
   }
 
+  if (!SUPPORTED_PRECISIONS.includes(Number(n))) n = 8;
   precision = n;
-  LEVELS    = n === 16 ? LEVELS_16.slice() : n === 10 ? LEVELS_10.slice() : LEVELS_8.slice();
-  LEVEL_PCT = LEVELS.map(v => Math.round(Number(v) / 255 * 1000) / 10);
+  LEVELS    = levelsForPrecision(n);
+  LEVEL_PCT = percentForLevels(LEVELS);
 
   CHANNELS.forEach(ch => { data[ch] = LEVELS.map(() => ({x:'',y:'',Y:''})); });
 
-  document.getElementById('btn8').classList.toggle('prec-active', n === 8);
-  const b10 = document.getElementById('btn10');
-  if (b10) b10.classList.toggle('prec-active', n === 10);
-  document.getElementById('btn16').classList.toggle('prec-active', n === 16);
+  SUPPORTED_PRECISIONS.forEach(p => {
+    const btn = document.getElementById('btn' + p);
+    if (btn) btn.classList.toggle('prec-active', n === p);
+  });
 
   document.getElementById('precHint').textContent      = `${n} punktów: poziomy ${LEVELS.join(' · ')}`;
   document.getElementById('pasteHint').textContent     = `→ ${n} wierszy dla aktualnie wybranego kanału. Separatory: spacja, tab, przecinek lub średnik.`;
@@ -2846,12 +2986,10 @@ if (hadSaved) {
 // Sync precision UI to loaded state
 (function syncPrecisionUI() {
   const n = precision;
-  const btn8  = document.getElementById('btn8');
-  const btn10 = document.getElementById('btn10');
-  const btn16 = document.getElementById('btn16');
-  if (btn8)  btn8.classList.toggle('prec-active',  n === 8);
-  if (btn10) btn10.classList.toggle('prec-active', n === 10);
-  if (btn16) btn16.classList.toggle('prec-active', n === 16);
+  SUPPORTED_PRECISIONS.forEach(p => {
+    const btn = document.getElementById('btn' + p);
+    if (btn) btn.classList.toggle('prec-active', n === p);
+  });
   const ph = document.getElementById('precHint');
   const paste = document.getElementById('pasteHint');
   const ipc = document.getElementById('infoPointCount');
@@ -2897,7 +3035,7 @@ const CC_PATCHES = [
   { name: 'Black 2',          ref: { x: 0.3101, y: 0.3163 }, color: '#343434' },
 ];
 
-let ccData = CC_PATCHES.map(p => ({ x: p.ref.x.toString(), y: p.ref.y.toString() }));
+let ccData = CC_PATCHES.map(() => ({ x: '', y: '' }));
 let ccInited = false;
 let ccCieImageCache = null;
 
@@ -2927,45 +3065,50 @@ function ccSave(i, field, val) {
     ccData[i].x !== '' || ccData[i].y !== '');
 }
 
-function ccParsePaste() {
+function importColorCheckerRowsText(raw, opts = {}) {
   initColorChecker();
-  const raw = document.getElementById('ccPasteInput').value.trim();
-  if (!raw) { alert('Pole wklejania jest puste.'); return; }
-
-  const lines = raw.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  raw = String(raw || '').trim();
   const rows = [];
-  for (const line of lines) {
-    const parts = line.split(/[\t,;]+|\s{2,}|\s+/).map(p => p.trim()).filter(p => p !== '');
-    if (parts.length < 2) continue;
-    const x = parseFloat(parts[0]);
-    const y = parseFloat(parts[1]);
-    // Y (3rd column) is intentionally ignored
-    if (!isNaN(x) && !isNaN(y)) rows.push({ x, y });
-  }
-
-  if (rows.length === 0) { alert('Nie znaleziono danych. Wymagany format: x  y (lub x  y  Y — kolumna Y jest ignorowana).'); return; }
-  if (rows.length > 24) { alert(`Znaleziono ${rows.length} wierszy, zostanie użytych pierwszych 24.`); }
-
-  for (let i = 0; i < 24; i++) {
-    if (rows[i]) {
-      ccData[i] = { x: rows[i].x.toString(), y: rows[i].y.toString() };
-      const xi = document.getElementById('ccX_' + i);
-      const yi = document.getElementById('ccY_' + i);
-      if (xi) xi.value = rows[i].x.toString();
-      if (yi) yi.value = rows[i].y.toString();
-      const cell = document.getElementById('ccPatch_' + i);
-      if (cell) cell.classList.add('has-data');
+  if (raw) {
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+    for (const line of lines) {
+      const parts = line.split(/[\t,;]+|\s{2,}|\s+/).map(p => p.trim()).filter(p => p !== '');
+      if (parts.length < 2) continue;
+      const x = parseFloat(parts[0]);
+      const y = parseFloat(parts[1]);
+      if (!isNaN(x) && !isNaN(y)) rows.push({ x, y });
     }
   }
-
-  document.getElementById('ccPasteInput').value = '';
-  const btn = event.target;
-  const orig = btn.textContent;
-  btn.textContent = `✓ Zaimportowano ${Math.min(rows.length, 24)} pól`;
-  btn.style.color = '#36b37e';
-  setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
-
+  if (rows.length !== 24) {
+    if (!opts.silent) alert(`ColorChecker wymaga dokładnie 24 wierszy, wykryto ${rows.length}.`);
+    return false;
+  }
+  for (let i = 0; i < 24; i++) {
+    ccData[i] = { x: rows[i].x.toString(), y: rows[i].y.toString() };
+    const xi = document.getElementById('ccX_' + i);
+    const yi = document.getElementById('ccY_' + i);
+    if (xi) xi.value = rows[i].x.toString();
+    if (yi) yi.value = rows[i].y.toString();
+    const cell = document.getElementById('ccPatch_' + i);
+    if (cell) cell.classList.add('has-data');
+  }
+  const ccPaste = document.getElementById('ccPasteInput');
+  if (ccPaste) ccPaste.value = '';
   renderCCDiagram();
+  return true;
+}
+
+function ccParsePaste() {
+  const raw = document.getElementById('ccPasteInput').value.trim();
+  if (!raw) { alert('Pole wklejania jest puste.'); return; }
+  if (!importColorCheckerRowsText(raw)) return;
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : null;
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Zaimportowano 24 pola';
+    btn.style.color = '#36b37e';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+  }
 }
 
 function ccLoadRef() {
@@ -4506,7 +4649,142 @@ body.light {
   --W: #666666;
   --canvas-bg: #dcdce2;
 }
-</style>
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
 <script>
 /* Suite-wide theme listener (shell broadcasts + shared localStorage) */
 (function(){
@@ -4527,6 +4805,35 @@ body.light {
     if(ev.data && ev.data.type==='spectral-to-cda'){
       try {
         const ch = ev.data.channel;
+        const incomingPrecision = SUPPORTED_PRECISIONS.includes(Number(ev.data.precision)) ? Number(ev.data.precision) : precision;
+        if (incomingPrecision !== precision) {
+          precision = incomingPrecision;
+          LEVELS = levelsForPrecision(precision);
+          LEVEL_PCT = percentForLevels(LEVELS);
+          CHANNELS.forEach(c => { data[c] = LEVELS.map(() => ({x:'',y:'',Y:''})); });
+          SUPPORTED_PRECISIONS.forEach(p => {
+            const btn = document.getElementById('btn' + p);
+            if (btn) btn.classList.toggle('prec-active', precision === p);
+          });
+          const ph = document.getElementById('precHint');
+          const paste = document.getElementById('pasteHint');
+          const ipc = document.getElementById('infoPointCount');
+          const ilvl = document.getElementById('infoLevels');
+          if (ph) ph.textContent = `${precision} punktów: poziomy ${LEVELS.join(' · ')}`;
+          if (paste) paste.textContent = `→ ${precision} wierszy dla aktualnie wybranego kanału. Separatory: spacja, tab, przecinek lub średnik.`;
+          if (ipc) ipc.textContent = precision;
+          if (ilvl) ilvl.textContent = LEVELS.join(', ');
+        }
+        if (ch && CHANNELS.includes(ch) && Array.isArray(ev.data.rows) && ev.data.rows.length === data[ch].length) {
+          data[ch] = ev.data.rows.map(r => ({ x: r.x || '', y: r.y || '', Y: r.Y || '' }));
+          saveToStorage();
+          // Full series import: switch to the input tab and selected channel.
+          if(currentMain !== 'input') switchMain('input');
+          if(currentCh !== ch) switchCh(ch);
+          else renderInputs();
+          return;
+        }
+
         const idx = typeof ev.data.levelIdx === 'number' ? ev.data.levelIdx : -1;
         const pt = ev.data.point;
         if(ch && CHANNELS.includes(ch) && idx >= 0 && idx < data[ch].length && pt){
@@ -4539,19 +4846,29 @@ body.light {
         }
       } catch(e) {}
     }
+    /* Incoming ColorChecker 24 from Spectral Analyzer */
+    if(ev.data && ev.data.type==='spectral-incoming'){
+      try {
+        const p = ev.data.payload || JSON.parse(localStorage.getItem('spectral_incoming') || 'null');
+        if (p && (p.target === 'cdaColorChecker' || p.target === 'colorCheckerBoth')) {
+          const ok = importColorCheckerRowsText(p.rowsText || '', { silent: true });
+          if (ok) switchMain('colorchecker');
+        }
+      } catch(e) {}
+    }
     /* Global reset — clear in-memory state so UI shows empty after reset */
     if(ev.data && ev.data.type==='suite-reset'){
       try {
         precision = 8;
-        LEVELS = LEVELS_8.slice();
-        LEVEL_PCT = [0,14.1,28.6,42.7,57.3,71.4,85.9,100];
+        LEVELS = levelsForPrecision(8);
+        LEVEL_PCT = percentForLevels(LEVELS);
         CHANNELS.forEach(ch => { data[ch] = LEVELS.map(() => ({x:'',y:'',Y:''})); });
         if(typeof CC_PATCHES !== 'undefined') ccData = CC_PATCHES.map(() => ({ x:'', y:'' }));
         ccInited = false;
         ccCieImageCache = null;
         Object.keys(charts).forEach(k => { try{ if(charts[k]) charts[k].destroy(); }catch(e){} charts[k] = null; });
         currentMain = 'input';
-        const ids = ['input','chroma','rgbtrack','de','grayscale','apl','colorchecker','export'];
+        const ids = ['input','chroma','rgbtrack','de','grayscale','apl','colorchecker'];
         document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ids[i]==='input'));
         ids.forEach(id => { const el=document.getElementById('view-'+id); if(el) el.style.display = id==='input' ? '' : 'none'; });
         switchCh('R');
@@ -4563,12 +4880,41 @@ body.light {
       } catch(e) {}
     }
   });
+  try {
+    const __pendingSpectral = JSON.parse(localStorage.getItem('spectral_incoming') || 'null');
+    if (__pendingSpectral && (__pendingSpectral.target === 'cdaColorChecker' || __pendingSpectral.target === 'colorCheckerBoth')) {
+      const ok = importColorCheckerRowsText(__pendingSpectral.rowsText || '', { silent: true });
+      if (ok) switchMain('colorchecker');
+    }
+  } catch(e) {}
+
   /* Fallback: when SA writes wba_data_v1 via localStorage, reload in-memory state
      (storage event fires in all same-origin contexts except the writer) */
   window.addEventListener('storage', function(ev) {
+    if (ev.key === 'spectral_incoming') {
+      try {
+        const p = JSON.parse(localStorage.getItem('spectral_incoming') || 'null');
+        if (p && (p.target === 'cdaColorChecker' || p.target === 'colorCheckerBoth')) {
+          const ok = importColorCheckerRowsText(p.rowsText || '', { silent: true });
+          if (ok) switchMain('colorchecker');
+        }
+      } catch(e) {}
+    }
     if (ev.key === 'wba_data_v1') {
       try {
         loadFromStorage();
+        SUPPORTED_PRECISIONS.forEach(p => {
+          const btn = document.getElementById('btn' + p);
+          if (btn) btn.classList.toggle('prec-active', precision === p);
+        });
+        const ph = document.getElementById('precHint');
+        const paste = document.getElementById('pasteHint');
+        const ipc = document.getElementById('infoPointCount');
+        const ilvl = document.getElementById('infoLevels');
+        if (ph) ph.textContent = `${precision} punktów: poziomy ${LEVELS.join(' · ')}`;
+        if (paste) paste.textContent = `→ ${precision} wierszy dla aktualnie wybranego kanału. Separatory: spacja, tab, przecinek lub średnik.`;
+        if (ipc) ipc.textContent = precision;
+        if (ilvl) ilvl.textContent = LEVELS.join(', ');
         if (currentMain !== 'input') switchMain('input');
         else renderInputs();
       } catch(e) {}

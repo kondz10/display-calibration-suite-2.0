@@ -459,7 +459,142 @@
   }
 
 html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
-</style>
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
 </head>
 <body>
 <div class="container">
@@ -1364,7 +1499,142 @@ body.light {
   --input-border: #d6d8de;
   --border-light: #c4c6ce;
 }
-</style>
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
 <script>
 /* Suite-wide theme listener (shell broadcasts + shared localStorage) */
 (function(){
@@ -1392,6 +1662,9 @@ body.light {
   function fromLS(){ try{ return JSON.parse(localStorage.getItem('spectral_incoming')||'null'); }catch(e){ return null; } }
   window.addEventListener('message', function(ev){
     if(ev.data && ev.data.type==='spectral-incoming') consume(ev.data.payload || fromLS());
+  });
+  window.addEventListener('storage', function(ev){
+    if(ev.key === 'spectral_incoming') consume(fromLS());
   });
   consume(fromLS());
 })();

@@ -579,7 +579,142 @@
   .acc-btn.active-acc .acc-sub { color: var(--accent); opacity: .7; }
 
 html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-color .9s ease, color .9s ease, border-color .9s ease, fill .9s ease, box-shadow .9s ease !important; }
-</style>
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
 </head>
 <body>
 
@@ -736,6 +871,10 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     <button class="acc-btn" id="acc-8" onclick="setAccuracy(8)">
       <span class="acc-num">8</span> kroków
       <span class="acc-sub">szybki · 32 próbki</span>
+    </button>
+    <button class="acc-btn" id="acc-10" onclick="setAccuracy(10)">
+      <span class="acc-num">10</span> kroków
+      <span class="acc-sub">skala 10 · 40 próbek</span>
     </button>
     <button class="acc-btn" id="acc-16" onclick="setAccuracy(16)">
       <span class="acc-num">16</span> kroków
@@ -958,9 +1097,12 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
 <script>
 // ── State ──────────────────────────────────────────────────────────
-const STEPS_8  = [0, 36, 73, 109, 146, 182, 219, 255];
-const STEPS_16 = [0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255];
-const STEPS_32 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 255];
+const makeSteps = n => Array.from({ length: n }, (_, i) => Math.round(i * 255 / (n - 1)));
+const STEPS_8  = makeSteps(8);
+const STEPS_10 = makeSteps(10);
+const STEPS_16 = makeSteps(16);
+const STEPS_32 = makeSteps(32);
+const SUPPORTED_ACCURACY = [8, 10, 16, 32];
 let STEPS = STEPS_32;
 let ACCURACY = 32;
 
@@ -979,20 +1121,22 @@ initMeas();
 let generatedTI3 = '';
 
 // ── Accuracy switcher ──────────────────────────────────────────────
-function setAccuracy(n) {
+function setAccuracy(n, opts = {}) {
+  n = SUPPORTED_ACCURACY.includes(Number(n)) ? Number(n) : 32;
   if (ACCURACY === n) return;
   const hasData = CHANNELS.some(ch => meas[ch].some(m => m.x !== '' || m.y !== '' || m.Y !== ''));
-  if (hasData) {
+  if (hasData && !opts.force) {
     if (!confirm(`Zmiana dokładności z ${ACCURACY} na ${n} kroków wyczyści wprowadzone dane pomiarowe. Kontynuować?`)) return;
   }
   ACCURACY = n;
-  STEPS = n === 32 ? STEPS_32 : (n === 16 ? STEPS_16 : STEPS_8);
+  STEPS = n === 32 ? STEPS_32 : (n === 16 ? STEPS_16 : (n === 10 ? STEPS_10 : STEPS_8));
   initMeas();
 
   // Update UI
-  document.getElementById('acc-8').classList.toggle('active-acc', n === 8);
-  document.getElementById('acc-16').classList.toggle('active-acc', n === 16);
-  document.getElementById('acc-32').classList.toggle('active-acc', n === 32);
+  SUPPORTED_ACCURACY.forEach(function(a){
+    var btn = document.getElementById('acc-' + a);
+    if (btn) btn.classList.toggle('active-acc', n === a);
+  });
 
   const labels = STEPS.join(', ');
   document.getElementById('steps-label').textContent = labels;
@@ -1390,11 +1534,11 @@ function fillSampleData() {
     ]
   };
 
-  // For 16 steps, interpolate between 8-step samples
-  const interp16 = (arr) => {
+  // Interpolate demo samples for any supported step count
+  const interpN = (arr, n) => {
     const result = [];
-    for (let i = 0; i < 16; i++) {
-      const t = i / 15 * 7; // map 0..15 → 0..7
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1) * 7;
       const lo = Math.floor(t);
       const hi = Math.min(lo + 1, 7);
       const f = t - lo;
@@ -1407,32 +1551,11 @@ function fillSampleData() {
     return result;
   };
 
-  const interp32 = (arr) => {
-    const result = [];
-    for (let i = 0; i < 32; i++) {
-      const t = i / 31 * 7;
-      const lo = Math.floor(t);
-      const hi = Math.min(lo + 1, 7);
-      const f = t - lo;
-      result.push([
-        arr[lo][0] + (arr[hi][0] - arr[lo][0]) * f,
-        arr[lo][1] + (arr[hi][1] - arr[lo][1]) * f,
-        arr[lo][2] + (arr[hi][2] - arr[lo][2]) * f
-      ]);
-    }
-    return result;
-  };
-
-  const samples = ACCURACY === 8 ? samples8 : ACCURACY === 16 ? {
-    gray: interp16(samples8.gray),
-    r:    interp16(samples8.r),
-    g:    interp16(samples8.g),
-    b:    interp16(samples8.b)
-  } : {
-    gray: interp32(samples8.gray),
-    r:    interp32(samples8.r),
-    g:    interp32(samples8.g),
-    b:    interp32(samples8.b)
+  const samples = ACCURACY === 8 ? samples8 : {
+    gray: interpN(samples8.gray, ACCURACY),
+    r:    interpN(samples8.r, ACCURACY),
+    g:    interpN(samples8.g, ACCURACY),
+    b:    interpN(samples8.b, ACCURACY)
   };
 
   CHANNELS.forEach(ch => {
@@ -1786,8 +1909,129 @@ function v(id) {
   return el ? el.value.trim() : '';
 }
 
+function mapSuiteTechToTI3(type) {
+  switch (String(type || '').toLowerCase()) {
+    case 'oled': return 'OLED';
+    case 'woled': return 'WOLED';
+    case 'qd-led': return 'QD-OLED';
+    case 'edge-lit': return 'LCD Edge LED';
+    case 'back-lit': return 'LCD White LED';
+    case 'mini led': return 'Mini LED';
+    default: return '';
+  }
+}
+function cleanProfileName(parts) {
+  return parts.filter(Boolean).join('_').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '') || 'Display_D65';
+}
+function readSuiteDevicePayload(payload) {
+  if (payload && (payload.device || payload.workflow)) return payload;
+  let device = {};
+  let workflow = null;
+  try { device = JSON.parse(localStorage.getItem('dcs-device') || '{}'); } catch(e) {}
+  try { workflow = JSON.parse(localStorage.getItem('dcs-workflow') || 'null'); } catch(e) {}
+  return { device, workflow };
+}
+function setFieldIfPossible(id, value) {
+  const el = document.getElementById(id);
+  if (!el || value == null || value === '') return;
+  if (el.tagName === 'SELECT') {
+    const wanted = String(value);
+    const opt = Array.from(el.options).find(o => o.value === wanted || o.textContent.trim() === wanted);
+    if (opt) el.value = opt.value;
+    return;
+  }
+  el.value = String(value);
+}
+function applySuiteDeviceConfig(payload) {
+  const pack = readSuiteDevicePayload(payload);
+  const d = pack.device || {};
+  const ti3 = (pack.workflow && pack.workflow.ti3) || {};
+  if (!d.brand && !d.model && !d.type && !ti3.prof_desc) return;
+
+  const mfr   = ti3.disp_mfr || d.brand || '';
+  const model = ti3.disp_model || d.model || [d.brand, d.model].filter(Boolean).join(' ');
+  const serial = ti3.disp_serial || d.serial || '';
+  const desc  = ti3.prof_desc || cleanProfileName([d.brand, d.model, 'D65']);
+  const tech  = ti3.disp_tech || mapSuiteTechToTI3(d.type);
+
+  setFieldIfPossible('prof_desc', desc);
+  setFieldIfPossible('disp_mfr', mfr);
+  setFieldIfPossible('disp_model', model);
+  setFieldIfPossible('disp_serial', serial);
+  setFieldIfPossible('disp_tech', tech);
+  setFieldIfPossible('white_point', ti3.white_point || 'D65');
+  setFieldIfPossible('target_gamma', ti3.target_gamma || '2.2');
+  try { updateCmdHints(); } catch(e) {}
+}
+
+// ── Main-suite device metadata sync ─────────────────────────────────
+window.addEventListener('message', function(ev){
+  if (ev.data && ev.data.type === 'suite-device-config') applySuiteDeviceConfig(ev.data);
+});
+window.addEventListener('storage', function(ev){
+  if (ev.key === 'dcs-device' || ev.key === 'dcs-workflow') applySuiteDeviceConfig();
+});
+
 // ── Set default date ───────────────────────────────────────────────
 document.getElementById('meas_date').value = new Date().toISOString().slice(0, 10);
+applySuiteDeviceConfig();
+
+
+
+/* ── Import danych ze Spectral Analyzer ───────────────────────────── */
+(function(){
+  var lastTs = null;
+  function fromLS(){ try { return JSON.parse(localStorage.getItem('spectral_incoming_ti3') || localStorage.getItem('spectral_incoming') || 'null'); } catch(e) { return null; } }
+  function rowsTextFromPayload(p){
+    if (p && p.rowsText) return p.rowsText;
+    if (!p || !Array.isArray(p.rows)) return '';
+    return p.rows.map(function(r){
+      var x = r.x != null ? r.x : '';
+      var y = r.y != null ? r.y : '';
+      var Y = r.Y != null ? r.Y : '';
+      return [x,y,Y].join('\t');
+    }).join('\n');
+  }
+  function channelToTi3(ch){
+    ch = String(ch || '').toUpperCase();
+    if (ch === 'R') return 'r';
+    if (ch === 'G') return 'g';
+    if (ch === 'B') return 'b';
+    return 'gray'; // W / white point goes to grayscale ramp
+  }
+  function consume(p){
+    if (!p || !['ti3','ti3ColorChecker','colorCheckerBoth'].includes(p.target) || p.ts === lastTs) return;
+    lastTs = p.ts;
+    var text = rowsTextFromPayload(p).trim();
+    if (!text) return;
+    var rows = text.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+    if (p.target === 'ti3ColorChecker' || p.target === 'colorCheckerBoth') {
+      if (rows.length !== 24) return;
+      var cc = document.getElementById('paste-cc');
+      if (!cc) return;
+      cc.value = text;
+      try { parsePasteCC(); } catch(e) {}
+      try { switchTab(3); } catch(e) {}
+      return;
+    }
+    if (SUPPORTED_ACCURACY.indexOf(rows.length) !== -1) {
+      try { setAccuracy(rows.length, { force: true }); } catch(e) {}
+    } else {
+      return;
+    }
+    var ch = channelToTi3(p.channel);
+    var ta = document.getElementById('paste-' + ch);
+    if (!ta) return;
+    ta.value = text;
+    try { parsePaste(ch); } catch(e) {}
+    try { switchTab(1); switchCh(ch); } catch(e) {}
+  }
+
+  window.addEventListener('message', function(ev){ if (ev.data && ev.data.type === 'spectral-incoming') consume(ev.data.payload || fromLS()); });
+  window.addEventListener('storage', function(ev){ if (ev.key === 'spectral_incoming' || ev.key === 'spectral_incoming_ti3') consume(fromLS()); });
+  document.addEventListener('DOMContentLoaded', function(){ consume(fromLS()); });
+  consume(fromLS());
+})();
 
 // ── Init ───────────────────────────────────────────────────────────
 buildTables();
@@ -1808,7 +2052,142 @@ body.light {
   --text3: #8a8a92;
   --canvas-bg: #dcdce2;
 }
-</style>
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
+  </style>
 <script>
 /* Suite-wide theme listener (shell broadcasts + shared localStorage) */
 (function(){

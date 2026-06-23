@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adaptive RGB Tracking Optimizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080808;
+  --surface:#0f0f0f;
+  --surface2:#131313;
+  --border:#1f1f1f;
+  --border2:#2a2a2a;
+  --accent:#8b15ba;
+  --accent2:#b629ee;
+  --text:#e5e5e5;
+  --muted:#666;
+  --bad:#ff4f5d;
+  --warn:#ffd24a;
+  --ok:#37ff86;
+  --r:#ff4a4a;
+  --g:#37ff6c;
+  --b:#4f79ff;
+  --mono:'Share Tech Mono', monospace;
+  --sans:'Rajdhani', sans-serif;
+}
+* { box-sizing:border-box; margin:0; padding:0; scrollbar-width:none; }
+::-webkit-scrollbar { display:none; }
+body {
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  overflow-x:hidden;
+}
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(139,21,186,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,21,186,.04) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+.app {
+  position:relative;
+  z-index:1;
+  max-width:1320px;
+  margin:0 auto;
+  padding:38px 28px 70px;
+}
+.header {
+  display:flex;
+  align-items:flex-end;
+  gap:16px;
+  padding-bottom:22px;
+  margin-bottom:34px;
+  border-bottom:1px solid var(--border);
+}
+.logo-icon {
+  width:44px; height:44px;
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:3px; padding:7px;
+  border:1px solid var(--accent);
+  border-radius:10px;
+  flex-shrink:0;
+  filter:drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+}
+.logo-icon span { display:block; border-radius:3px; }
+.logo-icon span:nth-child(1){ background:#ff3333; }
+.logo-icon span:nth-child(2){ background:#33ff33; }
+.logo-icon span:nth-child(3){ background:#3333ff; }
+.logo-icon span:nth-child(4){ background:#fff; }
+.header-text h1 {
+  font-family:var(--mono);
+  font-size:24px;
+  letter-spacing:4px;
+  color:var(--accent);
+  text-transform:uppercase;
+}
+.header-text p {
+  margin-top:5px;
+  color:var(--muted);
+  font-size:14px;
+  letter-spacing:2px;
+}
+.header-badge {
+  margin-left:auto;
+  text-align:right;
+  font-family:var(--mono);
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.8;
+  letter-spacing:1px;
+}
+.grid {
+  display:grid;
+  grid-template-columns:minmax(0, 1.15fr) minmax(360px, .85fr);
+  gap:18px;
+  align-items:start;
+}
+.panel {
+  border:1px solid var(--border);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(139,21,186,.08), transparent 38%),
+    var(--surface);
+  border-radius:14px;
+  padding:20px;
+  margin-bottom:16px;
+}
+.section-title {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-family:var(--mono);
+  color:var(--accent);
+  text-transform:uppercase;
+  letter-spacing:3px;
+  font-size:14px;
+  margin-bottom:14px;
+}
+.section-title .num {
+  color:rgba(139,21,186,.55);
+}
+.help {
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.55;
+  margin-bottom:14px;
+}
+.form-grid {
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:10px;
+}
+.form-grid.four { grid-template-columns:repeat(4, 1fr); }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label {
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+}
+input, select, textarea {
+  width:100%;
+  border:1px solid #1a1a1a;
+  background:#080808;
+  color:var(--text);
+  font-family:var(--mono);
+  font-size:13px;
+  padding:10px 11px;
+  border-radius:7px;
+  outline:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px rgba(139,21,186,.25);
+}
+textarea {
+  resize:vertical;
+  min-height:92px;
+  line-height:1.5;
+}
+.input-r { border-color:rgba(255,74,74,.25); }
+.input-g { border-color:rgba(55,255,108,.25); }
+.input-b { border-color:rgba(79,121,255,.25); }
+.btn-row {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+button {
+  border:1px solid var(--border2);
+  background:transparent;
+  color:var(--muted);
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:2px;
+  padding:11px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  text-transform:uppercase;
+  transition:all .16s;
+}
+button:hover {
+  border-color:var(--accent);
+  color:var(--text);
+  background:rgba(139,21,186,.07);
+}
+button.primary {
+  border-color:var(--accent);
+  color:var(--accent);
+  background:rgba(139,21,186,.06);
+}
+button.primary:hover {
+  color:#fff;
+  background:rgba(139,21,186,.22);
+}
+button.danger:hover {
+  border-color:var(--bad);
+  color:var(--bad);
+}
+button.small {
+  font-size:10px;
+  padding:8px 10px;
+  letter-spacing:1.5px;
+}
+.table-wrap {
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+}
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-family:var(--mono);
+  font-size:12px;
+}
+th {
+  color:var(--muted);
+  font-weight:400;
+  text-align:left;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  background:#0b0b0b;
+}
+th, td {
+  border-bottom:1px solid var(--border);
+  padding:8px;
+}
+tr:last-child td { border-bottom:none; }
+td input {
+  padding:8px;
+  font-size:12px;
+}
+.row-actions {
+  width:60px;
+  text-align:right;
+}
+.pill-row {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:10px 0 0;
+}
+.pill {
+  font-family:var(--mono);
+  border:1px solid var(--border);
+  color:var(--muted);
+  padding:7px 10px;
+  border-radius:999px;
+  cursor:pointer;
+  font-size:11px;
+  letter-spacing:1.2px;
+  transition:all .15s;
+}
+.pill.active, .pill:hover {
+  border-color:var(--accent);
+  color:var(--accent);
+  background:rgba(139,21,186,.07);
+}
+.checkbox-line {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:var(--muted);
+  font-size:13px;
+  margin-top:10px;
+}
+.checkbox-line input {
+  width:auto;
+  accent-color:var(--accent);
+}
+.result-main {
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+}
+.result-card {
+  border:1px solid var(--border);
+  background:#0a0a0a;
+  border-radius:11px;
+  padding:15px;
+}
+.result-title {
+  font-family:var(--mono);
+  color:var(--accent);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  font-size:12px;
+  margin-bottom:12px;
+}
+.channel-line {
+  display:grid;
+  grid-template-columns:34px 1fr 74px 84px;
+  gap:10px;
+  align-items:center;
+  margin:9px 0;
+  font-family:var(--mono);
+}
+.ch {
+  font-size:17px;
+  font-weight:bold;
+}
+.ch.r { color:var(--r); }
+.ch.g { color:var(--g); }
+.ch.b { color:var(--b); }
+.bar {
+  position:relative;
+  height:12px;
+  border-radius:999px;
+  background:#171717;
+  overflow:hidden;
+  border:1px solid #202020;
+}
+.bar > span {
+  display:block;
+  height:100%;
+  width:50%;
+  border-radius:999px;
+}
+.bar.r > span { background:linear-gradient(90deg, rgba(255,74,74,.35), var(--r)); }
+.bar.g > span { background:linear-gradient(90deg, rgba(55,255,108,.35), var(--g)); }
+.bar.b > span { background:linear-gradient(90deg, rgba(79,121,255,.35), var(--b)); }
+.delta {
+  text-align:right;
+  font-size:12px;
+  color:var(--muted);
+}
+.next {
+  text-align:right;
+  font-size:17px;
+  color:var(--text);
+}
+.kpi-grid {
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:10px;
+}
+.kpi {
+  border:1px solid var(--border);
+  background:#090909;
+  border-radius:9px;
+  padding:12px;
+}
+.kpi .label {
+  font-family:var(--mono);
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.kpi .value {
+  font-family:var(--mono);
+  font-size:22px;
+  color:var(--text);
+}
+.kpi.good .value { color:var(--ok); }
+.kpi.warn .value { color:var(--warn); }
+.kpi.bad .value { color:var(--bad); }
+.chart {
+  height:220px;
+  border:1px solid var(--border);
+  background:#070707;
+  border-radius:10px;
+  overflow:hidden;
+}
+svg text {
+  font-family:var(--mono);
+  fill:var(--muted);
+  font-size:10px;
+}
+.note {
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.55;
+}
+.note strong { color:var(--text); }
+.history-list {
+  max-height:210px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.hist-item {
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px;
+  background:#090909;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.55;
+}
+.hist-item span { color:var(--text); }
+.import-block { margin-top:12px; display:none; }
+.import-block.active { display:block; }
+.status {
+  position:fixed;
+  right:18px;
+  bottom:14px;
+  z-index:10;
+  border:1px solid var(--border);
+  background:rgba(10,10,10,.86);
+  backdrop-filter:blur(10px);
+  color:var(--muted);
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:1px;
+  padding:9px 12px;
+  border-radius:8px;
+}
+body.light {
+  --bg:#f4f4f7;
+  --surface:#ffffff;
+  --surface2:#f4f4f8;
+  --border:#d7d8df;
+  --border2:#c3c4ce;
+  --text:#1a1a1c;
+  --muted:#878891;
+}
+body.light input, body.light select, body.light textarea { background:#fff; color:#111; border-color:#d5d6de; }
+body.light .result-card, body.light .kpi, body.light .hist-item, body.light .chart { background:#fff; }
+@media(max-width:1050px) {
+  .grid { grid-template-columns:1fr; }
+}
+@media(max-width:760px) {
+  .app { padding:26px 16px 60px; }
+  .header { align-items:flex-start; }
+  .header-badge { display:none; }
+  .form-grid, .form-grid.four, .kpi-grid { grid-template-columns:1fr; }
+  .channel-line { grid-template-columns:28px 1fr 70px; }
+  .next { grid-column:2 / -1; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="logo-icon"><span></span><span></span><span></span><span></span></div>
+    <div class="header-text">
+      <h1>Adaptive RGB Tracking Optimizer</h1>
+      <p>ITERACYJNA ANALIZA BALANSU RGB · GREYSCALE TRACKING · KOREKTY GAIN / BIAS</p>
+    </div>
+    <div class="header-badge">
+      TARGET: R=100 · G=100 · B=100<br>
+      INPUT: DRIVE % + RGB TRACKING %<br>
+      ENGINE: ADAPTIVE SENSITIVITY MATRIX
+    </div>
+  </header>
+
+  <div class="grid">
+    <main>
+      <section class="panel">
+        <div class="section-title"><span class="num">01</span> Aktualne ustawienie monitora</div>
+        <div class="help">Wpisz obecne ustawienia RGB w menu monitora oraz zakres regulacji. Algorytm liczy korektę tak, aby średnia linii RGB tracking zbliżała się do 100 / 100 / 100.</div>
+        <div class="form-grid">
+          <div class="field"><label>R setting</label><input id="curR" class="input-r" type="number" value="100" step="0.1"></div>
+          <div class="field"><label>G setting</label><input id="curG" class="input-g" type="number" value="100" step="0.1"></div>
+          <div class="field"><label>B setting</label><input id="curB" class="input-b" type="number" value="100" step="0.1"></div>
+        </div>
+        <div class="form-grid four" style="margin-top:10px">
+          <div class="field"><label>Min ustawienia</label><input id="minSetting" type="number" value="0" step="1"></div>
+          <div class="field"><label>Max ustawienia</label><input id="maxSetting" type="number" value="120" step="1"></div>
+          <div class="field"><label>Max krok korekty</label><input id="maxStep" type="number" value="8" step="0.5"></div>
+          <div class="field"><label>Agresywność</label><select id="aggression"><option value="0.45">Ostrożnie 45%</option><option value="0.70" selected>Standard 70%</option><option value="0.90">Szybko 90%</option><option value="1.00">Pełna korekta 100%</option></select></div>
+        </div>
+        <label class="checkbox-line"><input id="allowRaise" type="checkbox" checked> Monitor pozwala podnieść kanały powyżej obecnej wartości / 100</label>
+      </section>
+
+      <section class="panel">
+        <div class="section-title"><span class="num">02</span> Dane RGB tracking</div>
+        <div class="help">Dodaj punkty pomiarowe. Dla pojedynczego punktu wpisz np. 100% wysterowania i wynik RGB. Dla całej linii dodaj wiele punktów, np. 10–100%.</div>
+
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th style="width:90px">Drive %</th>
+                <th>R %</th>
+                <th>G %</th>
+                <th>B %</th>
+                <th class="row-actions">Usuń</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+
+        <div class="btn-row">
+          <button class="small primary" onclick="loadRgbTrackingFromCDA()">Wczytaj z RGB Tracking</button>
+          <button class="small" onclick="addRow()">+ Dodaj punkt</button>
+          <button class="small" onclick="loadExample(1)">Przykład monitor 1</button>
+          <button class="small" onclick="loadExample(2)">Przykład monitor 2</button>
+          <button class="small" onclick="toggleImport()">Wklej dane</button>
+          <button class="small danger" onclick="clearRows()">Wyczyść tabelę</button>
+        </div>
+        <div class="note" id="cdaImportNote" style="margin-top:8px">
+          Źródło automatyczne: <strong>Chromatic Data Analyzer → RGB Tracking</strong>. Moduł czyta dane z kanału <strong>W</strong> zapisane w <code>wba_data_v1</code> i przelicza je tak samo jak wykres RGB Tracking.
+        </div>
+
+        <div class="import-block" id="importBlock">
+          <textarea id="pasteArea" placeholder="Wklej dane, np.:
+100 96 100 98
+80 97 100 98
+60 98 100 99
+
+Możesz też wkleić same RGB: 96 100 98 — wtedy drive zostanie nadany automatycznie."></textarea>
+          <div class="btn-row">
+            <button class="small primary" onclick="parsePaste()">Importuj wiersze</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title"><span class="num">03</span> Tryb analizy</div>
+        <div class="help">Wybierz, czy algorytm ma optymalizować całą linię, tylko jasne partie dla regulacji Gain/Drive, czy ciemne partie dla Bias/Offset.</div>
+        <div class="pill-row" id="modePills">
+          <div class="pill active" data-mode="line" onclick="setMode('line')">Cała linia</div>
+          <div class="pill" data-mode="gain" onclick="setMode('gain')">Gain / jasne 70–100%</div>
+          <div class="pill" data-mode="bias" onclick="setMode('bias')">Bias / ciemne 5–30%</div>
+          <div class="pill" data-mode="single" onclick="setMode('single')">Pojedynczy punkt</div>
+        </div>
+        <div class="form-grid" style="margin-top:12px">
+          <div class="field"><label>Punkt dla trybu single</label><input id="singleDrive" type="number" value="100" step="1"></div>
+          <div class="field"><label>Użyj uczenia adaptacyjnego</label><select id="useLearning"><option value="yes" selected>Tak</option><option value="no">Nie, tylko reguły</option></select></div>
+          <div class="field"><label>Cel RGB</label><input id="targetRgb" type="number" value="100" step="0.1"></div>
+        </div>
+        <div class="btn-row">
+          <button class="primary" onclick="analyze()">Analizuj i zaproponuj korektę</button>
+          <button onclick="saveState()">Zapisz stan</button>
+          <button onclick="loadState()">Wczytaj stan</button>
+          <button class="danger" onclick="resetAll()">Reset modułu</button>
+        </div>
+      </section>
+    </main>
+
+    <aside>
+      <section class="panel">
+        <div class="section-title"><span class="num">04</span> Wynik optymalizacji</div>
+        <div class="result-main" id="resultBox">
+          <div class="note">Wprowadź dane pomiarowe i kliknij <strong>Analizuj</strong>. Wynik pokaże średni błąd RGB tracking, proponowane nowe ustawienia i poziom pewności.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title"><span class="num">05</span> Wykres linii RGB</div>
+        <div class="chart" id="chart"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title"><span class="num">06</span> Uczenie adaptacyjne</div>
+        <div class="help">Po zastosowaniu korekty wpisz realny wynik kolejnego pomiaru. Program uczy się, jak dany monitor reaguje na zmianę R/G/B.</div>
+        <div class="form-grid">
+          <div class="field"><label>Wynik po korekcie R</label><input id="afterR" class="input-r" type="number" placeholder="np. 99.5" step="0.1"></div>
+          <div class="field"><label>Wynik po korekcie G</label><input id="afterG" class="input-g" type="number" placeholder="np. 100" step="0.1"></div>
+          <div class="field"><label>Wynik po korekcie B</label><input id="afterB" class="input-b" type="number" placeholder="np. 99.2" step="0.1"></div>
+        </div>
+        <div class="btn-row">
+          <button class="small primary" onclick="saveLearning()">Zapisz pomiar po korekcie</button>
+          <button class="small" onclick="exportLearning()">Eksport JSON</button>
+          <button class="small danger" onclick="clearLearning()">Wyczyść uczenie</button>
+        </div>
+        <div style="margin-top:12px" class="history-list" id="historyList"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+<div class="status" id="status">RGB OPTIMIZER · GOTOWY</div>
+
+<script>
+const STORAGE_STATE = 'adaptive_rgb_tracking_state';
+const STORAGE_LEARN = 'adaptive_rgb_tracking_learning';
+
+const CH = ['R','G','B'];
+let mode = 'line';
+let lastAnalysis = null;
+
+function n(v, fallback=0) {
+  const x = Number(String(v ?? '').trim().replace(',', '.'));
+  return Number.isFinite(x) ? x : fallback;
+}
+function fmt(v, d=1) {
+  if (!Number.isFinite(v)) return '—';
+  return Number(v).toFixed(d).replace(/\.0$/, '');
+}
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+  clearTimeout(window.__statusT);
+  window.__statusT = setTimeout(() => document.getElementById('status').textContent = 'RGB OPTIMIZER · GOTOWY', 2500);
+}
+
+function addRow(drive=100, r='', g='', b='') {
+  const tbody = document.getElementById('rows');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="number" step="1" class="drive" value="${drive}"></td>
+    <td><input type="number" step="0.1" class="r input-r" value="${r}"></td>
+    <td><input type="number" step="0.1" class="g input-g" value="${g}"></td>
+    <td><input type="number" step="0.1" class="b input-b" value="${b}"></td>
+    <td class="row-actions"><button class="small danger" onclick="this.closest('tr').remove(); drawChart();">×</button></td>`;
+  tbody.appendChild(tr);
+  tr.querySelectorAll('input').forEach(inp => inp.addEventListener('input', drawChart));
+  drawChart();
+}
+function clearRows() {
+  document.getElementById('rows').innerHTML = '';
+  drawChart();
+}
+function getRows() {
+  return [...document.querySelectorAll('#rows tr')].map(tr => ({
+    drive:n(tr.querySelector('.drive').value, 0),
+    R:n(tr.querySelector('.r').value, NaN),
+    G:n(tr.querySelector('.g').value, NaN),
+    B:n(tr.querySelector('.b').value, NaN)
+  })).filter(row => Number.isFinite(row.R) && Number.isFinite(row.G) && Number.isFinite(row.B));
+}
+function loadExample(id) {
+  clearRows();
+  document.getElementById('curR').value = 100;
+  document.getElementById('curG').value = 100;
+  document.getElementById('curB').value = 100;
+  if (id === 1) addRow(100, 96, 100, 98);
+  if (id === 2) addRow(100, 93, 97, 100);
+  setMode('single');
+  document.getElementById('singleDrive').value = 100;
+  setStatus('WCZYTANO PRZYKŁAD MONITOR ' + id);
+}
+function toggleImport() {
+  document.getElementById('importBlock').classList.toggle('active');
+}
+function parsePaste() {
+  const text = document.getElementById('pasteArea').value.trim();
+  if (!text) return;
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  const drives = [100,90,80,70,60,50,40,30,20,10];
+  lines.forEach((line, idx) => {
+    const vals = line.replace(/[,;]/g, ' ').split(/\s+/).map(x => n(x, NaN)).filter(Number.isFinite);
+    if (vals.length >= 4) addRow(vals[0], vals[1], vals[2], vals[3]);
+    else if (vals.length === 3) addRow(drives[idx] ?? 100, vals[0], vals[1], vals[2]);
+  });
+  document.getElementById('pasteArea').value = '';
+  setStatus('ZAIMPORTOWANO DANE');
+}
+
+// ── Import z Chromatic Data Analyzer → RGB Tracking ─────────────────────────
+// RGB Tracking w CDA jest liczony z kanału W: xyY szarości → gain R/G/B względem D65.
+const D65_FOR_IMPORT = { x: 0.3127, y: 0.3290 };
+const M_XYZ_TO_SRGB_IMPORT = [
+  [ 3.2404542, -1.5371385, -0.4985314],
+  [-0.9692660,  1.8760108,  0.0415560],
+  [ 0.0556434, -0.2040259,  1.0572252]
+];
+
+function xyYtoRGBgainForImport(x, y, Y) {
+  x = n(x, NaN);
+  y = n(y, NaN);
+  Y = n(Y, NaN);
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(Y) || y <= 0) return null;
+
+  // Ta sama idea co w Chromatic Data Analyzer: Y nie wpływa na gain,
+  // liczymy względny udział kanałów dla bieli względem D65.
+  const Yn = 1;
+  const X = (Yn / y) * x;
+  const Z = (Yn / y) * (1 - x - y);
+
+  const r = M_XYZ_TO_SRGB_IMPORT[0][0]*X + M_XYZ_TO_SRGB_IMPORT[0][1]*Yn + M_XYZ_TO_SRGB_IMPORT[0][2]*Z;
+  const g = M_XYZ_TO_SRGB_IMPORT[1][0]*X + M_XYZ_TO_SRGB_IMPORT[1][1]*Yn + M_XYZ_TO_SRGB_IMPORT[1][2]*Z;
+  const b = M_XYZ_TO_SRGB_IMPORT[2][0]*X + M_XYZ_TO_SRGB_IMPORT[2][1]*Yn + M_XYZ_TO_SRGB_IMPORT[2][2]*Z;
+
+  const xD = D65_FOR_IMPORT.x, yD = D65_FOR_IMPORT.y;
+  const XD = (1 / yD) * xD;
+  const ZD = (1 / yD) * (1 - xD - yD);
+
+  const rD = M_XYZ_TO_SRGB_IMPORT[0][0]*XD + M_XYZ_TO_SRGB_IMPORT[0][1]*1 + M_XYZ_TO_SRGB_IMPORT[0][2]*ZD;
+  const gD = M_XYZ_TO_SRGB_IMPORT[1][0]*XD + M_XYZ_TO_SRGB_IMPORT[1][1]*1 + M_XYZ_TO_SRGB_IMPORT[1][2]*ZD;
+  const bD = M_XYZ_TO_SRGB_IMPORT[2][0]*XD + M_XYZ_TO_SRGB_IMPORT[2][1]*1 + M_XYZ_TO_SRGB_IMPORT[2][2]*ZD;
+
+  return {
+    R: (r / rD) * 100,
+    G: (g / gD) * 100,
+    B: (b / bD) * 100
+  };
+}
+
+function levelsForPrecisionImport(p) {
+  const count = [8,10,16,32].includes(Number(p)) ? Number(p) : 8;
+  return Array.from({ length: count }, (_, i) => String(Math.round(i * 255 / (count - 1))));
+}
+
+function readCdaRgbTrackingRows() {
+  const raw = localStorage.getItem('wba_data_v1');
+  if (!raw) return { rows: [], reason: 'Brak zapisanych danych Chromatic Data Analyzer.' };
+
+  let saved;
+  try { saved = JSON.parse(raw); }
+  catch(e) { return { rows: [], reason: 'Nie udało się odczytać wba_data_v1.' }; }
+
+  const savedData = saved.data || saved;
+  const precision = Number(saved.precision || 8);
+  const levels = levelsForPrecisionImport(precision);
+  const wData = savedData && Array.isArray(savedData.W) ? savedData.W : null;
+
+  if (!wData || !wData.length) {
+    return { rows: [], reason: 'W Chromatic Data Analyzer nie ma danych kanału W, a RGB Tracking jest liczone właśnie z W.' };
+  }
+
+  const rows = [];
+  for (let i = 1; i < Math.min(wData.length, levels.length); i++) { // i=0 pomijamy jak CDA
+    const p = wData[i];
+    if (!p) continue;
+    if (p.x === '' || p.y === '' || p.Y === '') continue;
+    const gain = xyYtoRGBgainForImport(p.x, p.y, p.Y);
+    if (!gain) continue;
+
+    const drive = Math.round((Number(levels[i]) / 255 * 100) * 10) / 10;
+    rows.push({
+      drive,
+      R: Math.round(gain.R * 100) / 100,
+      G: Math.round(gain.G * 100) / 100,
+      B: Math.round(gain.B * 100) / 100
+    });
+  }
+
+  return { rows, precision, total: wData.length, source: 'wba_data_v1' };
+}
+
+function loadRgbTrackingFromCDA(silent = false) {
+  const res = readCdaRgbTrackingRows();
+  if (!res.rows.length) {
+    if (!silent) alert(res.reason || 'Brak danych RGB Tracking do wczytania.');
+    const note = document.getElementById('cdaImportNote');
+    if (note && !silent) note.innerHTML = 'Nie znaleziono danych kanału <strong>W</strong> z Chromatic Data Analyzer. Najpierw wypełnij Dane wejściowe / W w CDA.';
+    return false;
+  }
+
+  clearRows();
+  res.rows.forEach(r => addRow(r.drive, r.R, r.G, r.B));
+
+  // Dobierz tryb analizy do danych.
+  if (res.rows.length === 1) {
+    setMode('single');
+    document.getElementById('singleDrive').value = res.rows[0].drive;
+  } else {
+    setMode('line');
+  }
+
+  const note = document.getElementById('cdaImportNote');
+  if (note) {
+    note.innerHTML = `Wczytano <strong>${res.rows.length}</strong> punktów z <strong>Chromatic Data Analyzer → RGB Tracking</strong> ` +
+      `(precyzja CDA: ${res.precision || '—'}; poziom 0 pominięty jak w CDA).`;
+  }
+
+  drawChart();
+  saveState(false);
+  if (!silent) setStatus('WCZYTANO RGB TRACKING Z CDA');
+  return true;
+}
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('#modePills .pill').forEach(p => p.classList.toggle('active', p.dataset.mode === m));
+}
+function currentSettings() {
+  return {R:n(document.getElementById('curR').value,100), G:n(document.getElementById('curG').value,100), B:n(document.getElementById('curB').value,100)};
+}
+function getOptions() {
+  return {
+    min:n(document.getElementById('minSetting').value,0),
+    max:n(document.getElementById('maxSetting').value,120),
+    maxStep:Math.max(.1, n(document.getElementById('maxStep').value,8)),
+    aggression:n(document.getElementById('aggression').value,.7),
+    allowRaise:document.getElementById('allowRaise').checked,
+    target:n(document.getElementById('targetRgb').value,100),
+    useLearning:document.getElementById('useLearning').value === 'yes',
+    singleDrive:n(document.getElementById('singleDrive').value,100)
+  };
+}
+function weightFor(row, opt) {
+  const d = row.drive;
+  if (mode === 'single') return Math.max(0, 1 - Math.abs(d - opt.singleDrive) / 12);
+  if (mode === 'gain') return d >= 70 ? 1.6 : d >= 50 ? .7 : .15;
+  if (mode === 'bias') return d <= 30 ? 1.6 : d <= 50 ? .7 : .12;
+  // cała linia: średnie tony i jasne partie lekko ważniejsze
+  return d >= 40 ? 1.15 : .85;
+}
+function weightedAverage(rows, opt) {
+  const out = {R:0,G:0,B:0, w:0, used:0};
+  rows.forEach(row => {
+    const w = weightFor(row, opt);
+    if (w <= 0) return;
+    CH.forEach(ch => out[ch] += row[ch] * w);
+    out.w += w; out.used += 1;
+  });
+  if (!out.w) return null;
+  CH.forEach(ch => out[ch] /= out.w);
+  return out;
+}
+function getLearning() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_LEARN) || '[]'); } catch(e) { return []; }
+}
+function setLearning(hist) {
+  localStorage.setItem(STORAGE_LEARN, JSON.stringify(hist.slice(-80)));
+  renderHistory();
+}
+function learnedSensitivity() {
+  const hist = getLearning();
+  const values = {R:[],G:[],B:[]};
+  hist.forEach(h => {
+    CH.forEach(ch => {
+      const ds = (h.next?.[ch] ?? 0) - (h.current?.[ch] ?? 0);
+      const dm = (h.afterAvg?.[ch] ?? 0) - (h.beforeAvg?.[ch] ?? 0);
+      if (Math.abs(ds) >= .25 && Number.isFinite(dm)) {
+        const s = dm / ds;
+        if (s > .08 && s < 5) values[ch].push(s);
+      }
+    });
+  });
+  const out = {R:.85,G:.85,B:.85, count:hist.length};
+  CH.forEach(ch => {
+    if (values[ch].length) out[ch] = clamp(mean(values[ch]), .15, 2.5);
+  });
+  return out;
+}
+function recommend(avg, cur, opt) {
+  const sens = opt.useLearning ? learnedSensitivity() : {R:.85,G:.85,B:.85,count:0};
+  const next = {...cur}, delta = {};
+  if (opt.allowRaise) {
+    CH.forEach(ch => {
+      const err = opt.target - avg[ch];
+      let d = (err / (sens[ch] || .85)) * opt.aggression;
+      d = clamp(d, -opt.maxStep, opt.maxStep);
+      delta[ch] = d;
+      next[ch] = clamp(cur[ch] + d, opt.min, opt.max);
+    });
+  } else {
+    // Tylko redukcja: równamy kanały do najsłabszego kanału,
+    // czyli spada luminancja, ale balans się poprawia.
+    const ref = Math.min(avg.R, avg.G, avg.B);
+    CH.forEach(ch => {
+      const desired = cur[ch] * (ref / Math.max(avg[ch], 1e-6));
+      let d = clamp(desired - cur[ch], -opt.maxStep, 0);
+      delta[ch] = d;
+      next[ch] = clamp(cur[ch] + d, opt.min, opt.max);
+    });
+  }
+  return {next, delta, sens};
+}
+function confidence(rows, avg, sens) {
+  const maxErr = Math.max(...CH.map(ch => Math.abs(100 - avg[ch])));
+  let score = 35 + Math.min(rows.length, 10) * 4 + Math.min(sens.count, 8) * 4 - maxErr * 2.2;
+  if (mode === 'single') score -= 10;
+  return clamp(Math.round(score), 18, 92);
+}
+function analyze() {
+  const rows = getRows();
+  if (!rows.length) {
+    alert('Dodaj przynajmniej jeden punkt pomiarowy RGB tracking.');
+    return;
+  }
+  const opt = getOptions();
+  const avg = weightedAverage(rows, opt);
+  if (!avg) {
+    alert('Brak punktów spełniających wybrany tryb analizy.');
+    return;
+  }
+  const cur = currentSettings();
+  const rec = recommend(avg, cur, opt);
+  const maxErr = Math.max(...CH.map(ch => Math.abs(opt.target - avg[ch])));
+  const rms = Math.sqrt(mean(CH.map(ch => Math.pow(opt.target - avg[ch], 2))));
+  const conf = confidence(rows, avg, rec.sens);
+  lastAnalysis = {cur, avg:{R:avg.R,G:avg.G,B:avg.B}, next:rec.next, delta:rec.delta, opt, rows, date:new Date().toISOString()};
+  renderResult(avg, cur, rec, {maxErr, rms, conf, used:avg.used});
+  drawChart();
+  saveState(false);
+  setStatus('ANALIZA GOTOWA');
+}
+function renderResult(avg, cur, rec, stats) {
+  const cls = stats.maxErr <= 1 ? 'good' : stats.maxErr <= 3 ? 'warn' : 'bad';
+  const rows = CH.map(ch => {
+    const d = rec.delta[ch];
+    const sign = d >= 0 ? '+' : '';
+    return `<div class="channel-line">
+      <div class="ch ${ch.toLowerCase()}">${ch}</div>
+      <div class="bar ${ch.toLowerCase()}"><span style="width:${clamp(avg[ch],0,130)/130*100}%"></span></div>
+      <div class="delta">${fmt(avg[ch],1)}%</div>
+      <div class="next">${fmt(rec.next[ch],1)} <span style="color:var(--muted);font-size:11px">(${sign}${fmt(d,1)})</span></div>
+    </div>`;
+  }).join('');
+  const box = document.getElementById('resultBox');
+  box.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi ${cls}"><div class="label">Max error</div><div class="value">${fmt(stats.maxErr,1)}%</div></div>
+      <div class="kpi ${cls}"><div class="label">RMS error</div><div class="value">${fmt(stats.rms,1)}%</div></div>
+      <div class="kpi"><div class="label">Pewność</div><div class="value">${stats.conf}%</div></div>
+    </div>
+    <div class="result-card">
+      <div class="result-title">Proponowane nowe ustawienia</div>
+      ${rows}
+    </div>
+    <div class="result-card">
+      <div class="result-title">Interpretacja</div>
+      <div class="note">${explain(avg, rec, stats)}</div>
+    </div>
+    <div class="result-card">
+      <div class="result-title">Czułość algorytmu</div>
+      <div class="note">R: <strong>${fmt(rec.sens.R,2)}</strong> · G: <strong>${fmt(rec.sens.G,2)}</strong> · B: <strong>${fmt(rec.sens.B,2)}</strong> · zapisanych iteracji: <strong>${rec.sens.count}</strong></div>
+    </div>`;
+}
+function explain(avg, rec, stats) {
+  const high = CH.reduce((a,b)=>avg[a]>avg[b]?a:b);
+  const low = CH.reduce((a,b)=>avg[a]<avg[b]?a:b);
+  const lines = [];
+  if (stats.maxErr <= 1) lines.push('Balans jest już bardzo blisko celu. Zalecana jest najwyżej mała korekta kontrolna.');
+  else lines.push(`Najwyższy kanał: <strong>${high}</strong> (${fmt(avg[high],1)}%). Najniższy kanał: <strong>${low}</strong> (${fmt(avg[low],1)}%).`);
+  if (!getOptions().allowRaise) lines.push('Tryb bez podbijania kanałów: algorytm wyrównuje balans przez redukcję mocniejszych kanałów, więc luminancja może spaść.');
+  else lines.push('Tryb z podbijaniem kanałów: algorytm celuje bezpośrednio w 100% dla średniej ważonej.');
+  lines.push('Po zmianie ustawień wykonaj ponowny pomiar i zapisz wynik w sekcji uczenia adaptacyjnego.');
+  return lines.join('<br>');
+}
+function drawChart() {
+  const rows = getRows().sort((a,b)=>a.drive-b.drive);
+  const el = document.getElementById('chart');
+  if (!rows.length) { el.innerHTML = '<div class="note" style="padding:18px">Brak danych do wykresu.</div>'; return; }
+  const W = 560, H = 220, pad = 32;
+  const x = d => pad + (d/100) * (W-pad*2);
+  const y = v => H-pad - ((v-80)/40) * (H-pad*2);
+  const line = ch => rows.map((r,i)=>`${i?'L':'M'}${x(r.drive).toFixed(1)},${y(r[ch]).toFixed(1)}`).join(' ');
+  const color = {R:'#ff4a4a',G:'#37ff6c',B:'#4f79ff'};
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">
+    <defs><pattern id="grid" width="40" height="28" patternUnits="userSpaceOnUse"><path d="M40 0H0V28" fill="none" stroke="rgba(139,21,186,.12)" stroke-width="1"/></pattern></defs>
+    <rect width="${W}" height="${H}" fill="url(#grid)"/>
+    <line x1="${pad}" y1="${y(100)}" x2="${W-pad}" y2="${y(100)}" stroke="rgba(255,255,255,.35)" stroke-dasharray="4 4"/>
+    <text x="${pad}" y="${y(100)-6}">TARGET 100%</text>
+    ${CH.map(ch=>`<path d="${line(ch)}" fill="none" stroke="${color[ch]}" stroke-width="2.5"/>`).join('')}
+    ${rows.map(r=>CH.map(ch=>`<circle cx="${x(r.drive)}" cy="${y(r[ch])}" r="3" fill="${color[ch]}"/>`).join('')).join('')}
+    <text x="${pad}" y="${H-8}">0%</text><text x="${W-pad-24}" y="${H-8}">100%</text>
+  </svg>`;
+}
+function saveLearning() {
+  if (!lastAnalysis) { alert('Najpierw wykonaj analizę.'); return; }
+  const afterAvg = {R:n(document.getElementById('afterR').value, NaN), G:n(document.getElementById('afterG').value, NaN), B:n(document.getElementById('afterB').value, NaN)};
+  if (!CH.every(ch => Number.isFinite(afterAvg[ch]))) {
+    alert('Wpisz wynik RGB po korekcie dla R, G i B.');
+    return;
+  }
+  const hist = getLearning();
+  hist.push({...lastAnalysis, afterAvg, savedAt:new Date().toISOString()});
+  setLearning(hist);
+  ['afterR','afterG','afterB'].forEach(id => document.getElementById(id).value = '');
+  setStatus('ZAPISANO UCZENIE');
+  if (lastAnalysis) analyze();
+}
+function renderHistory() {
+  const hist = getLearning().slice().reverse();
+  const el = document.getElementById('historyList');
+  if (!hist.length) { el.innerHTML = '<div class="note">Brak zapisanych iteracji. Po kilku pomiarach algorytm lepiej oceni reakcję monitora.</div>'; return; }
+  el.innerHTML = hist.slice(0,12).map((h,idx) => `
+    <div class="hist-item">
+      <span>#${hist.length-idx}</span> ${new Date(h.savedAt || h.date).toLocaleString()}<br>
+      before avg: R ${fmt(h.avg.R,1)} / G ${fmt(h.avg.G,1)} / B ${fmt(h.avg.B,1)}<br>
+      next: R ${fmt(h.next.R,1)} / G ${fmt(h.next.G,1)} / B ${fmt(h.next.B,1)}<br>
+      after: R ${fmt(h.afterAvg.R,1)} / G ${fmt(h.afterAvg.G,1)} / B ${fmt(h.afterAvg.B,1)}
+    </div>`).join('');
+}
+function clearLearning() {
+  if (!confirm('Wyczyścić historię uczenia adaptacyjnego?')) return;
+  localStorage.removeItem(STORAGE_LEARN);
+  renderHistory();
+  setStatus('WYCZYSZCZONO UCZENIE');
+}
+function exportLearning() {
+  const data = JSON.stringify(getLearning(), null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'adaptive_rgb_tracking_learning.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function saveState(show=true) {
+  const state = {
+    cur:currentSettings(),
+    opt:getOptions(),
+    mode,
+    rows:getRows(),
+    ts:Date.now()
+  };
+  localStorage.setItem(STORAGE_STATE, JSON.stringify(state));
+  if (show) setStatus('ZAPISANO STAN');
+}
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_STATE) || 'null');
+    if (!s) return false;
+    document.getElementById('curR').value = s.cur?.R ?? 100;
+    document.getElementById('curG').value = s.cur?.G ?? 100;
+    document.getElementById('curB').value = s.cur?.B ?? 100;
+    if (s.opt) {
+      document.getElementById('minSetting').value = s.opt.min ?? 0;
+      document.getElementById('maxSetting').value = s.opt.max ?? 120;
+      document.getElementById('maxStep').value = s.opt.maxStep ?? 8;
+      document.getElementById('aggression').value = String(s.opt.aggression ?? .7);
+      document.getElementById('allowRaise').checked = !!s.opt.allowRaise;
+      document.getElementById('targetRgb').value = s.opt.target ?? 100;
+      document.getElementById('useLearning').value = s.opt.useLearning ? 'yes' : 'no';
+      document.getElementById('singleDrive').value = s.opt.singleDrive ?? 100;
+    }
+    setMode(s.mode || 'line');
+    clearRows();
+    (s.rows || []).forEach(r => addRow(r.drive, r.R, r.G, r.B));
+    setStatus('WCZYTANO STAN');
+    return true;
+  } catch(e) { return false; }
+}
+function resetAll() {
+  if (!confirm('Wyczyścić dane Adaptive RGB Tracking Optimizer?')) return;
+  localStorage.removeItem(STORAGE_STATE);
+  clearRows();
+  ['curR','curG','curB'].forEach(id => document.getElementById(id).value = 100);
+  document.getElementById('minSetting').value = 0;
+  document.getElementById('maxSetting').value = 120;
+  document.getElementById('maxStep').value = 8;
+  document.getElementById('aggression').value = '0.70';
+  document.getElementById('allowRaise').checked = true;
+  document.getElementById('targetRgb').value = 100;
+  document.getElementById('useLearning').value = 'yes';
+  setMode('line');
+  lastAnalysis = null;
+  document.getElementById('resultBox').innerHTML = '<div class="note">Moduł wyczyszczony. Wprowadź nowe dane pomiarowe.</div>';
+  drawChart();
+  setStatus('RESET MODUŁU');
+}
+window.addEventListener('message', ev => {
+  if (ev.data && ev.data.type === 'suite-reset') {
+    localStorage.removeItem(STORAGE_STATE);
+    localStorage.removeItem(STORAGE_LEARN);
+    clearRows();
+    resetAllSilent();
+  }
+  if (ev.data && ev.data.type === 'cda-rgb-tracking-updated') {
+    if (!localStorage.getItem(STORAGE_STATE)) loadRgbTrackingFromCDA(true);
+  }
+});
+window.addEventListener('storage', ev => {
+  if (ev.key === 'suite-reset-token') {
+    localStorage.removeItem(STORAGE_STATE);
+    localStorage.removeItem(STORAGE_LEARN);
+    resetAllSilent();
+  }
+  if (ev.key === 'wba_data_v1' && !localStorage.getItem(STORAGE_STATE)) {
+    loadRgbTrackingFromCDA(true);
+  }
+});
+function resetAllSilent() {
+  clearRows();
+  ['curR','curG','curB'].forEach(id => document.getElementById(id).value = 100);
+  ['afterR','afterG','afterB'].forEach(id => document.getElementById(id).value = '');
+  lastAnalysis = null;
+  document.getElementById('resultBox').innerHTML = '<div class="note">Moduł wyczyszczony przez reset globalny.</div>';
+  renderHistory();
+  drawChart();
+}
+/* theme listener */
+(function(){
+  var __at=null; function applyTheme(light){ if(!document.body) return; document.documentElement.classList.add('theme-anim'); document.body.classList.add('theme-anim'); document.body.classList.toggle('light', !!light); clearTimeout(__at); __at=setTimeout(function(){document.documentElement.classList.remove('theme-anim'); document.body.classList.remove('theme-anim');},950); }
+  function readLS(){ try { return localStorage.getItem('suite-theme')==='light'; } catch(e){ return false; } }
+  applyTheme(readLS());
+  document.addEventListener('DOMContentLoaded', function(){ applyTheme(readLS()); });
+  window.addEventListener('message', function(ev){ if(ev.data && ev.data.type==='suite-theme'){ if(!ev.data.noToggle) applyTheme(ev.data.light); } });
+})();
+renderHistory();
+if (!loadState()) {
+  if (!loadRgbTrackingFromCDA(true)) {
+    addRow(100, 96, 100, 98);
+    drawChart();
+  }
+}
+</script>
+</body>
+</html>

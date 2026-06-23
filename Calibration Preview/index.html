@@ -313,6 +313,17 @@ body::before {
   display: block;
   width: 100%;
 }
+
+#cvAfter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+#cvBefore {
+  z-index: 2;
+}
+
 #cvBefore {
   position: absolute;
   top: 0; left: 0;
@@ -447,6 +458,96 @@ body::before {
 .btn-download span { position: relative; z-index: 1; }
 .btn-download:hover { color: var(--text); border-color: #444; }
 .btn-download:hover::before { transform: translateX(0); }
+
+
+/* ── IMAGE CATALOG PICKER ── */
+.catalog-picker {
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.015);
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+}
+
+.catalog-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.catalog-desc {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.catalog-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 10px;
+}
+
+.catalog-select {
+  border: 1px solid var(--border);
+  background: #090909;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  padding: 13px 12px;
+  outline: none;
+  border-radius: 8px;
+}
+
+.catalog-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(139,21,186,.22);
+}
+
+.catalog-btn {
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 2px;
+  padding: 13px 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-radius: 8px;
+  transition: all .18s;
+}
+
+.catalog-btn:hover {
+  color: #fff;
+  background: rgba(139,21,186,.20);
+}
+
+.catalog-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--muted);
+  background: transparent;
+}
+
+.catalog-note {
+  margin-top: 9px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  color: rgba(120,120,120,.75);
+}
+
+@media (max-width: 720px) {
+  .catalog-row {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ── HINT ── */
 .preview-hint {
@@ -679,7 +780,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     </div>
     <div class="header-text">
       <h1>Calibration Preview</h1>
-      <p>CIE XY PREVIEW + MEASUREMENT TOOL</p>
+      <p>CIE XY PREVIEW + MEASUREMENT TOOL / v4.0</p>
     </div>
     <div class="header-badge">
       CHANNELS: R · G · B · W<br>
@@ -744,10 +845,22 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     <div class="section-label" style="margin-top:32px">03 / Podgląd obrazu — przed / po</div>
 
     <div class="preview-card">
+      <div class="catalog-picker">
+        <div class="catalog-title">Grafika z katalogu</div>
+        <div class="catalog-desc">Wybierz obraz z folderu <b>podgląd kalibracji grafiki</b> albo wgraj własny plik poniżej.</div>
+        <div class="catalog-row">
+          <select class="catalog-select" id="catalog-select">
+            <option value="">— wybierz grafikę z katalogu —</option>
+          </select>
+          <button class="catalog-btn" id="catalog-load-btn" type="button" onclick="loadSelectedCatalogImage()">Wczytaj grafikę</button>
+        </div>
+        <div class="catalog-note">Kolejne pliki dodawaj do folderu „podgląd kalibracji grafiki” i dopisz je w pliku katalog.js.</div>
+      </div>
+
       <label class="upload-zone" id="upload-zone">
         <input type="file" id="file-inp" accept="image/*">
         <div class="upload-icon">↑</div>
-        WGRAJ OBRAZ REFERENCYJNY
+        WGRAJ OBRAZ REFERENCYJNY Z DYSKU
       </label>
 
       <div class="slider-wrap" id="slider-wrap">
@@ -789,7 +902,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       <button class="btn-apply" id="btn-apply" onclick="renderPreview()">
         <span>▶ ZASTOSUJ KALIBRACJĘ</span>
       </button>
-      <div class="preview-hint" id="preview-hint">PRZECIĄGNIJ LINIĘ ABY PORÓWNAĆ · KLIKNIJ ▶ PO ZMIANIE PARAMETRÓW</div>
+      <div class="preview-hint" id="preview-hint">PRZECIĄGNIJ LINIĘ ABY PORÓWNAĆ · ZMIANA PÓL OD RAZU NAKŁADA FILTR</div>
       <button class="btn-download" id="btn-download" onclick="downloadComparison()">
         <span>↓ POBIERZ PORÓWNANIE PRZED / PO</span>
       </button>
@@ -800,6 +913,12 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 </div><!-- /app -->
 
 <script>
+window.CALIBRATION_PREVIEW_IMAGES = window.CALIBRATION_PREVIEW_IMAGES || [
+  { name: "Łabędzie na śniegu", file: "pen_ash-whooper-swans-8640045_1920.jpg" }
+];
+</script>
+<script src="podgląd kalibracji grafiki/katalog.js"></script>
+<script>
 /* ══════════════════════════════════════
    CALIBRATION PREVIEW
 ══════════════════════════════════════ */
@@ -808,8 +927,8 @@ const DOT_CLS  = {R:'r',G:'g',B:'b',W:'w'};
 let calMode = 'W'; // 'W' | 'RGB' | 'RGBW'
 
 const DEFAULTS = {
-  before: {R:{x:0.640,y:0.330,L:100},G:{x:0.300,y:0.600,L:100},B:{x:0.150,y:0.060,L:100},W:{x:0.320,y:0.336,L:100}},
-  after:  {R:{x:0.640,y:0.330,L:100},G:{x:0.300,y:0.600,L:100},B:{x:0.150,y:0.060,L:100},W:{x:0.3127,y:0.3290,L:100}}
+  before: {R:{x:'',y:'',L:''},G:{x:'',y:'',L:''},B:{x:'',y:'',L:''},W:{x:'',y:'',L:''}},
+  after:  {R:{x:'',y:'',L:''},G:{x:'',y:'',L:''},B:{x:'',y:'',L:''},W:{x:'',y:'',L:''}}
 };
 
 const MODE_NOTES = {
@@ -824,6 +943,7 @@ function setCalMode(m) {
   document.getElementById('cal-mode-note').textContent = MODE_NOTES[m];
   applyDisabledRows();
   updateSwatches();
+  requestPreviewRender();
 }
 
 function applyDisabledRows() {
@@ -871,34 +991,124 @@ function mul3(M, v) { return M.map(r => r.reduce((s,c,i) => s+c*v[i], 0)); }
 function linSRGB(v) { return v <= 0.04045 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
 function gamma(v)   { if(v<=0)return 0; if(v>=1)return 1; return v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055; }
 function clamp255(v){ return Math.min(255, Math.max(0, Math.round(v))); }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+function parseNum(v, fallback = 0) {
+  if (v === null || v === undefined) return fallback;
+  const n = Number(String(v).trim().replace(',', '.'));
+  return Number.isFinite(n) ? n : fallback;
+}
 
 function xyLtoXYZ(x,y,L) {
-  if(!y) return [0,0,0];
+  x = parseNum(x, 0);
+  y = parseNum(y, 0);
+  L = parseNum(L, 0);
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(L) || y <= 0 || L <= 0) return [0,0,0];
   const Y = L/100;
   return [Y*x/y, Y, Y*(1-x-y)/y];
 }
 
 function getParams(side) {
   return Object.fromEntries(CHANNELS.map(ch => [ch, {
-    x: parseFloat(document.getElementById(`${side}-${ch}-x`).value) || 0,
-    y: parseFloat(document.getElementById(`${side}-${ch}-y`).value) || 0.001,
-    L: parseFloat(document.getElementById(`${side}-${ch}-L`).value) || 0
+    x: parseNum(document.getElementById(`${side}-${ch}-x`).value, 0),
+    y: parseNum(document.getElementById(`${side}-${ch}-y`).value, 0),
+    L: parseNum(document.getElementById(`${side}-${ch}-L`).value, 0)
   }]));
+}
+
+function hasValidWhitePoint(p) {
+  return p && p.W && p.W.x > 0 && p.W.y > 0 && p.W.y < 1 && p.W.L > 0;
 }
 
 function whiteXYZ(p) {
   return xyLtoXYZ(p.W.x, p.W.y, p.W.L);
 }
 
-function whiteRGB(p) {
-  const [X,Y,Z] = whiteXYZ(p);
-  const [r,g,b] = mul3(M_XYZ_sRGB,[X,Y,Z]);
+function xyToUnitRGB(x, y) {
+  const [X,Y,Z] = xyLtoXYZ(x, y, 100);
+  const [r,g,b] = mul3(M_XYZ_sRGB, [X,Y,Z]);
   return [clamp255(gamma(r)*255), clamp255(gamma(g)*255), clamp255(gamma(b)*255)];
 }
 
+function whiteRGB(p) {
+  if (!hasValidWhitePoint(p)) return [80,80,80];
+  return xyToUnitRGB(p.W.x, p.W.y);
+}
+
 function cct(x,y) {
+  x = parseNum(x, 0);
+  y = parseNum(y, 0);
+  if (x <= 0 || y <= 0 || Math.abs(y - 0.1858) < 1e-6) return null;
   const n = (x-0.3320)/(y-0.1858);
-  return Math.round(Math.max(1000, Math.min(20000, -449*n*n*n+3525*n*n-6823.3*n+5520.33)));
+  const K = -449*n*n*n+3525*n*n-6823.3*n+5520.33;
+  return Number.isFinite(K) ? Math.round(Math.max(1000, Math.min(20000, K))) : null;
+}
+
+function channelGainsFromWhite(p) {
+  if (!hasValidWhitePoint(p)) return [1,1,1,1];
+
+  const [wr,wg,wb] = whiteRGB(p);
+  const maxRGB = Math.max(wr, wg, wb, 1);
+
+  // normalizacja względem najjaśniejszego kanału + wzmocnienie poglądowe,
+  // dzięki temu efekt jest widoczny na jasnych zdjęciach, a nie tylko w swatchu.
+  const norm = [wr/maxRGB, wg/maxRGB, wb/maxRGB];
+  const strength = 2.35;
+  const gains = norm.map(v => clamp(1 + (v - 1) * strength, 0.03, 3.2));
+
+  // luminancja W jako ekspozycja podglądowa
+  const lum = clamp(parseNum(p.W.L, 100) / 100, 0.10, 2.0);
+  return [gains[0], gains[1], gains[2], lum];
+}
+
+function rgbPrimaryBoosts(p) {
+  if (!(calMode === 'RGB' || calMode === 'RGBW')) return [1,1,1];
+
+  // Jeśli podane są współrzędne R/G/B, dodajemy subtelny wpływ gamutu.
+  // To jest podgląd wizualny, więc ma być czytelny, nie laboratoryjnie neutralny.
+  const ref = { R:{x:0.640,y:0.330}, G:{x:0.300,y:0.600}, B:{x:0.150,y:0.060} };
+  const boost = [1,1,1];
+
+  ['R','G','B'].forEach((ch, idx) => {
+    if (!p[ch] || p[ch].x <= 0 || p[ch].y <= 0) return;
+    const dx = p[ch].x - ref[ch].x;
+    const dy = p[ch].y - ref[ch].y;
+    boost[idx] = clamp(1 + dx*1.4 + dy*0.9, 0.55, 1.65);
+  });
+
+  return boost;
+}
+
+function buildCorrector(p) {
+  // Brak danych W: pokaż obraz neutralnie, bez czarnych/zerowych połówek.
+  if (!hasValidWhitePoint(p)) {
+    return (r,g,b) => [r,g,b];
+  }
+
+  // Wylicz kolor bieli z xy. Swatch korzysta z tej samej drogi, więc jeśli swatch
+  // jest czerwony/żółty/niebieski, obraz musi dostać odpowiedni filtr.
+  const [wr, wg, wb] = whiteRGB(p);
+  const maxW = Math.max(wr, wg, wb, 1);
+
+  // Normalizacja do najmocniejszego kanału i wzmocnienie poglądowe.
+  // Dla W x=0.6 y=0.336 daje bardzo czytelny czerwono-ciepły filtr.
+  const strength = 2.8;
+  let gainR = 1 + ((wr / maxW) - 1) * strength;
+  let gainG = 1 + ((wg / maxW) - 1) * strength;
+  let gainB = 1 + ((wb / maxW) - 1) * strength;
+
+  gainR = clamp(gainR, 0.02, 3.5);
+  gainG = clamp(gainG, 0.02, 3.5);
+  gainB = clamp(gainB, 0.02, 3.5);
+
+  const lum = clamp(parseNum(p.W.L, 100) / 100, 0.08, 2.0);
+
+  return (r,g,b) => {
+    const nr = clamp255(r * gainR * lum);
+    const ng = clamp255(g * gainG * lum);
+    const nb = clamp255(b * gainB * lum);
+    return [nr, ng, nb];
+  };
 }
 
 function updateSwatches() {
@@ -907,12 +1117,23 @@ function updateSwatches() {
     const [r,g,b] = whiteRGB(p);
     document.getElementById(`sw-${side}`).style.background = `rgb(${r},${g},${b})`;
     const K = cct(p.W.x, p.W.y);
-    document.getElementById(`meta-${side}`).innerHTML =
-      `<span>rgb(${r}, ${g}, ${b})</span><br>CCT ≈ ${K} K`;
+    document.getElementById(`meta-${side}`).innerHTML = hasValidWhitePoint(p)
+      ? `<span>rgb(${r}, ${g}, ${b})</span><br>CCT ≈ ${K || '—'} K`
+      : `<span>brak danych W</span><br>wpisz x, y oraz L`;
   });
 }
+function requestPreviewRender() {
+  if (typeof srcImage === 'undefined' || !srcImage) return;
+  clearTimeout(window.__calPreviewRenderTimer);
+  window.__calPreviewRenderTimer = setTimeout(() => {
+    try { renderPreview(); } catch (e) { console.error('Calibration Preview render error:', e); }
+  }, 40);
+}
 
-document.querySelectorAll('.field-input').forEach(inp => inp.addEventListener('input', updateSwatches));
+document.querySelectorAll('.field-input').forEach(inp => inp.addEventListener('input', () => {
+  updateSwatches();
+  requestPreviewRender();
+}));
 updateSwatches();
 
 /* ── IMAGE / SLIDER ── */
@@ -922,6 +1143,8 @@ let dragging = false;
 
 const fileInp    = document.getElementById('file-inp');
 const uploadZone = document.getElementById('upload-zone');
+const catalogSelect = document.getElementById('catalog-select');
+const catalogLoadBtn = document.getElementById('catalog-load-btn');
 const sliderWrap = document.getElementById('slider-wrap');
 const cvBefore   = document.getElementById('cvBefore');
 const cvAfter    = document.getElementById('cvAfter');
@@ -938,29 +1161,94 @@ uploadZone.addEventListener('drop', e => {
   if (f && f.type.startsWith('image/')) loadFile(f);
 });
 fileInp.addEventListener('change', () => { if(fileInp.files[0]) loadFile(fileInp.files[0]); });
+if (catalogSelect) catalogSelect.addEventListener('change', () => { if (catalogSelect.value !== '') loadSelectedCatalogImage(); });
+initCatalogImages();
+
+function showLoadedImage(img) {
+  srcImage = img;
+  uploadZone.style.display = 'none';
+  sliderWrap.style.display = 'block';
+  btnApply.style.display = 'block';
+  hintEl.style.display = 'block';
+  document.getElementById('btn-download').style.display = 'block';
+  document.getElementById('btn-remove-image').style.display = 'flex';
+  renderPreview();
+}
 
 function loadFile(f) {
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
-    img.onload = () => {
-      srcImage = img;
-      uploadZone.style.display = 'none';
-      sliderWrap.style.display = 'block';
-      btnApply.style.display = 'block';
-      hintEl.style.display = 'block';
-      document.getElementById('btn-download').style.display = 'block';
-      document.getElementById('btn-remove-image').style.display = 'flex';
-      renderPreview();
-    };
+    img.onload = () => showLoadedImage(img);
     img.src = e.target.result;
   };
   reader.readAsDataURL(f);
 }
 
+function buildCatalogUrl(fileName) {
+  return 'podgląd kalibracji grafiki/' + encodeURIComponent(fileName);
+}
+
+function initCatalogImages() {
+  const list = Array.isArray(window.CALIBRATION_PREVIEW_IMAGES) ? window.CALIBRATION_PREVIEW_IMAGES : [];
+  if (!catalogSelect) return;
+
+  // Wyczyść wszystko poza pierwszą opcją, żeby fallback i katalog.js nie robiły duplikatów.
+  while (catalogSelect.options.length > 1) catalogSelect.remove(1);
+
+  list.forEach((item, index) => {
+    if (!item || (!item.file && !item.dataUrl)) return;
+    const opt = document.createElement('option');
+    opt.value = String(index);
+    opt.textContent = item.name || item.file || ('Grafika ' + (index + 1));
+    catalogSelect.appendChild(opt);
+  });
+
+  if (!list.length && catalogLoadBtn) catalogLoadBtn.disabled = true;
+}
+
+function loadImageFromSrc(src, label) {
+  const img = new Image();
+  img.onload = () => showLoadedImage(img);
+  img.onerror = () => alert('Nie udało się wczytać grafiki z katalogu: ' + (label || ''));
+  img.src = src;
+}
+
+async function loadSelectedCatalogImage() {
+  const list = Array.isArray(window.CALIBRATION_PREVIEW_IMAGES) ? window.CALIBRATION_PREVIEW_IMAGES : [];
+  const idx = Number(catalogSelect ? catalogSelect.value : NaN);
+  const item = list[idx];
+  if (!item || (!item.file && !item.dataUrl)) return;
+
+  // Najbezpieczniej: dataUrl. Wtedy canvas NIE jest blokowany i filtr działa.
+  if (item.dataUrl) {
+    loadImageFromSrc(item.dataUrl, item.file || item.name);
+    return;
+  }
+
+  // Fallback dla hostingu HTTP/GitHub Pages: pobierz jako Blob i zamień na dataURL.
+  // Przy zwykłym file:// fetch może być blokowany — wtedy pokażemy komunikat.
+  try {
+    const res = await fetch(buildCatalogUrl(item.file), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onload = e => loadImageFromSrc(e.target.result, item.file);
+    reader.onerror = () => alert('Nie udało się przekonwertować grafiki katalogowej na dataURL.');
+    reader.readAsDataURL(blob);
+  } catch (err) {
+    alert(
+      'Ta grafika z katalogu została wczytana jako zwykły plik, ale przeglądarka może blokować filtr canvas przy file://. ' +
+      'Uruchom aktualizuj_katalog_grafik.bat w folderze „podgląd kalibracji grafiki” albo wgraj obraz przyciskiem z dysku.'
+    );
+    loadImageFromSrc(buildCatalogUrl(item.file), item.file);
+  }
+}
+
 function removeImage() {
   srcImage = null;
   fileInp.value = '';
+  if (catalogSelect) catalogSelect.value = '';
   uploadZone.style.display = '';
   sliderWrap.style.display = 'none';
   btnApply.style.display = 'none';
@@ -971,20 +1259,59 @@ function removeImage() {
   [cvBefore, cvAfter].forEach(c => { const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); });
 }
 
-function buildCorrector(p) {
-  // Oblicz białe XYZ dla danych parametrów
-  const w = whiteXYZ(p);
-  // Referencja: D65 sRGB white point w XYZ
-  const D65 = [0.95047, 1.00000, 1.08883];
-  // Skala: jak XYZ sRGB mapuje się do XYZ ekranu
-  const s = D65.map((v,i) => w[i]>1e-9 ? w[i]/v : 1);
-  return (r,g,b) => {
-    const rl = linSRGB(r/255), gl = linSRGB(g/255), bl = linSRGB(b/255);
-    const [X,Y,Z] = mul3(M_sRGB_XYZ,[rl,gl,bl]);
-    const [ro,go,bo] = mul3(M_XYZ_sRGB,[X*s[0],Y*s[1],Z*s[2]]);
-    return [clamp255(gamma(ro)*255), clamp255(gamma(go)*255), clamp255(gamma(bo)*255)];
-  };
+function resetCalibrationPreview(clearStorage = true) {
+  try { closeFullscreen(); } catch(e) {}
+
+  calMode = 'W';
+  ['W','RGB','RGBW'].forEach(id => {
+    const btn = document.getElementById('msb' + id);
+    if (btn) btn.classList.toggle('active', id === 'W');
+  });
+  const note = document.getElementById('cal-mode-note');
+  if (note) note.textContent = MODE_NOTES.W;
+
+  document.querySelectorAll('.field-input').forEach(inp => {
+    inp.value = '';
+  });
+
+  if (catalogSelect) catalogSelect.value = '';
+  removeImage();
+
+  [cvBefore, cvAfter, fsCvBefore, fsCvAfter].forEach(c => {
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, c.width || 1, c.height || 1);
+  });
+
+  setSlider(0.5);
+  try { setFsSlider(0.5); } catch(e) {}
+  applyDisabledRows();
+  updateSwatches();
+
+  if (clearStorage) {
+    try {
+      ['calibration_preview_state','calibration_preview_image','calibration_preview_catalog_choice','spectral_incoming'].forEach(k => localStorage.removeItem(k));
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('calibration_preview') || k.startsWith('calibrationPreview') || k.startsWith('cal-preview')) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch(e) {}
+  }
 }
+
+window.addEventListener('message', function(ev) {
+  if (ev.data && ev.data.type === 'suite-reset') {
+    resetCalibrationPreview(true);
+  }
+});
+
+window.addEventListener('storage', function(ev) {
+  if (ev.key === 'suite-reset-token') {
+    resetCalibrationPreview(false);
+  }
+});
+
 
 function applyCorrector(ctx, W, H, corrFn) {
   const id = ctx.getImageData(0,0,W,H);
@@ -998,22 +1325,35 @@ function applyCorrector(ctx, W, H, corrFn) {
 
 function renderPreview() {
   if (!srcImage) return;
-  const W = sliderWrap.offsetWidth || 800;
+
+  const W = Math.max(1, Math.round(sliderWrap.clientWidth || sliderWrap.offsetWidth || 800));
   const asp = srcImage.naturalHeight / srcImage.naturalWidth;
-  const H = Math.round(W * asp);
+  const H = Math.max(1, Math.round(W * asp));
 
   sliderWrap.style.height = H + 'px';
-  [cvBefore, cvAfter].forEach(c => { c.width = W; c.height = H; c.style.width = W+'px'; c.style.height = H+'px'; });
+  [cvBefore, cvAfter].forEach(c => {
+    c.width = W;
+    c.height = H;
+    c.style.width = W + 'px';
+    c.style.height = H + 'px';
+    c.style.position = 'absolute';
+    c.style.top = '0';
+    c.style.left = '0';
+  });
+  cvAfter.style.zIndex = '1';
+  cvBefore.style.zIndex = '2';
 
-  // PRZED: obraz z korekcją według parametrów "przed"
-  const ctxB = cvBefore.getContext('2d');
-  ctxB.drawImage(srcImage, 0, 0, W, H);
-  applyCorrector(ctxB, W, H, buildCorrector(getParams('before')));
-
-  // PO: obraz z korekcją według parametrów "po"
-  const ctxA = cvAfter.getContext('2d');
+  // PO — spodnia pełna warstwa.
+  const ctxA = cvAfter.getContext('2d', { willReadFrequently: true });
+  ctxA.clearRect(0,0,W,H);
   ctxA.drawImage(srcImage, 0, 0, W, H);
   applyCorrector(ctxA, W, H, buildCorrector(getParams('after')));
+
+  // PRZED — wierzchnia warstwa obcięta suwakiem.
+  const ctxB = cvBefore.getContext('2d', { willReadFrequently: true });
+  ctxB.clearRect(0,0,W,H);
+  ctxB.drawImage(srcImage, 0, 0, W, H);
+  applyCorrector(ctxB, W, H, buildCorrector(getParams('before')));
 
   setSlider(sliderRatio);
 }
@@ -1043,6 +1383,7 @@ window.addEventListener('resize', () => { if(srcImage) renderPreview(); });
 
 function downloadComparison() {
   if (!srcImage) return;
+  renderPreview();
 
   const W = cvBefore.width;
   const H = cvBefore.height;
@@ -1168,12 +1509,15 @@ function renderFsPreview() {
     c.width = W; c.height = H;
     c.style.width = W + 'px'; c.style.height = H + 'px';
   });
-  const ctxB = fsCvBefore.getContext('2d');
-  ctxB.drawImage(srcImage, 0, 0, W, H);
-  applyCorrector(ctxB, W, H, buildCorrector(getParams('before')));
-  const ctxA = fsCvAfter.getContext('2d');
+  const ctxA = fsCvAfter.getContext('2d', { willReadFrequently: true });
+  ctxA.clearRect(0,0,W,H);
   ctxA.drawImage(srcImage, 0, 0, W, H);
   applyCorrector(ctxA, W, H, buildCorrector(getParams('after')));
+
+  const ctxB = fsCvBefore.getContext('2d', { willReadFrequently: true });
+  ctxB.clearRect(0,0,W,H);
+  ctxB.drawImage(srcImage, 0, 0, W, H);
+  applyCorrector(ctxB, W, H, buildCorrector(getParams('before')));
   setFsSlider(fsRatio);
 }
 
@@ -1222,6 +1566,39 @@ body.light {
   window.addEventListener('message', function(ev){
     if(ev.data && ev.data.type==='suite-theme'){ if(!ev.data.noToggle) applyTheme(ev.data.light); }
   });
+})();
+</script>
+
+
+<script>
+/* ── Import danych ze Spectral Analyzer ─────────────────────────────
+   Importujemy tylko kanał W jako pomiar „PRZED” albo „PO”. */
+(function(){
+  var lastTs = null;
+  function fromLS(){ try { return JSON.parse(localStorage.getItem('spectral_incoming') || 'null'); } catch(e) { return null; } }
+  function setVal(id, v){
+    var el = document.getElementById(id);
+    if (el && v !== null && v !== undefined && !isNaN(Number(v))) {
+      el.value = Number(v).toFixed(id.endsWith('-L') ? 3 : 4).replace(/\.?0+$/, '');
+      el.dispatchEvent(new Event('input', { bubbles:true }));
+    }
+  }
+  function consume(p){
+    if (!p || p.target !== 'calibrationPreview' || p.ts === lastTs) return;
+    lastTs = p.ts;
+    var ch = String(p.channel || 'W').toUpperCase();
+    if (ch !== 'W') return;
+    var side = p.calSide === 'after' ? 'after' : 'before';
+    try { setCalMode('W'); } catch(e) {}
+    setVal(side + '-W-x', p.x);
+    setVal(side + '-W-y', p.y);
+    if (p.Y !== null && p.Y !== undefined && p.Y !== '') setVal(side + '-W-L', p.Y);
+    try { updateSwatches(); if (typeof srcImage !== 'undefined' && srcImage) renderPreview(); } catch(e) {}
+  }
+  window.addEventListener('message', function(ev){ if (ev.data && ev.data.type === 'spectral-incoming') consume(ev.data.payload || fromLS()); });
+  window.addEventListener('storage', function(ev){ if (ev.key === 'spectral_incoming') consume(fromLS()); });
+  document.addEventListener('DOMContentLoaded', function(){ consume(fromLS()); });
+  consume(fromLS());
 })();
 </script>
 

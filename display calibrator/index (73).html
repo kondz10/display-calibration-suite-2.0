@@ -44,7 +44,7 @@
   .app {
     position: relative;
     z-index: 1;
-    max-width: 860px;
+    max-width: 1360px;
     margin: 0 auto;
     padding: 40px 24px 60px;
   }
@@ -320,6 +320,320 @@
 
   .btn-start:disabled:hover { color: var(--muted); }
   .btn-start:disabled:hover::before { transform: translateX(-100%); }
+
+  /* ===== VISUAL REWORK: large mode cards + wider live preview ===== */
+  .measurement-builder {
+    display: grid;
+    grid-template-columns: minmax(0, 740px) minmax(500px, 560px);
+    gap: 30px;
+    align-items: start;
+  }
+
+  .measurement-controls {
+    min-width: 0;
+  }
+
+  /* Tryby pomiaru mają wyglądać jak duża karta Color Checker:
+     pełna szerokość, równa wysokość, jedna pod drugą. */
+  .mode-list {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+    margin-bottom: 34px !important;
+  }
+
+  .mode-list .mode-card {
+    grid-column: auto !important;
+    width: 100%;
+    min-height: 86px;
+    padding: 20px 22px;
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    align-items: start;
+    gap: 16px;
+  }
+
+  .mode-list .mode-num {
+    width: 38px;
+    text-align: center;
+    font-size: 22px;
+    color: rgba(139,21,186,.42);
+  }
+
+  .mode-list .mode-title {
+    margin-bottom: 7px;
+  }
+
+  .mode-list .mode-desc {
+    line-height: 1.55;
+  }
+
+  .measurement-preview-panel {
+    position: sticky;
+    top: 18px;
+    margin-top: 33px;
+    min-height: 540px;
+    border: 1px solid var(--border);
+    background:
+      radial-gradient(circle at 50% 0%, rgba(139,21,186,.12), transparent 48%),
+      var(--surface);
+    border-radius: 14px;
+    padding: 18px;
+    overflow: hidden;
+  }
+
+  .measurement-preview-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(139,21,186,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,21,186,.045) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: .55;
+    pointer-events: none;
+  }
+
+  .preview-head,
+  .preview-stage,
+  .preview-caption,
+  .preview-steps {
+    position: relative;
+    z-index: 1;
+  }
+
+  .preview-head {
+    margin-bottom: 14px;
+  }
+
+  .preview-kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .preview-title {
+    font-family: var(--mono);
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  .preview-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    border: 1px solid rgba(139,21,186,.38);
+    border-radius: 12px;
+    background: #020202;
+    overflow: hidden;
+    box-shadow:
+      inset 0 0 30px rgba(0,0,0,.85),
+      0 0 20px rgba(139,21,186,.08);
+  }
+
+  .preview-stage-inner {
+    position: absolute;
+    inset: 0;
+  }
+
+  .preview-hud {
+    position: absolute;
+    top: 12px;
+    left: 13px;
+    right: 13px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    color: rgba(255,255,255,.68);
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .preview-hint {
+    position: absolute;
+    left: 13px;
+    right: 13px;
+    bottom: 12px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    color: rgba(255,255,255,.38);
+    text-transform: uppercase;
+    z-index: 3;
+  }
+
+  .preview-caption {
+    margin-top: 15px;
+    min-height: 72px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .preview-caption b {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .preview-steps {
+    display: flex;
+    gap: 5px;
+    margin-top: 14px;
+  }
+
+  .preview-dot {
+    flex: 1;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(139,21,186,.22);
+  }
+
+  .preview-dot.active {
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(139,21,186,.65);
+  }
+
+  .pv-gradient {
+    position: absolute;
+    inset: 0;
+    display: flex;
+  }
+
+  .pv-gradient span {
+    flex: 1;
+    border-right: 1px solid rgba(255,255,255,.08);
+  }
+
+  .pv-solid {
+    position: absolute;
+    inset: 0;
+    transition: background .3s;
+  }
+
+  .pv-grid::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px);
+    background-size: 30px 30px;
+    opacity: .55;
+  }
+
+  .pv-apl-box,
+  .pv-zone,
+  .pv-halo {
+    position: absolute;
+    background: #fff;
+    box-shadow: 0 0 20px rgba(255,255,255,.24);
+  }
+
+  .pv-zone,
+  .pv-halo {
+    width: var(--pv-size, 12%);
+    aspect-ratio: 1 / 1;
+    height: auto;
+    max-width: 92%;
+    max-height: 92%;
+  }
+
+  .pv-apl-box {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .pv-zone.circle,
+  .pv-halo {
+    border-radius: 50%;
+  }
+
+  .pv-halo {
+    background:
+      radial-gradient(circle at 50% 50%,
+        rgba(255,255,255,1) 0%,
+        rgba(255,255,255,.98) 28%,
+        rgba(255,255,255,.70) 42%,
+        rgba(255,255,255,.24) 61%,
+        rgba(255,255,255,.055) 78%,
+        rgba(255,255,255,0) 100%);
+    box-shadow:
+      0 0 16px rgba(255,255,255,.36),
+      0 0 42px rgba(255,255,255,.16);
+  }
+
+  .pv-zone.circle {
+    background:
+      radial-gradient(circle at 50% 50%,
+        rgba(255,255,255,1) 0%,
+        rgba(255,255,255,.96) 58%,
+        rgba(255,255,255,.70) 72%,
+        rgba(255,255,255,.18) 100%);
+    box-shadow:
+      0 0 10px rgba(255,255,255,.28),
+      0 0 22px rgba(255,255,255,.12);
+  }
+
+  .pv-checker {
+    position: absolute;
+    inset: 16%;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 4px;
+  }
+
+  .pv-checker span {
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
+  }
+
+  @media (max-width: 1320px) {
+    .measurement-builder {
+      grid-template-columns: 1fr;
+    }
+
+    .measurement-preview-panel {
+      position: relative;
+      top: 0;
+      margin-top: 0;
+      min-height: auto;
+    }
+
+    .preview-stage {
+      aspect-ratio: 16 / 9;
+      height: auto;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .mode-list .mode-card {
+      min-height: auto;
+    }
+
+    .preview-stage {
+      aspect-ratio: 16 / 9;
+      height: auto;
+    }
+  }
+
+
+
+
+
+
+
 
   /* ===== FULLSCREEN OVERLAY ===== */
   .fs-overlay {
@@ -1020,8 +1334,10 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
   </header>
 
   <!-- 01 TRYB -->
+  <div class="measurement-builder">
+    <div class="measurement-controls">
   <div class="section-label">01 / Tryb pomiaru</div>
-  <div class="card-grid cols3" style="margin-bottom:36px;">
+  <div class="card-grid cols3 mode-list" style="margin-bottom:36px;">
     <div class="mode-card active" id="modeCard1" onclick="selectMode(1)">
       <div class="mode-num">01</div>
       <div>
@@ -1181,6 +1497,24 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
   <!-- START -->
   <div class="start-wrap">
     <button class="btn-start" id="startBtn" onclick="launch()"><span id="startLabel">WYKONAJ POMIAR</span></button>
+  </div>
+    </div>
+
+    <aside class="measurement-preview-panel" aria-label="Podgląd okna pomiarowego">
+      <div class="preview-head">
+        <div class="preview-kicker">Podgląd pomiaru</div>
+        <div class="preview-title" id="previewTitle">Gradient Steps</div>
+      </div>
+      <div class="preview-stage" id="previewStage">
+        <div class="preview-stage-inner" id="previewVisual"></div>
+        <div class="preview-hud"><span id="previewHudA">R</span><span id="previewHudB">KROK 1/4</span></div>
+        <div class="preview-hint">Podgląd sekwencji · ESC zamyka pełny pomiar</div>
+      </div>
+      <div class="preview-caption" id="previewCaption">
+        <b>Gradient Steps.</b> Podgląd kolejnych plansz przed uruchomieniem pomiaru.
+      </div>
+      <div class="preview-steps" id="previewDots"></div>
+    </aside>
   </div>
 </div>
 
@@ -1444,6 +1778,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     document.getElementById('fillSection').classList.toggle('hidden', m!==6);
     if (m===2) channel = -1;
     updateBtn();
+    restartPreview();
   }
 
   function selectScale(s) {
@@ -1455,6 +1790,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     document.getElementById('scaleCard32').classList.toggle('active', s===32);
     updateGridLabel();
     updateBtn();
+    restartPreview();
   }
 
   function updateGridLabel() {
@@ -1490,6 +1826,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     btn.classList.add('active');
     channel = ch;
     updateBtn();
+    restartPreview();
   }
 
   function updateBtn() {
@@ -2219,12 +2556,14 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     document.getElementById('gridCardOn').classList.toggle('active', on);
     document.getElementById('gridCardOff').classList.toggle('active', !on);
     updateBtn();
+    restartPreview();
   }
 
   function selectShape(s) {
     wzlShape = s;
     document.getElementById('shapeCardSquare').classList.toggle('active', s === 'square');
     document.getElementById('shapeCardCircle').classList.toggle('active', s === 'circle');
+    restartPreview();
   }
 
   function selectFill(pct) {
@@ -2233,6 +2572,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       const el = document.getElementById(`fillCard${v}`);
       if (el) el.classList.toggle('active', v === pct);
     });
+    restartPreview();
   }
 
   function startWZL() {
@@ -2359,8 +2699,135 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
         !document.getElementById('wzlDone').classList.contains('active')) renderWZL();
   });
 
+
+  /* ===== LIVE MEASUREMENT PREVIEW ===== */
+  let previewStep = 0;
+  let previewTimer = null;
+
+  const CHECKER_COLORS = [
+    '#735244','#c29682','#627a9d','#576c43','#8580b1','#67bdaa',
+    '#d67e2c','#505ba6','#c15a63','#5e3c6c','#9dbc40','#e0a32e',
+    '#383d96','#469449','#af363c','#e7c71f','#bb5695','#0885a1',
+    '#f3f3f2','#c8c8c8','#a0a0a0','#7a7a7a','#555555','#343434'
+  ];
+
+  function previewColorForChannel(ch, v) {
+    const c = CH_COLORS[ch] || [255,255,255];
+    return `rgb(${Math.round(c[0]*v/255)},${Math.round(c[1]*v/255)},${Math.round(c[2]*v/255)})`;
+  }
+
+  function setPreviewDots(count, active) {
+    const dots = document.getElementById('previewDots');
+    if (!dots) return;
+    dots.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement('span');
+      d.className = 'preview-dot' + (i === active ? ' active' : '');
+      dots.appendChild(d);
+    }
+  }
+
+  function previewFrames() {
+    const ch = channel >= 0 ? channel : 3;
+    if (mode === 1) {
+      return [0,1,2,3].map((c, idx) => ({
+        title: 'Gradient Steps',
+        a: CH_NAMES[c],
+        b: `KANAŁ ${idx+1}/4 · ${scale} KROKÓW`,
+        desc: `<b>Gradient Steps.</b> Kanał ${CH_NAMES[c]} jest mierzony jako seria ${scale} pól od czerni do pełnej jasności.`,
+        html: `<div class="pv-gradient">${stepValues(scale).map(v => `<span style="background:${previewColorForChannel(c,v)}"></span>`).join('')}</div>`
+      }));
+    }
+    if (mode === 2) {
+      const values = [...stepValues(scale)].reverse();
+      return values.map((v, idx) => ({
+        title: 'Solid Levels',
+        a: CH_NAMES[ch],
+        b: `POZIOM ${idx+1}/${scale} · RGB ${previewColorForChannel(ch,v).replace(/[^\d,]/g,'')}`,
+        desc: `<b>Solid Levels.</b> Pełnoekranowe pole jednorodne dla kanału ${CH_NAMES[ch]}; kliknięcie przechodzi do kolejnego poziomu.`,
+        html: `<div class="pv-solid ${solidGrid ? 'pv-grid' : ''}" style="background:${previewColorForChannel(ch,v)}"></div>`
+      }));
+    }
+    if (mode === 3) {
+      return [
+        { title:'Contrast Check', a:'WHITE', b:'RGB 255 · 255 · 255', desc:'<b>Contrast Check.</b> Najpierw zmierz biel pełnoekranową.', html:'<div class="pv-solid" style="background:#fff"></div>' },
+        { title:'Contrast Check', a:'BLACK', b:'RGB 0 · 0 · 0', desc:'<b>Contrast Check.</b> Następnie kliknij i zmierz czerń pełnoekranową.', html:'<div class="pv-solid" style="background:#000"></div>' }
+      ];
+    }
+    if (mode === 4) {
+      const apl = [2,5,10,15,20,25,50,75,100];
+      return apl.map((p, idx) => {
+        const side = Math.sqrt(p/100)*84;
+        return { title:'APL White Fill', a:`APL ${p}%`, b:`POZIOM ${idx+1}/9`, desc:`<b>APL White Fill.</b> Biały prostokąt zajmuje ${p}% powierzchni ekranu na czarnym tle.`, html:`<div class="pv-solid" style="background:#000"></div><div class="pv-apl-box" style="width:${side}%;height:${side}%;"></div>` };
+      });
+    }
+    if (mode === 5) {
+      return CHECKER_COLORS.map((_, idx) => ({
+        title:'Color Checker',
+        a:'COLOR CHECKER',
+        b:`POLE ${idx+1}/24`,
+        desc:`<b>Color Checker.</b> Zmierz pole ${idx+1}/24 w centrum ekranu przy użyciu spektroradiometru.`,
+        html:`<div class="pv-solid" style="background:#111"></div><div class="pv-checker">${CHECKER_COLORS.map((c,i)=>`<span style="background:${c};${i===idx?'outline:2px solid #fff;box-shadow:0 0 12px rgba(255,255,255,.6);':''}"></span>`).join('')}</div>`
+      }));
+    }
+    if (mode === 6) {
+      const zones = [
+        ['L-G', 15, 16], ['P-G', 76, 16], ['L-D', 15, 72], ['P-D', 76, 72], ['CTR', 50, 50], ['ALL', 0, 0]
+      ];
+      const size = Math.max(9, Math.min(22, wzlFill * 4.8));
+      return zones.map((z, idx) => {
+        let html = '<div class="pv-solid" style="background:#000"></div>';
+        if (z[0] === 'ALL') {
+          [[15,16],[76,16],[15,72],[76,72],[50,50]].forEach(p => html += `<div class="pv-zone ${wzlShape==='circle'?'circle':''}" style="--pv-size:${size}%;left:${p[0]}%;top:${p[1]}%;transform:translate(-50%,-50%);"></div>`);
+        } else {
+          html += `<div class="pv-zone ${wzlShape==='circle'?'circle':''}" style="--pv-size:${size}%;left:${z[1]}%;top:${z[2]}%;transform:translate(-50%,-50%);"></div>`;
+        }
+        return { title:'White Zone Luminance', a:z[0], b:`STREFA ${idx+1}/6 · ${wzlFill}%`, desc:`<b>White Zone Luminance.</b> Ustaw miernik luminancji na białym polu ${z[0]} i przejdź do kolejnej strefy kliknięciem.`, html };
+      });
+    }
+    if (mode === 7) {
+      const halo = [1,2,5,10,20,25,50];
+      return halo.map((p, idx) => {
+        const size = Math.sqrt(p/100)*78;
+        return { title:'Halo Test', a:`HALO ${p}%`, b:`KROK ${idx+1}/7`, desc:`<b>Halo Test.</b> Biała plama ${p}% powierzchni ekranu pozwala ocenić poświatę lokalnego podświetlenia.`, html:`<div class="pv-solid" style="background:#000"></div><div class="pv-halo" style="--pv-size:${size}%;left:50%;top:50%;transform:translate(-50%,-50%);"></div>` };
+      });
+    }
+    return [];
+  }
+
+  function updatePreview(resetStep = false) {
+    const visual = document.getElementById('previewVisual');
+    if (!visual) return;
+    const frames = previewFrames();
+    if (!frames.length) return;
+    if (resetStep) previewStep = 0;
+    previewStep = previewStep % frames.length;
+    const f = frames[previewStep];
+    document.getElementById('previewTitle').textContent = f.title;
+    document.getElementById('previewHudA').textContent = f.a;
+    document.getElementById('previewHudB').textContent = f.b;
+    document.getElementById('previewCaption').innerHTML = f.desc;
+    visual.innerHTML = f.html;
+    setPreviewDots(Math.min(frames.length, 12), Math.min(previewStep, 11));
+  }
+
+  function tickPreview() {
+    const frames = previewFrames();
+    if (!frames.length) return;
+    previewStep = (previewStep + 1) % frames.length;
+    updatePreview(false);
+  }
+
+  function restartPreview() {
+    updatePreview(true);
+    clearInterval(previewTimer);
+    previewTimer = setInterval(tickPreview, 1000);
+  }
+
+
   // init
   updateBtn();
+  restartPreview();
 </script>
 <!-- ===== HALO TEST OVERLAY ===== -->
 <div class="fs-overlay" id="haloOverlay" style="background:#000;">

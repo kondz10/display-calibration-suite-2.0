@@ -201,7 +201,8 @@
     .modal-btn.confirm:hover { opacity: .85; }
 
     /* ── Setup screen ── */
-    .setup-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 26px; align-items: start; }
+    .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: stretch; }
+    .setup-grid > .panel { height: 100%; }
     .panel {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 26px 28px;
@@ -225,6 +226,161 @@
     .rec .ri svg { width: 17px; height: 17px; }
     .rec b { display: block; font-size: 14px; color: var(--text); letter-spacing: .5px; margin-bottom: 2px; }
     .rec span { font-size: 13px; color: var(--text2); line-height: 1.45; }
+
+
+    /* ── Setup hero animation ── */
+    .hero-panel {
+      position: relative; min-height: 100%; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: space-between;
+      background:
+        radial-gradient(circle at 23% 16%, rgba(139,21,186,.24), transparent 32%),
+        radial-gradient(circle at 76% 74%, rgba(51,255,255,.07), transparent 28%),
+        linear-gradient(145deg, rgba(255,255,255,.018), transparent 42%),
+        var(--surface);
+      isolation: isolate;
+    }
+    .hero-panel::before {
+      content: ''; position: absolute; inset: 0; z-index: -2;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at 50% 48%, #000 0%, transparent 78%);
+      opacity: .46;
+    }
+    .hero-panel::after {
+      content: ''; position: absolute; inset: -35%; z-index: -1;
+      background: conic-gradient(from 95deg,
+        transparent 0 12%, rgba(255,51,51,.14) 16%, transparent 23%,
+        rgba(51,255,51,.12) 34%, transparent 43%,
+        rgba(51,80,255,.14) 56%, transparent 64%,
+        rgba(255,255,255,.10) 76%, transparent 88%);
+      animation: heroSpinField 11s cubic-bezier(.42,0,.28,1) infinite;
+      filter: blur(1px);
+      opacity: .72;
+    }
+    .hero-heading {
+      display: flex; flex-direction: column; gap: 8px;
+      padding-bottom: 2px;
+    }
+    .hero-title {
+      font-family: var(--mono); font-size: clamp(19px, 1.8vw, 25px); line-height: 1.28;
+      letter-spacing: 4px; color: var(--text); text-transform: uppercase; max-width: 560px;
+    }
+    .hero-title span { display: block; color: var(--text); }
+    .hero-title strong {
+      display: block; color: var(--accent); font-weight: 400;
+      text-shadow: 0 0 18px rgba(139,21,186,.48);
+    }
+    .hero-subtitle {
+      max-width: 560px; font-family: var(--mono); font-size: 11px; line-height: 1.7;
+      letter-spacing: 1.8px; color: var(--text2); text-transform: uppercase;
+    }
+    .hero-subtitle b { color: var(--accent); font-weight: 400; }
+    .hero-stage {
+      position: relative; height: 335px; margin-top: 20px;
+      border: 1px solid rgba(139,21,186,.28); border-radius: 14px; overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.035), transparent 33%),
+        radial-gradient(circle at 50% 62%, rgba(139,21,186,.14), transparent 58%),
+        rgba(0,0,0,.33);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), 0 20px 55px -44px var(--accent);
+      perspective: 900px;
+    }
+    .hero-stage::before {
+      content: ''; position: absolute; inset: 18px 22px 54px 42px;
+      background-image:
+        linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 100% 25%, 14.28% 100%;
+      border-left: 1px solid rgba(255,255,255,.14);
+      border-bottom: 1px solid rgba(255,255,255,.14);
+      opacity: .82;
+    }
+    .hero-stage::after {
+      content: '380   460   530   610   700 nm';
+      position: absolute; left: 44px; right: 24px; bottom: 22px;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--text3);
+      text-align: center;
+    }
+    .spectrum-layer {
+      position: absolute; inset: 0; padding: 20px 20px 56px 38px;
+      opacity: 0; transform: translateY(10px) scale(.985);
+      animation: spectrumSequence 12s ease-in-out infinite;
+    }
+    .spectrum-layer svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 12px currentColor); }
+    .spectrum-layer .fill { opacity: .16; }
+    .spectrum-layer .line { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .spectrum-layer .trace { fill: none; stroke: rgba(255,255,255,.13); stroke-width: 1; stroke-dasharray: 4 8; }
+    .spectrum-layer .tag {
+      position: absolute; top: 18px; right: 22px; font-family: var(--mono); font-size: 11px;
+      letter-spacing: 2px; text-transform: uppercase; color: currentColor;
+    }
+    .spectrum-red { color: #ff3333; animation-delay: 0s; }
+    .spectrum-green { color: #33ff66; animation-delay: 2.2s; }
+    .spectrum-blue { color: #4566ff; animation-delay: 4.4s; }
+    .spectrum-white { color: #f4f6ff; animation-delay: 6.6s; }
+    .hero-final {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      opacity: 0; transform: rotateY(70deg) scale(.72);
+      animation: logoFinal 12s cubic-bezier(.2,.78,.17,1) infinite;
+    }
+    .hero-logo-large {
+      width: 142px; height: 142px; border: 1px solid var(--accent); border-radius: 26px;
+      padding: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      background: rgba(0,0,0,.44); box-shadow: 0 0 34px rgba(139,21,186,.38), inset 0 0 28px rgba(139,21,186,.16);
+      position: relative;
+    }
+    .hero-logo-large::before {
+      content: ''; position: absolute; inset: -42px; border-radius: 50%;
+      background: conic-gradient(from 90deg, rgba(255,51,51,.25), rgba(51,255,51,.22), rgba(51,51,255,.24), rgba(255,255,255,.18), rgba(255,51,51,.25));
+      filter: blur(24px); opacity: .62; z-index: -1;
+    }
+    .hero-logo-large span { border-radius: 6px; position: relative; overflow: hidden; }
+    .hero-logo-large span::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(100deg, transparent 0 24%, rgba(255,255,255,.48) 46%, transparent 70%);
+      transform: translateX(-120%); animation: logoSweep 12s ease-in-out infinite;
+    }
+    .hero-logo-large .lr { box-shadow: 0 0 22px rgba(255,51,51,.64); }
+    .hero-logo-large .lg { box-shadow: 0 0 22px rgba(51,255,51,.56); }
+    .hero-logo-large .lb { box-shadow: 0 0 22px rgba(51,51,255,.66); }
+    .hero-logo-large .lw { box-shadow: 0 0 22px rgba(255,255,255,.45); }
+    .hero-caption {
+      position: absolute; left: 22px; right: 22px; bottom: 20px;
+      display: flex; justify-content: space-between; gap: 14px; align-items: center;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase;
+    }
+    .hero-caption b { color: var(--accent); font-weight: 400; }
+    .hero-metrics {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px;
+    }
+    .hero-metric {
+      border: 1px solid var(--border); border-radius: 8px; padding: 10px 8px;
+      background: rgba(0,0,0,.2); text-align: center; font-family: var(--mono);
+    }
+    .hero-metric b { display: block; font-size: 12px; letter-spacing: 1.5px; color: var(--text); font-weight: 400; }
+    .hero-metric span { display: block; margin-top: 4px; font-size: 10px; letter-spacing: 1.2px; color: var(--text3); text-transform: uppercase; }
+    @keyframes spectrumSequence {
+      0%, 12% { opacity: 0; transform: translateY(10px) scale(.985); }
+      16%, 29% { opacity: 1; transform: translateY(0) scale(1); }
+      34%, 100% { opacity: 0; transform: translateY(-12px) scale(1.015); }
+    }
+    @keyframes logoFinal {
+      0%, 69% { opacity: 0; transform: rotateY(72deg) rotateZ(-8deg) scale(.7); }
+      74%, 92% { opacity: 1; transform: rotateY(0) rotateZ(0) scale(1); }
+      100% { opacity: 0; transform: rotateY(-18deg) scale(.96); }
+    }
+    @keyframes heroSpinField {
+      0%, 61% { transform: rotate(0deg) scale(1); opacity: .62; }
+      72% { transform: rotate(205deg) scale(1.08); opacity: .95; }
+      100% { transform: rotate(360deg) scale(1); opacity: .62; }
+    }
+    @keyframes logoSweep {
+      0%, 72% { transform: translateX(-120%); }
+      78%, 92% { transform: translateX(120%); }
+      100% { transform: translateX(120%); }
+    }
 
     .field { margin-bottom: 14px; }
     .field label {
@@ -376,17 +532,166 @@
     #tool-nav-crumb .sep { color: var(--text3); }
     #tool-nav-crumb .here { color: var(--accent); }
 
+    @media (prefers-reduced-motion: reduce) {
+      .hero-panel::after, .spectrum-layer, .hero-final, .hero-logo-large span::after { animation: none !important; }
+      .spectrum-layer { opacity: 0; }
+      .spectrum-white { opacity: 1; transform: none; }
+      .hero-final { opacity: 1; transform: scale(.9); }
+    }
+
     @media (max-width: 900px) {
       .setup-grid { grid-template-columns: 1fr; }
+      .hero-panel { min-height: 470px; }
+      .hero-stage { height: 305px; }
       .grid { grid-template-columns: repeat(2, 1fr); }
       .workflow { grid-template-columns: 1fr 1fr; }
       .header-spec { display: none; }
     }
     @media (max-width: 560px) {
       .grid { grid-template-columns: 1fr; }
+      .hero-panel { padding: 22px 18px; min-height: 430px; }
+      .hero-title { letter-spacing: 2.5px; }
+      .hero-stage { height: 270px; }
+      .hero-metrics { grid-template-columns: 1fr 1fr; }
+      .hero-logo-large { width: 116px; height: 116px; padding: 18px; }
       main { padding: 18px; }
       .header-text h1 { font-size: 17px; letter-spacing: 3px; }
     }
+
+    /* —— subtle header/app logo glow + slower tile dimming —— */
+    .logo-icon {
+      position: relative;
+      isolation: isolate;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      filter: drop-shadow(0 0 5px rgba(176, 74, 255, .16));
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      inset: -9%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 50%, rgba(185, 74, 255, .10), transparent 68%);
+      filter: blur(4px);
+      opacity: .28;
+      z-index: -1;
+      pointer-events: none;
+      animation: logoAuraMinimal 7.35s ease-in-out infinite;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      inset: -3%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.018);
+      filter: blur(2px);
+      opacity: .18;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-icon span {
+      transform-origin: 50% 50%;
+      will-change: opacity, filter, transform, box-shadow;
+      animation: logoTileBrightDim 5.6s ease-in-out infinite;
+    }
+
+    .logo-icon span:nth-child(1) {
+      animation-delay: 0s;
+      --tile-glow-1: rgba(255, 45, 60, .72);
+      --tile-glow-2: rgba(255, 45, 60, .36);
+    }
+
+    .logo-icon span:nth-child(2) {
+      animation-delay: 1.4s;
+      --tile-glow-1: rgba(45, 255, 95, .72);
+      --tile-glow-2: rgba(45, 255, 95, .36);
+    }
+
+    .logo-icon span:nth-child(3) {
+      animation-delay: 2.8s;
+      --tile-glow-1: rgba(65, 80, 255, .76);
+      --tile-glow-2: rgba(65, 80, 255, .38);
+    }
+
+    .logo-icon span:nth-child(4) {
+      animation-delay: 4.2s;
+      --tile-glow-1: rgba(255,255,255,.68);
+      --tile-glow-2: rgba(255,255,255,.32);
+    }
+
+    .logo-icon.logo-spin {
+      animation: logoSpinLinear .72s linear 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    @keyframes logoTileBrightDim {
+      0%, 100% {
+        opacity: .72;
+        filter: brightness(.72) saturate(.95);
+        transform: scale(.965);
+        box-shadow: 0 0 1px transparent;
+      }
+      18% {
+        opacity: 1;
+        filter: brightness(1.90) saturate(1.55);
+        transform: scale(1.065);
+        box-shadow:
+          0 0 6px var(--tile-glow-1),
+          0 0 12px var(--tile-glow-2);
+      }
+      34% {
+        opacity: .88;
+        filter: brightness(1.05) saturate(1.10);
+        transform: scale(1.005);
+        box-shadow: 0 0 3px var(--tile-glow-2);
+      }
+      58% {
+        opacity: .55;
+        filter: brightness(.55) saturate(.85);
+        transform: scale(.94);
+        box-shadow: 0 0 0 transparent;
+      }
+      78% {
+        opacity: .86;
+        filter: brightness(1.12) saturate(1.18);
+        transform: scale(1);
+        box-shadow: 0 0 2px var(--tile-glow-2);
+      }
+    }
+
+    @keyframes logoAuraMinimal {
+      0%, 100% {
+        opacity: .18;
+        transform: scale(.985);
+      }
+      50% {
+        opacity: .32;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes logoSpinLinear {
+      from { transform: rotate(0deg) translateZ(0); }
+      to   { transform: rotate(360deg) translateZ(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon::before,
+      .logo-icon::after,
+      .logo-icon span,
+      .logo-icon.logo-spin {
+        animation: none !important;
+      }
+    }
+
+
+
+
+
   </style>
 </head>
 <body>
@@ -413,19 +718,55 @@
     <!-- ── SETUP ─────────────────────────────────────────────── -->
     <section id="screen-setup" class="screen active">
       <div class="setup-grid">
-        <div class="panel">
-          <h2>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12M4 5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7"/><path d="M16 5l4-2v14l-4 2"/></svg>
-            Instrukcja i przygotowanie pomiaru
-          </h2>
-          <p class="lead">Aplikacja służy do wyświetlania wzorców, analizy oraz kalibracji wyświetlaczy z wykorzystaniem spektroradiometru GL Optic Spectis lub kolorymetru. Przed rozpoczęciem uzupełnij dane urządzenia i przygotuj stanowisko pomiarowe.</p>
-
-          <div class="sub-label">Zalecenia przed pomiarem</div>
-          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div><div><b>Rozgrzej wyświetlacz</b><span>Włącz ekran na minimum 30 minut przed pomiarem.</span></div></div>
-          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg></div><div><b>Ustaw tryb obrazu</b><span>Tryb standardowy lub referencyjny, wyłącz ulepszacze obrazu.</span></div></div>
-          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></div><div><b>Ustaw jasność</b><span>Poziom 100% lub zgodny z planem pomiarowym.</span></div></div>
-          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 0 1 18 0M3 12a9 9 0 0 0 18 0"/><path d="M12 3v18"/></svg></div><div><b>Warunki otoczenia</b><span>Zadbaj o ciemne otoczenie bez odbić światła na ekranie.</span></div></div>
-          <div class="rec"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></div><div><b>Pozycjonowanie sondy</b><span>Sonda prostopadle do ekranu, w centrum powierzchni.</span></div></div>
+        <div class="panel hero-panel" aria-label="Animacja rozkładu widmowego i logo aplikacji">
+          <div class="hero-heading">
+            <div class="hero-title"><span>Widmowa analiza RGBW</span><strong>Kalibracja wyświetlaczy</strong></div>
+            <p class="hero-subtitle">Sekwencja rozkładów widmowych kanałów <b>R · G · B · W</b></p>
+          </div>
+          <div class="hero-stage" aria-hidden="true">
+            <div class="spectrum-layer spectrum-red">
+              <div class="tag">R · peak 630 nm</div>
+              <svg viewBox="0 0 560 210" preserveAspectRatio="none">
+                <path class="trace" d="M0 182 C70 181 120 180 170 178 C225 174 250 167 285 150 C335 125 362 76 397 37 C418 14 440 18 463 45 C492 80 520 143 560 176"/>
+                <path class="fill" fill="currentColor" d="M0 190 C65 188 135 187 195 184 C262 179 305 158 345 110 C384 63 405 8 438 24 C477 42 503 136 560 184 L560 210 L0 210 Z"/>
+                <path class="line" d="M0 190 C65 188 135 187 195 184 C262 179 305 158 345 110 C384 63 405 8 438 24 C477 42 503 136 560 184"/>
+              </svg>
+            </div>
+            <div class="spectrum-layer spectrum-green">
+              <div class="tag">G · peak 532 nm</div>
+              <svg viewBox="0 0 560 210" preserveAspectRatio="none">
+                <path class="trace" d="M0 184 C75 181 124 180 184 171 C244 160 277 125 311 68 C334 30 359 19 388 48 C429 88 457 145 560 183"/>
+                <path class="fill" fill="currentColor" d="M0 190 C65 188 126 183 178 174 C226 166 260 139 291 86 C322 32 350 12 381 38 C421 72 448 150 560 185 L560 210 L0 210 Z"/>
+                <path class="line" d="M0 190 C65 188 126 183 178 174 C226 166 260 139 291 86 C322 32 350 12 381 38 C421 72 448 150 560 185"/>
+              </svg>
+            </div>
+            <div class="spectrum-layer spectrum-blue">
+              <div class="tag">B · peak 455 nm</div>
+              <svg viewBox="0 0 560 210" preserveAspectRatio="none">
+                <path class="trace" d="M0 179 C35 169 63 130 91 74 C113 28 140 11 170 33 C210 61 238 142 283 169 C353 193 463 188 560 184"/>
+                <path class="fill" fill="currentColor" d="M0 186 C34 171 58 121 86 65 C112 16 145 9 178 36 C220 72 235 146 287 174 C360 196 463 188 560 185 L560 210 L0 210 Z"/>
+                <path class="line" d="M0 186 C34 171 58 121 86 65 C112 16 145 9 178 36 C220 72 235 146 287 174 C360 196 463 188 560 185"/>
+              </svg>
+            </div>
+            <div class="spectrum-layer spectrum-white">
+              <div class="tag">W · broadband D65</div>
+              <svg viewBox="0 0 560 210" preserveAspectRatio="none">
+                <path class="trace" d="M0 160 C50 120 84 82 126 58 C178 30 221 57 255 72 C297 91 330 62 373 50 C430 35 490 94 560 138"/>
+                <path class="fill" fill="currentColor" d="M0 176 C42 124 83 75 128 52 C178 27 213 52 253 71 C294 91 321 65 365 51 C425 30 491 83 560 134 L560 210 L0 210 Z"/>
+                <path class="line" d="M0 176 C42 124 83 75 128 52 C178 27 213 52 253 71 C294 91 321 65 365 51 C425 30 491 83 560 134"/>
+              </svg>
+            </div>
+            <div class="hero-final">
+              <div class="hero-logo-large"><span class="lr"></span><span class="lg"></span><span class="lb"></span><span class="lw"></span></div>
+            </div>
+            <div class="hero-caption"><span>Symulacja SPD RGBW</span><b>Display Calibration Suite</b></div>
+          </div>
+          <div class="hero-metrics" aria-hidden="true">
+            <div class="hero-metric"><b>R</b><span>610–700 nm</span></div>
+            <div class="hero-metric"><b>G</b><span>500–560 nm</span></div>
+            <div class="hero-metric"><b>B</b><span>430–480 nm</span></div>
+            <div class="hero-metric"><b>W</b><span>D65 mix</span></div>
+          </div>
         </div>
 
         <div class="panel">
@@ -483,7 +824,7 @@
     <!-- ── MENU ──────────────────────────────────────────────── -->
     <section id="screen-menu" class="screen">
       <div class="crumb">
-        <button class="back" id="btn-to-setup">↻ Instrukcja / zmień konfigurację</button>
+        <button class="back" id="btn-to-setup">↻ Dane urządzenia / konfiguracja</button>
         <span class="sep">/</span><span class="here">Menu aplikacji</span>
         <button class="btn-reset-all" onclick="confirmResetAll()">⊘ Resetuj wszystkie dane</button>
       </div>
@@ -583,7 +924,6 @@
           { id:'grayscale',    title:'Grayscale',       icon:'cda_gray',   desc:'Analiza skali szarości i balansu bieli.' },
           { id:'apl',          title:'APL Brightness',  icon:'cda_apl',    desc:'Jasność w funkcji APL (Average Picture Level).' },
           { id:'colorchecker', title:'Colour Checker',  icon:'falsecolor', desc:'Analiza wzorca Colour Checker i odwzorowania barw.' },
-          { id:'export',       title:'Eksport',         icon:'cda_export', desc:'Eksport wyników analizy do plików.' },
         ] },
       colorCalculator:    { title:'Color Calculator',          desc:'Przeliczanie przestrzeni barw i współrzędnych kolorów.',                  src:'Colour Calculator/colour_calculator_v2.html', icon:'calc' },
       gamutScope:         { title:'Gamut Scope',               desc:'Wizualizacja i porównanie gamutów na diagramie chromatyczności.',         src:'Gamut Scope/gamut_scope_v2 (4).html',      icon:'gamut' },
@@ -591,6 +931,7 @@
       falseColor:         { title:'False Color Viewer',        desc:'Mapa fałszywych kolorów luminancji (LMK2000).',                          src:'False Color Viewer/False Color Viever.html', icon:'falsecolor' },
       haloAnalysis:       { title:'Halo Analysis',             desc:'Analiza efektu halo i profili luminancji wokół wzorców.',                 src:'Halo Analysis/halo_analysis_v7.html',      icon:'halo' },
       calibrationPreview: { title:'Calibration Preview',       desc:'Podgląd efektów kalibracji: balans bieli, gamma, CMS.',                   src:'Calibration Preview/index.html',           icon:'preview' },
+      adaptiveRgbOptimizer: { title:'Adaptive RGB Tracking Optimizer', desc:'Iteracyjna analiza RGB tracking i propozycje korekt R/G/B dla całej linii szarości.', src:'Adaptive RGB Tracking Optimizer/index.html', icon:'cda_rgb' },
       ti3:                { title:'TI3 · Argyll Profiler',     desc:'Generator plików TI3 i profili ICC — rozbity na osobne moduły.',           src:'TI3/ti3gen_v6.html',                       icon:'ti3',
         tabs:[
           { id:'0', title:'Pomiary',        icon:'ti3', desc:'Wprowadź i edytuj dane pomiarowe do profilu.' },
@@ -611,10 +952,13 @@
         ] },
       { num:'02', title:'Analiza barwy',      icon:'wheel',  desc:'Chromatyczność, gamuty, temperatura barwowa, ΔE i analiza widma.',         tools:['spectralAnalyzer','chromaticAnalyzer','colorCalculator','gamutScope'] },
       { num:'03', title:'Analiza luminancji', icon:'sun',    desc:'Jasność, kontrast, jednorodność, gamma, HDR oraz efekt halo.',            tools:['gammaAnalyzer','falseColor','haloAnalysis'] },
-      { num:'04', title:'Kalibracja',         icon:'target', desc:'Balans bieli, gamma, CMS oraz podgląd kalibracji SDR i HDR.',             tools:['calibrationPreview'] },
+      { num:'04', title:'Kalibracja',         icon:'target', desc:'Balans bieli, gamma, CMS oraz podgląd kalibracji SDR i HDR.',             tools:['adaptiveRgbOptimizer','calibrationPreview'] },
       { num:'05', title:'Profile ICC',        icon:'icc',    desc:'Generowanie i weryfikacja profili ICC/ICM (TI3 · ArgyllCMS).',            tools:['ti3'] },
       { num:'06', title:'Raporty',            icon:'report', desc:'Raporty pomiarów, eksport danych oraz scalanie dokumentów PDF.',        tools:['docxGenerator','eksportDanych','pdfMerger'] },
     ];
+
+    // Alias używany przez obsługę wiadomości z ramek.
+    const TOOL_INFO = TOOLS;
 
     /* line-art icons (stroke = currentColor / accent) */
     function icon(name) {
@@ -713,6 +1057,7 @@
     }
 
     function openCategory(i) {
+      triggerLogoSpin();
       const c = CATEGORIES[i];
       catReopen = () => openCategory(i);
       setCatCrumb('← Menu aplikacji', () => showScreen('menu'), c.num + ' · ' + c.title);
@@ -725,6 +1070,7 @@
     }
 
     function openSub(i, j) {
+      triggerLogoSpin();
       const c = CATEGORIES[i], s = c.subs[j];
       catReopen = () => openSub(i, j);
       setCatCrumb('← ' + c.title, () => openCategory(i), c.num + ' · ' + c.title + '  ›  ' + s.title);
@@ -735,6 +1081,7 @@
     // A tool that expands into its own internal tabs (e.g. Chromatic Data Analyser).
     // All tabs share ONE window, so importing on the general tab feeds the rest.
     function openMultiTool(tid) {
+      triggerLogoSpin();
       const t = TOOLS[tid];
       const parentHere = document.getElementById('cat-title').textContent;
       const parentTitle = parentHere.split('·').pop().split('›').pop().trim();
@@ -752,12 +1099,31 @@
       window.scrollTo(0, 0);
     }
 
+    function triggerLogoSpin() {
+      const logos = document.querySelectorAll('.header-top .logo-icon, .hero-logo-large');
+      logos.forEach(el => {
+        el.classList.remove('logo-spin');
+        void el.offsetWidth;
+        el.classList.add('logo-spin');
+        if (el._logoSpinTimer) clearTimeout(el._logoSpinTimer);
+        el._logoSpinTimer = setTimeout(() => el.classList.remove('logo-spin'), 760);
+      });
+    }
+
     /* lazy-loaded tool iframes, cached by id so state (and imported data) persists */
     const frameCache = {};
     const TAB_MSG_TYPE = {
       spectralAnalyzer: 'spectral-tab',
       ti3:              'ti3-tab',
     };
+    function isSpectralPayloadForTool(pending, tid) {
+      if (!pending || !pending.target) return false;
+      if (pending.target === tid) return true;
+      if (pending.target === 'colorCheckerBoth' && (tid === 'chromaticAnalyzer' || tid === 'ti3')) return true;
+      if (pending.target === 'cdaColorChecker' && tid === 'chromaticAnalyzer') return true;
+      if (pending.target === 'ti3ColorChecker' && tid === 'ti3') return true;
+      return false;
+    }
     function sendTab(f) {
       const tab = f.dataset.tab;
       if (!tab) return;
@@ -772,6 +1138,7 @@
       try { f.contentWindow.postMessage(msg, '*'); } catch(e) {}
     }
     function openTool(tid, tabId) {
+      triggerLogoSpin();
       const t = TOOLS[tid];
       if (!t || t.info) return;
       let f = frameCache[tid];
@@ -781,7 +1148,21 @@
         f.src = t.src;
         f.setAttribute('allowfullscreen', '');
         f.setAttribute('allow', 'fullscreen');
-        f.addEventListener('load', () => { applyThemeToFrame(f); sendTab(f); sendLaunch(f); });
+        f.addEventListener('load', () => {
+          applyThemeToFrame(f);
+          sendTab(f);
+          sendLaunch(f);
+          sendDeviceConfig(f);
+          // If Spectral Analyzer exported data before the target iframe was opened,
+          // replay the pending payload right after load. This fixes exports to tools
+          // that are opened only after choosing "Przekaż dane do...".
+          try {
+            const pending = JSON.parse(localStorage.getItem('spectral_incoming') || 'null');
+            if (pending && isSpectralPayloadForTool(pending, tid)) {
+              f.contentWindow.postMessage({ type: 'spectral-incoming', payload: pending }, '*');
+            }
+          } catch(e) {}
+        });
         document.getElementById('tool-frames').appendChild(f);
         frameCache[tid] = f;
       }
@@ -793,6 +1174,7 @@
       applyThemeToFrame(f);
       sendTab(f);                       // cached frame already loaded → switch now
       sendLaunch(f);
+      sendDeviceConfig(f);
       document.body.classList.add('tool-open');
       document.getElementById('tool-host').setAttribute('aria-hidden', 'false');
       const tabLabel = tabId && t.tabs ? (t.tabs.find(tb => tb.id === tabId) || {}).title : null;
@@ -815,12 +1197,20 @@
         if (cdaFrame) {
           try { cdaFrame.contentWindow.postMessage(ev.data, '*'); } catch(e) {}
         }
+        if (ev.data.openTarget && TOOL_INFO[ev.data.openTarget]) {
+          setTimeout(() => openTool(ev.data.openTarget), 0);
+        }
+        updateStatusBar();
       }
       // Forward generic Spectral export to every open tool (each target picks up its own)
       if (ev.data.type === 'spectral-incoming') {
         document.querySelectorAll('.tool-frame').forEach(fr => {
           try { fr.contentWindow.postMessage(ev.data, '*'); } catch(e) {}
         });
+        if (ev.data.openTarget && TOOL_INFO[ev.data.openTarget]) {
+          setTimeout(() => openTool(ev.data.openTarget), 0);
+        }
+        updateStatusBar();
       }
     });
 
@@ -836,6 +1226,55 @@
     }
     function loadDevice() {
       try { return JSON.parse(localStorage.getItem('dcs-device') || '{}'); } catch(e) { return {}; }
+    }
+    function safeSlug(v) {
+      return String(v || '').trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
+    }
+    function ti3TechFromDeviceType(type) {
+      switch (String(type || '').toLowerCase()) {
+        case 'oled': return 'OLED';
+        case 'woled': return 'WOLED';
+        case 'qd-led': return 'QD-OLED';
+        case 'edge-lit': return 'LCD Edge LED';
+        case 'back-lit': return 'LCD White LED';
+        case 'mini led': return 'Mini LED';
+        default: return 'LCD White LED';
+      }
+    }
+    function buildDeviceWorkflowOptions(d) {
+      d = d || loadDevice();
+      const displayName = [d.brand, d.model].filter(Boolean).join(' ').trim();
+      const profileBase = safeSlug([d.brand, d.model, 'D65'].filter(Boolean).join('_')) || 'Display_D65';
+      return {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        device: d,
+        ti3: {
+          prof_desc: profileBase,
+          disp_mfr: d.brand || '',
+          disp_model: d.model || displayName || '',
+          disp_serial: d.serial || '',
+          disp_tech: ti3TechFromDeviceType(d.type),
+          white_point: 'D65',
+          target_gamma: '2.2'
+        },
+        exportDanych: {
+          filenameBase: safeSlug(d.model || displayName || 'dane'),
+          includeDevice: true
+        }
+      };
+    }
+    function loadWorkflowOptions() {
+      try { return JSON.parse(localStorage.getItem('dcs-workflow') || 'null'); } catch(e) { return null; }
+    }
+    function sendDeviceConfig(frame) {
+      if (!frame || !frame.contentWindow) return;
+      const device = loadDevice();
+      const workflow = loadWorkflowOptions() || buildDeviceWorkflowOptions(device);
+      try { frame.contentWindow.postMessage({ type:'suite-device-config', device, workflow }, '*'); } catch(e) {}
+    }
+    function broadcastDeviceConfig() {
+      Object.values(frameCache || {}).forEach(sendDeviceConfig);
     }
     // Device form-factor selector (TV / Monitor / Laptop)
     let selectedClass = '';
@@ -870,7 +1309,11 @@
         return;
       }
       document.getElementById('setup-hint').textContent = '';
-      try { localStorage.setItem('dcs-device', JSON.stringify(d)); } catch(e) {}
+      try {
+        localStorage.setItem('dcs-device', JSON.stringify(d));
+        localStorage.setItem('dcs-workflow', JSON.stringify(buildDeviceWorkflowOptions(d)));
+      } catch(e) {}
+      broadcastDeviceConfig();
       sessionStart = new Date();
       updateStatusBar();
       showScreen('menu');
@@ -892,7 +1335,7 @@
       if (!el) return;
       const hasWba = !!localStorage.getItem('wba_data_v1');
       const hasDev = !!localStorage.getItem('dcs-device');
-      const hasSpectral = !!localStorage.getItem('spectral_incoming');
+      const hasSpectral = !!localStorage.getItem('spectral_incoming') || !!localStorage.getItem('spectral_incoming_cda') || !!localStorage.getItem('spectral_incoming_gamma') || !!localStorage.getItem('spectral_incoming_ti3');
       const hasSpectralRaw = !!localStorage.getItem('spectral_single_rawdata');
       const hasData = hasWba || hasDev || hasSpectral || hasSpectralRaw;
       el.textContent = hasData ? 'ZAPISANE W PRZEGLĄDARCE' : 'POLA WYCZYSZCZONE';
@@ -917,7 +1360,7 @@
     }
 
     /* ─────────────────────── RESET ALL DATA ───────────── */
-    const APP_STORAGE_KEYS = ['dcs-device','wba_data_v1','spectral_incoming','spectral_single_rawdata','suite-theme'];
+    const APP_STORAGE_KEYS = ['dcs-device','dcs-workflow','wba_data_v1','spectral_incoming','spectral_incoming_cda','spectral_incoming_gamma','spectral_incoming_ti3','spectral_auto_export_enabled','spectral_single_rawdata','adaptive_rgb_tracking_state','adaptive_rgb_tracking_learning','calibration_preview_state','calibration_preview_image','calibration_preview_catalog_choice','suite-reset-token','suite-theme'];
     function confirmResetAll() {
       document.getElementById('reset-modal').style.display = 'flex';
     }
@@ -928,9 +1371,25 @@
       APP_STORAGE_KEYS.forEach(k => {
         if (k !== 'suite-theme') localStorage.removeItem(k);
       });
+
+      try {
+        Object.keys(localStorage).forEach(k => {
+          if (k !== 'suite-theme' && (
+            k.startsWith('calibration_preview') ||
+            k.startsWith('calibrationPreview') ||
+            k.startsWith('cal-preview') ||
+            k.startsWith('adaptive_rgb_tracking') ||
+            k === 'spectral_incoming'
+          )) {
+            localStorage.removeItem(k);
+          }
+        });
+        localStorage.setItem('suite-reset-token', String(Date.now()));
+      } catch(e) {}
+
       // Broadcast reset to all cached iframes so they clear in-memory state
       Object.values(frameCache).forEach(f => {
-        try { f.contentWindow.postMessage({ type: 'suite-reset' }, '*'); } catch(e) {}
+        try { f.contentWindow.postMessage({ type: 'suite-reset', target: 'all' }, '*'); } catch(e) {}
       });
       closeResetModal();
       updateStatusBar();
@@ -1014,7 +1473,7 @@
     })();
 
     /* ─────────────────────── EVENTS / INIT ────────────────────── */
-    document.getElementById('btn-start').addEventListener('click', startWork);
+    document.getElementById('btn-start').addEventListener('click', () => { triggerLogoSpin(); startWork(); });
     document.getElementById('btn-to-setup').addEventListener('click', () => { fillSetupForm(); showScreen('setup'); });
     document.getElementById('btn-cat-back').addEventListener('click', () => catBack());
 

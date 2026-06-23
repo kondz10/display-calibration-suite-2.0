@@ -213,14 +213,18 @@
       if (!chData) return 0;
       return chData.filter(p => p && (p.x !== '' || p.y !== '' || p.Y !== '')).length;
     }
+    function getChannelData(data, ch) {
+      if (!data || !data.data) return [];
+      return data.data[ch] || data.data[String(ch).toLowerCase()] || [];
+    }
 
     function buildCSV(data) {
       const channels = ['R','G','B','W'];
       const header = 'Kanal,Poziom,x,y,Y';
       const rows = [header];
       channels.forEach(ch => {
-        const chData = data.data && data.data[ch.toLowerCase()];
-        if (!chData) return;
+        const chData = getChannelData(data, ch);
+        if (!chData || !chData.length) return;
         chData.forEach((pt, idx) => {
           if (pt && (pt.x !== '' || pt.y !== '' || pt.Y !== '')) {
             rows.push([ch, idx, pt.x || '', pt.y || '', pt.Y || ''].join(','));
@@ -276,17 +280,17 @@
         return;
       }
 
-      const channels = ['r','g','b','w'];
-      const chLabels = { r:'R', g:'G', b:'B', w:'W' };
-      const chClass  = { r:'ch-r', g:'ch-g', b:'ch-b', w:'ch-w' };
-      const totalPts = channels.reduce((s, ch) => s + channelPoints(data.data[ch]), 0);
+      const channels = ['R','G','B','W'];
+      const chLabels = { R:'R', G:'G', B:'B', W:'W' };
+      const chClass  = { R:'ch-r', G:'ch-g', B:'ch-b', W:'ch-w' };
+      const totalPts = channels.reduce((s, ch) => s + channelPoints(getChannelData(data, ch)), 0);
       const precision = data.precision || 8;
       const devStr = device.brand && device.model ? `${device.brand} ${device.model}` : '—';
       const dateStr = new Date().toISOString().slice(0,10);
       const fname = (device.model || 'dane').replace(/\s+/g,'_');
 
       const chRows = channels.map(ch => {
-        const pts = channelPoints(data.data[ch]);
+        const pts = channelPoints(getChannelData(data, ch));
         return `<div class="channel-row">
           <div class="ch-label ${chClass[ch]}">${chLabels[ch]}</div>
           <span class="ch-name">Kanał ${chLabels[ch]}</span>
