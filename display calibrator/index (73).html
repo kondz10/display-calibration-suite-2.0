@@ -174,6 +174,80 @@
     letter-spacing: 1px;
   }
 
+  .wp-card-note {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.46);
+  }
+
+  .white-point-summary {
+    margin: -6px 0 36px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .white-point-summary b {
+    color: var(--text);
+    font-family: var(--mono);
+    letter-spacing: 1px;
+  }
+
+  .auto-advance-panel {
+    margin: -8px 0 36px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .auto-advance-row {
+    display: grid;
+    grid-template-columns: 1fr 150px;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .auto-advance-copy {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .auto-advance-copy b {
+    color: var(--text);
+    font-family: var(--mono);
+    letter-spacing: 1px;
+  }
+
+  .auto-advance-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.35);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 13px 12px;
+    font-family: var(--mono);
+    font-size: 18px;
+    text-align: center;
+    outline: none;
+  }
+
+  .auto-advance-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(139,21,186,0.18);
+  }
+
+  @media (max-width: 900px) {
+    .auto-advance-row { grid-template-columns: 1fr; }
+  }
+
   /* MODE CARDS — left-aligned with number */
   .mode-card {
     border: 1px solid var(--border);
@@ -1412,6 +1486,52 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     </div>
   </div>
 
+  <!-- 03 PUNKT BIELI — wszystkie wzorce poza Color Checker -->
+  <div id="whitePointSection">
+    <div class="section-label">03 / Punkt bieli docelowy</div>
+    <div class="card-grid cols3" style="margin-bottom:18px;">
+      <div class="card active" id="wpCardD65" onclick="selectWhitePoint('D65')">
+        <div class="card-main">D65</div>
+        <div class="card-sub">x 0.3127 · y 0.3290</div>
+        <div class="wp-card-note" id="wpRgbD65">RGB ref: 255 · 255 · 255</div>
+      </div>
+      <div class="card" id="wpCardD50" onclick="selectWhitePoint('D50')">
+        <div class="card-main">D50</div>
+        <div class="card-sub">x 0.3457 · y 0.3585</div>
+        <div class="wp-card-note" id="wpRgbD50">RGB ref: 255 · 252 · 221</div>
+      </div>
+      <div class="card" id="wpCardDCI" onclick="selectWhitePoint('DCI_WHITE')">
+        <div class="card-main">DCI WHITE</div>
+        <div class="card-sub">x 0.3140 · y 0.3510</div>
+        <div class="wp-card-note" id="wpRgbDCI">RGB ref: 242 · 255 · 238</div>
+      </div>
+    </div>
+    <div class="white-point-summary" id="whitePointSummary">Aktywny punkt bieli: <b>D65</b>. Wszystkie skale kanałów R / G / B / W oraz wzorce bieli są adaptowane do wybranego celu.</div>
+  </div>
+
+  <!-- AUTO ZMIANA WZORCÓW -->
+  <div id="autoAdvanceSection">
+    <div class="section-label">04 / Automatyczna zmiana wzorców</div>
+    <div class="card-grid cols2" style="margin-bottom:18px;">
+      <div class="card active" id="autoCardOff" onclick="selectAutoAdvance(false)">
+        <div class="card-main">OFF</div>
+        <div class="card-sub">RĘCZNIE KLIKNIĘCIEM</div>
+      </div>
+      <div class="card" id="autoCardOn" onclick="selectAutoAdvance(true)">
+        <div class="card-main">AUTO</div>
+        <div class="card-sub">ZMIANA CO X SEKUND</div>
+      </div>
+    </div>
+    <div class="auto-advance-panel" id="autoAdvancePanel">
+      <div class="auto-advance-row">
+        <div class="auto-advance-copy">
+          <b>Interwał zmiany:</b> po uruchomieniu pomiaru aplikacja sama przechodzi do kolejnego pola / planszy po wybranej liczbie sekund. ESC dalej kończy pomiar, a kliknięcie nadal działa ręcznie.
+        </div>
+        <input class="auto-advance-input" id="autoSecondsInput" type="number" min="0.5" max="120" step="0.5" value="3" onchange="setAutoSeconds(this.value)" oninput="setAutoSeconds(this.value)" aria-label="Czas automatycznej zmiany wzorca w sekundach">
+      </div>
+    </div>
+  </div>
+
   <!-- 03 KANAŁ — tylko dla trybu 2 -->
   <div id="channelSection" class="hidden">
     <div class="section-label">03 / Kanał</div>
@@ -1740,6 +1860,11 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
   let mode = 1;
   let scale = 8;
   let channel = -1;
+  let targetWhitePoint = 'D65';
+  let autoAdvanceEnabled = false;
+  let autoAdvanceSeconds = 3;
+  let autoAdvanceTimer = null;
+  let autoAdvanceCallback = null;
 
   /* ===== RESOLUTION HELPERS ===== */
   function getCanvasDims() {
@@ -1757,9 +1882,131 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     return { W, H };
   }
 
-  const CH_NAMES  = ['R','G','B','W'];
-  const CH_COLORS = [[255,0,0],[0,255,0],[0,0,255],[255,255,255]];
-  const CH_HUD    = ['#ff4444','#44ff44','#4488ff','#ffffff'];
+  const CH_NAMES = ['R','G','B','W'];
+  const SRGB_TO_XYZ = [
+    [0.4124564, 0.3575761, 0.1804375],
+    [0.2126729, 0.7151522, 0.0721750],
+    [0.0193339, 0.1191920, 0.9503041]
+  ];
+  const XYZ_TO_SRGB = [
+    [ 3.2404542, -1.5371385, -0.4985314],
+    [-0.9692660,  1.8760108,  0.0415560],
+    [ 0.0556434, -0.2040259,  1.0572252]
+  ];
+  const BRADFORD = [
+    [ 0.8951,  0.2664, -0.1614],
+    [-0.7502,  1.7135,  0.0367],
+    [ 0.0389, -0.0685,  1.0296]
+  ];
+  const BRADFORD_INV = [
+    [ 0.9869929, -0.1470543, 0.1599627],
+    [ 0.4323053,  0.5183603, 0.0492912],
+    [-0.0085287,  0.0400428, 0.9684867]
+  ];
+
+  const WHITE_POINT_PRESETS = {
+    D65: { key:'D65', label:'D65', xy:[0.3127, 0.3290] },
+    D50: { key:'D50', label:'D50', xy:[0.3457, 0.3585] },
+    DCI_WHITE: { key:'DCI_WHITE', label:'DCI WHITE', xy:[0.3140, 0.3510] }
+  };
+
+  function clamp01(v) { return Math.min(1, Math.max(0, v)); }
+  function clamp255(v) { return Math.min(255, Math.max(0, Math.round(v))); }
+  function matVecMul(m, v) {
+    return [
+      m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2],
+      m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2],
+      m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2]
+    ];
+  }
+  function xyToXYZ(x, y, Y = 1) {
+    if (!y) return [0, 0, 0];
+    return [x * Y / y, Y, (1 - x - y) * Y / y];
+  }
+  function srgbToLinear(v) {
+    const n = v / 255;
+    return n <= 0.04045 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4);
+  }
+  function linearToSrgb8(v) {
+    const n = clamp01(v);
+    const enc = n <= 0.0031308 ? 12.92 * n : 1.055 * Math.pow(n, 1 / 2.4) - 0.055;
+    return clamp255(enc * 255);
+  }
+  function adaptXYZBradford(xyz, srcXY, dstXY) {
+    const srcXYZ = xyToXYZ(srcXY[0], srcXY[1], 1);
+    const dstXYZ = xyToXYZ(dstXY[0], dstXY[1], 1);
+    const srcLMS = matVecMul(BRADFORD, srcXYZ);
+    const dstLMS = matVecMul(BRADFORD, dstXYZ);
+    const lms = matVecMul(BRADFORD, xyz);
+    const scaled = [
+      lms[0] * dstLMS[0] / srcLMS[0],
+      lms[1] * dstLMS[1] / srcLMS[1],
+      lms[2] * dstLMS[2] / srcLMS[2]
+    ];
+    return matVecMul(BRADFORD_INV, scaled);
+  }
+  function adaptRgbFromD65(rgb, dstXY) {
+    const lin = rgb.map(srgbToLinear);
+    const xyz = matVecMul(SRGB_TO_XYZ, lin);
+    const adapted = adaptXYZBradford(xyz, WHITE_POINT_PRESETS.D65.xy, dstXY);
+    const linRgb = matVecMul(XYZ_TO_SRGB, adapted);
+    return linRgb.map(linearToSrgb8);
+  }
+  function computePresetChannels(preset) {
+    preset.channelColors = [
+      adaptRgbFromD65([255,0,0], preset.xy),
+      adaptRgbFromD65([0,255,0], preset.xy),
+      adaptRgbFromD65([0,0,255], preset.xy),
+      adaptRgbFromD65([255,255,255], preset.xy)
+    ];
+    preset.hudColors = preset.channelColors.map(rgb => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`);
+    preset.whiteCss = `rgb(${preset.channelColors[3][0]},${preset.channelColors[3][1]},${preset.channelColors[3][2]})`;
+    preset.whiteText = `${preset.channelColors[3][0]}, ${preset.channelColors[3][1]}, ${preset.channelColors[3][2]}`;
+    return preset;
+  }
+  Object.keys(WHITE_POINT_PRESETS).forEach(key => computePresetChannels(WHITE_POINT_PRESETS[key]));
+
+  function getWhitePointPreset() {
+    return WHITE_POINT_PRESETS[targetWhitePoint] || WHITE_POINT_PRESETS.D65;
+  }
+  function getChannelColor(ch) {
+    const preset = getWhitePointPreset();
+    return (preset.channelColors && preset.channelColors[ch]) ? preset.channelColors[ch] : [255,255,255];
+  }
+  function getChannelHudColor(ch) {
+    const preset = getWhitePointPreset();
+    return (preset.hudColors && preset.hudColors[ch]) ? preset.hudColors[ch] : '#ffffff';
+  }
+  function getWhiteFillCss() { return getWhitePointPreset().whiteCss; }
+  function getWhiteFillRgb() { return getChannelColor(3); }
+  function getWhiteFillText() { return getWhitePointPreset().whiteText; }
+  function whitePointSummaryHtml() {
+    const preset = getWhitePointPreset();
+    return `Aktywny punkt bieli: <b>${preset.label}</b> · xy: ${preset.xy[0].toFixed(4)} / ${preset.xy[1].toFixed(4)} · RGB ref: ${preset.whiteText}. Wszystkie skale kanałów R / G / B / W oraz wzorce bieli są adaptowane do wybranego celu.`;
+  }
+  function refreshWhitePointCards() {
+    const ids = { D65:'wpCardD65', D50:'wpCardD50', DCI_WHITE:'wpCardDCI' };
+    Object.keys(ids).forEach(key => {
+      const el = document.getElementById(ids[key]);
+      if (el) el.classList.toggle('active', targetWhitePoint === key);
+    });
+    const summary = document.getElementById('whitePointSummary');
+    if (summary) summary.innerHTML = whitePointSummaryHtml();
+    const rgbD65 = document.getElementById('wpRgbD65');
+    const rgbD50 = document.getElementById('wpRgbD50');
+    const rgbDCI = document.getElementById('wpRgbDCI');
+    if (rgbD65) rgbD65.textContent = `RGB ref: ${WHITE_POINT_PRESETS.D65.whiteText.replace(/, /g, ' · ')}`;
+    if (rgbD50) rgbD50.textContent = `RGB ref: ${WHITE_POINT_PRESETS.D50.whiteText.replace(/, /g, ' · ')}`;
+    if (rgbDCI) rgbDCI.textContent = `RGB ref: ${WHITE_POINT_PRESETS.DCI_WHITE.whiteText.replace(/, /g, ' · ')}`;
+  }
+  function rerenderActiveWhitePointPatterns() {
+    if (document.getElementById('gradOverlay')?.classList.contains('active') && !document.getElementById('gradDone')?.classList.contains('active')) renderGrad();
+    if (document.getElementById('solidOverlay')?.classList.contains('active') && !document.getElementById('solidDone')?.classList.contains('active')) renderSolid();
+    if (document.getElementById('contrastOverlay')?.classList.contains('active')) renderContrast();
+    if (document.getElementById('aplOverlay')?.classList.contains('active') && !document.getElementById('aplDone')?.classList.contains('active')) renderAPL();
+    if (document.getElementById('haloOverlay')?.classList.contains('active') && !document.getElementById('haloDone')?.classList.contains('active')) renderHalo();
+    if (document.getElementById('wzlOverlay')?.classList.contains('active') && !document.getElementById('wzlDone')?.classList.contains('active')) renderWZL();
+  }
 
   function stepValues(n) {
     const v = [];
@@ -1772,6 +2019,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     mode = m;
     [1,2,3,4,5,6,7].forEach(n => document.getElementById(`modeCard${n}`) && document.getElementById(`modeCard${n}`).classList.toggle('active', n===m));
     document.getElementById('scaleSection').classList.toggle('hidden', m===3 || m===4 || m===5 || m===6 || m===7);
+    document.getElementById('whitePointSection').classList.toggle('hidden', m===5);
     document.getElementById('channelSection').classList.toggle('hidden', m!==2);
     document.getElementById('gridSection').classList.toggle('hidden', m!==2);
     document.getElementById('shapeSection').classList.toggle('hidden', m!==6);
@@ -1827,6 +2075,62 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     channel = ch;
     updateBtn();
     restartPreview();
+  }
+
+  function selectWhitePoint(key) {
+    if (!WHITE_POINT_PRESETS[key]) return;
+    targetWhitePoint = key;
+    refreshWhitePointCards();
+    rerenderActiveWhitePointPatterns();
+    restartPreview();
+  }
+
+  function selectAutoAdvance(on) {
+    autoAdvanceEnabled = !!on;
+    const onCard = document.getElementById('autoCardOn');
+    const offCard = document.getElementById('autoCardOff');
+    if (onCard) onCard.classList.toggle('active', autoAdvanceEnabled);
+    if (offCard) offCard.classList.toggle('active', !autoAdvanceEnabled);
+    if (autoAdvanceEnabled) scheduleAutoAdvance();
+    else stopAutoAdvance();
+  }
+
+  function setAutoSeconds(value) {
+    const n = parseFloat(value);
+    if (!Number.isFinite(n)) return;
+    autoAdvanceSeconds = Math.min(120, Math.max(0.5, n));
+    const input = document.getElementById('autoSecondsInput');
+    if (input && String(input.value) !== String(autoAdvanceSeconds)) input.value = autoAdvanceSeconds;
+    if (autoAdvanceEnabled && autoAdvanceCallback) scheduleAutoAdvance();
+  }
+
+  function startAutoAdvance(callback) {
+    autoAdvanceCallback = callback;
+    scheduleAutoAdvance();
+  }
+
+  function scheduleAutoAdvance() {
+    clearTimeout(autoAdvanceTimer);
+    if (!autoAdvanceEnabled || typeof autoAdvanceCallback !== 'function') return;
+    autoAdvanceTimer = setTimeout(() => {
+      if (!autoAdvanceEnabled || typeof autoAdvanceCallback !== 'function') return;
+      autoAdvanceCallback();
+    }, Math.max(500, autoAdvanceSeconds * 1000));
+  }
+
+  function stopAutoAdvance() {
+    clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer = null;
+    autoAdvanceCallback = null;
+  }
+
+  function syncAutoAdvanceUi() {
+    const input = document.getElementById('autoSecondsInput');
+    if (input) input.value = autoAdvanceSeconds;
+    const onCard = document.getElementById('autoCardOn');
+    const offCard = document.getElementById('autoCardOff');
+    if (onCard) onCard.classList.toggle('active', autoAdvanceEnabled);
+    if (offCard) offCard.classList.toggle('active', !autoAdvanceEnabled);
   }
 
   function updateBtn() {
@@ -1893,6 +2197,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     ov.onclick = onGradClick;
     document.addEventListener('keydown', onGradKey);
     renderGrad();
+    startAutoAdvance(onGradClick);
     gradTimer = fadeHud(3000,'gradHud','gradHint');
   }
 
@@ -1900,6 +2205,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
   function closeGradient() {
     clearTimeout(gradTimer);
+    stopAutoAdvance();
     document.getElementById('gradOverlay').classList.remove('active');
     document.removeEventListener('keydown', onGradKey);
     window.parent.postMessage({type:'shellFS', on:false}, '*');
@@ -1916,6 +2222,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     } else {
       clearTimeout(gradTimer);
       renderGrad();
+      scheduleAutoAdvance();
       gradTimer = fadeHud(3000,'gradHud','gradHint');
     }
   }
@@ -1926,7 +2233,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     const ctx = canvas.getContext('2d', {alpha:false});
     ctx.imageSmoothingEnabled = false;
 
-    const [cr,cg,cb] = CH_COLORS[gradStep];
+    const [cr,cg,cb] = getChannelColor(gradStep);
     const steps = stepValues(scale);
 
     steps.forEach((v, i) => {
@@ -1951,8 +2258,8 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
     const lbl = document.getElementById('gradLabel');
     lbl.textContent = CH_NAMES[gradStep];
-    lbl.style.color = CH_HUD[gradStep];
-    document.getElementById('gradInfo').textContent = `KANAŁ ${gradStep+1}/4 · SKALA ${scale}`;
+    lbl.style.color = getChannelHudColor(gradStep);
+    document.getElementById('gradInfo').textContent = `KANAŁ ${gradStep+1}/4 · SKALA ${scale} · ${getWhitePointPreset().label}`;
   }
 
   function showGradDone() {
@@ -1962,6 +2269,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     ctx.fillRect(0,0,canvas.width,canvas.height);
     document.getElementById('gradHud').style.display = 'none';
     document.getElementById('gradHint').style.display = 'none';
+    stopAutoAdvance();
     document.getElementById('gradDone').classList.add('active');
   }
 
@@ -1990,6 +2298,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     document.addEventListener('keydown', onSolidKey);
     buildDots();
     renderSolid();
+    startAutoAdvance(onSolidClick);
     solidTimer = fadeHud(3000,'solidHud','solidHint','solidDots');
   }
 
@@ -1997,6 +2306,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
   function closeSolid() {
     clearTimeout(solidTimer);
+    stopAutoAdvance();
     document.getElementById('solidOverlay').classList.remove('active');
     document.removeEventListener('keydown', onSolidKey);
     window.parent.postMessage({type:'shellFS', on:false}, '*');
@@ -2033,13 +2343,14 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       clearTimeout(solidTimer);
       renderSolid();
       updateDots();
+      scheduleAutoAdvance();
       solidTimer = fadeHud(3000,'solidHud','solidHint','solidDots');
     }
   }
 
   function renderSolid() {
     const v = solidVals[solidStep];
-    const [cr,cg,cb] = CH_COLORS[channel];
+    const [cr,cg,cb] = getChannelColor(channel);
     const r = Math.round(cr*v/255), g = Math.round(cg*v/255), b = Math.round(cb*v/255);
     const ov = document.getElementById('solidOverlay');
     ov.style.background = `rgb(${r},${g},${b})`;
@@ -2087,10 +2398,10 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
     const lbl = document.getElementById('solidLabel');
     lbl.textContent = CH_NAMES[channel];
-    lbl.style.color = dark ? 'rgba(0,0,0,0.8)' : CH_HUD[channel];
+    lbl.style.color = dark ? 'rgba(0,0,0,0.8)' : getChannelHudColor(channel);
 
     const info = document.getElementById('solidInfo');
-    info.textContent = `POZIOM ${solidStep+1}/${solidVals.length}  ·  RGB: ${r},${g},${b}  ·  VAL: ${v}`;
+    info.textContent = `POZIOM ${solidStep+1}/${solidVals.length}  ·  RGB: ${r},${g},${b}  ·  VAL: ${v}  ·  ${getWhitePointPreset().label}`;
     info.style.color = hudColor;
 
     document.getElementById('solidHud').style.background = dark
@@ -2113,9 +2424,11 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
   function showSolidDone() {
     document.getElementById('solidOverlay').style.background = '#000';
     const bar = document.getElementById('solidDoneBar');
-    bar.style.background = CH_HUD[channel];
-    bar.style.boxShadow = `0 0 14px ${CH_HUD[channel]}`;
+    const hudColor = getChannelHudColor(channel);
+    bar.style.background = hudColor;
+    bar.style.boxShadow = `0 0 14px ${hudColor}`;
     ['solidHud','solidHint','solidDots'].forEach(id => document.getElementById(id).style.display='none');
+    stopAutoAdvance();
     document.getElementById('solidDone').classList.add('active');
   }
 
@@ -2129,6 +2442,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     ov.classList.add('active');
     ov.onclick = onContrastClick;
     renderContrast();
+    startAutoAdvance(onContrastClick);
     contrastTimer = fadeHud(3000,'contrastHud','contrastHint');
     document.addEventListener('keydown', onContrastKey);
   }
@@ -2139,6 +2453,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
   function closeContrast() {
     clearTimeout(contrastTimer);
+    stopAutoAdvance();
     document.getElementById('contrastOverlay').classList.remove('active');
     document.removeEventListener('keydown', onContrastKey);
     window.parent.postMessage({type:'shellFS', on:false}, '*');
@@ -2148,6 +2463,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     contrastWhite = !contrastWhite;
     renderContrast();
     clearTimeout(contrastTimer);
+    scheduleAutoAdvance();
     contrastTimer = fadeHud(3000,'contrastHud','contrastHint');
   }
 
@@ -2159,9 +2475,9 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     const hnt = document.getElementById('contrastHint');
 
     if (contrastWhite) {
-      ov.style.background = '#ffffff';
-      lbl.textContent = 'WHITE';
-      inf.textContent = 'RGB: 255, 255, 255';
+      ov.style.background = getWhiteFillCss();
+      lbl.textContent = `WHITE · ${getWhitePointPreset().label}`;
+      inf.textContent = `RGB: ${getWhiteFillText()}`;
       lbl.style.color = 'rgba(0,0,0,0.65)';
       inf.style.color = 'rgba(0,0,0,0.4)';
       hnt.style.color = 'rgba(0,0,0,0.3)';
@@ -2194,6 +2510,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     document.addEventListener('keydown', onAPLKey);
     buildAPLDots();
     renderAPL();
+    startAutoAdvance(onAPLClick);
     aplTimer = fadeHud(2000,'aplHud','aplHint','aplDots');
   }
 
@@ -2201,6 +2518,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
   function closeAPL() {
     clearTimeout(aplTimer);
+    stopAutoAdvance();
     document.getElementById('aplOverlay').classList.remove('active');
     document.removeEventListener('keydown', onAPLKey);
     window.parent.postMessage({type:'shellFS', on:false}, '*');
@@ -2240,6 +2558,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       clearTimeout(aplTimer);
       renderAPL();
       updateAPLDots();
+      scheduleAutoAdvance();
       aplTimer = fadeHud(2000,'aplHud','aplHint','aplDots');
     }
   }
@@ -2255,7 +2574,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     ctx.fillRect(0, 0, W, H);
 
     if (apl === 100) {
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = getWhiteFillCss();
       ctx.fillRect(0, 0, W, H);
     } else {
       // biały prostokąt wycentrowany zajmujący dokładnie apl% powierzchni
@@ -2265,16 +2584,17 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       const rW = Math.round(area / rH);
       const rx = Math.round((W - rW) / 2);
       const ry = Math.round((H - rH) / 2);
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = getWhiteFillCss();
       ctx.fillRect(rx, ry, rW, rH);
     }
 
     document.getElementById('aplLabel').textContent = `APL ${apl}%`;
-    document.getElementById('aplInfo').textContent = `POZIOM ${aplStep+1}/${APL_LEVELS.length}  ·  WYPEŁNIENIE ${apl}%`;
+    document.getElementById('aplInfo').textContent = `POZIOM ${aplStep+1}/${APL_LEVELS.length}  ·  WYPEŁNIENIE ${apl}%  ·  ${getWhitePointPreset().label}`;
   }
 
   function showAPLDone() {
     ['aplHud','aplHint','aplDots'].forEach(id => document.getElementById(id).style.display = 'none');
+    stopAutoAdvance();
     document.getElementById('aplDone').classList.add('active');
   }
 
@@ -2326,6 +2646,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     ov.classList.add('active');
     ov.onclick = onCCClick;
     document.addEventListener('keydown', onCCKey);
+    startAutoAdvance(onCCClick);
     ccTimer = fadeHud(3000, 'ccHud', 'ccHint', 'ccDots');
   }
 
@@ -2393,6 +2714,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     } else {
       clearTimeout(ccTimer);
       renderCC();
+      scheduleAutoAdvance();
       ccTimer = fadeHud(3000, 'ccHud', 'ccHint', 'ccDots');
     }
   }
@@ -2400,6 +2722,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
   function showCCDone() {
     document.getElementById('colorCheckerOverlay').style.background = '#000';
     ['ccHud','ccHint','ccDots'].forEach(id => document.getElementById(id).style.display = 'none');
+    stopAutoAdvance();
     document.getElementById('ccDone').classList.add('active');
   }
 
@@ -2409,6 +2732,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
   function closeCCOverlay() {
     clearTimeout(ccTimer);
+    stopAutoAdvance();
     document.getElementById('colorCheckerOverlay').classList.remove('active');
     document.removeEventListener('keydown', onCCKey);
     window.parent.postMessage({type:'shellFS', on:false}, '*');
@@ -2431,6 +2755,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     document.addEventListener('keydown', onHaloKey);
     buildHaloDots();
     renderHalo();
+    startAutoAdvance(onHaloClick);
     haloTimer = fadeHud(2500, 'haloHud', 'haloHint', 'haloDots');
   }
 
@@ -2475,7 +2800,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     const cx = W / 2;
     const cy = H / 2;
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = getWhiteFillCss();
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
     ctx.fill();
@@ -2484,7 +2809,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     const label = document.getElementById('haloLabel');
     label.textContent = `HALO ${pct}%`;
     const info = document.getElementById('haloInfo');
-    info.textContent = `KROK ${haloStep + 1}/${HALO_STEPS.length}  ·  ${pct}% POWIERZCHNI`;
+    info.textContent = `KROK ${haloStep + 1}/${HALO_STEPS.length}  ·  ${pct}% POWIERZCHNI  ·  ${getWhitePointPreset().label}`;
 
     updateHaloDots();
   }
@@ -2500,12 +2825,14 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       showHaloDone();
     } else {
       renderHalo();
+      scheduleAutoAdvance();
       haloTimer = fadeHud(2500, 'haloHud', 'haloHint', 'haloDots');
     }
   }
 
   function showHaloDone() {
     ['haloHud', 'haloHint', 'haloDots'].forEach(id => document.getElementById(id).style.display = 'none');
+    stopAutoAdvance();
     document.getElementById('haloDone').classList.add('active');
   }
 
@@ -2515,6 +2842,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
   function closeHaloOverlay() {
     clearTimeout(haloTimer);
+    stopAutoAdvance();
     document.getElementById('haloOverlay').classList.remove('active');
     document.removeEventListener('keydown', onHaloKey);
     window.parent.postMessage({type:'shellFS', on:false}, '*');
@@ -2587,6 +2915,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     document.addEventListener('keydown', onWZLKey);
     buildWZLDots();
     renderWZL();
+    startAutoAdvance(onWZLClick);
     wzlTimer = fadeHud(2500, 'wzlHud', 'wzlHint', 'wzlDots');
   }
 
@@ -2634,7 +2963,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
     zonesToDraw.forEach((zone) => {
       const r = zone.getRect(W, H, side);
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = getWhiteFillCss();
       if (wzlShape === 'circle') {
         // Promień koła o tej samej powierzchni co kwadrat (2% ekranu): π*r² = side²  →  r = side/√π
         const radius = side / Math.sqrt(Math.PI);
@@ -2654,10 +2983,10 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
     const info = document.getElementById('wzlInfo');
     if (isAll) {
       hud.textContent = 'WSZYSTKIE';
-      info.textContent = `STREFA 6/6  ·  WSZYSTKIE STREFY  ·  ${wzlFill}% KAŻDA`;
+      info.textContent = `STREFA 6/6  ·  WSZYSTKIE STREFY  ·  ${wzlFill}% KAŻDA  ·  ${getWhitePointPreset().label}`;
     } else {
       hud.textContent = WZL_LABELS[wzlStep];
-      info.textContent = `STREFA ${wzlStep+1}/6  ·  ${wzlFill}% POWIERZCHNI`;
+      info.textContent = `STREFA ${wzlStep+1}/6  ·  ${wzlFill}% POWIERZCHNI  ·  ${getWhitePointPreset().label}`;
     }
 
     updateWZLDots();
@@ -2674,12 +3003,14 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       showWZLDone();
     } else {
       renderWZL();
+      scheduleAutoAdvance();
       wzlTimer = fadeHud(2500, 'wzlHud', 'wzlHint', 'wzlDots');
     }
   }
 
   function showWZLDone() {
     ['wzlHud','wzlHint','wzlDots'].forEach(id => document.getElementById(id).style.display = 'none');
+    stopAutoAdvance();
     document.getElementById('wzlDone').classList.add('active');
   }
 
@@ -2689,6 +3020,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
   function closeWZLOverlay() {
     clearTimeout(wzlTimer);
+    stopAutoAdvance();
     document.getElementById('wzlOverlay').classList.remove('active');
     document.removeEventListener('keydown', onWZLKey);
     window.parent.postMessage({type:'shellFS', on:false}, '*');
@@ -2712,8 +3044,18 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
   ];
 
   function previewColorForChannel(ch, v) {
-    const c = CH_COLORS[ch] || [255,255,255];
+    const c = getChannelColor(ch);
     return `rgb(${Math.round(c[0]*v/255)},${Math.round(c[1]*v/255)},${Math.round(c[2]*v/255)})`;
+  }
+
+  function whitePointCssWithAlpha(alpha = 1) {
+    const [r,g,b] = getWhiteFillRgb();
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function haloPreviewStyle(size) {
+    const [r,g,b] = getWhiteFillRgb();
+    return `--pv-size:${size}%;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 50% 50%,rgba(${r},${g},${b},1) 0%,rgba(${r},${g},${b},0.98) 28%,rgba(${r},${g},${b},0.70) 42%,rgba(${r},${g},${b},0.24) 61%,rgba(${r},${g},${b},0.055) 78%,rgba(${r},${g},${b},0) 100%);box-shadow:0 0 16px rgba(${r},${g},${b},0.36),0 0 42px rgba(${r},${g},${b},0.16);`;
   }
 
   function setPreviewDots(count, active) {
@@ -2733,8 +3075,8 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       return [0,1,2,3].map((c, idx) => ({
         title: 'Gradient Steps',
         a: CH_NAMES[c],
-        b: `KANAŁ ${idx+1}/4 · ${scale} KROKÓW`,
-        desc: `<b>Gradient Steps.</b> Kanał ${CH_NAMES[c]} jest mierzony jako seria ${scale} pól od czerni do pełnej jasności.`,
+        b: `KANAŁ ${idx+1}/4 · ${scale} KROKÓW · ${getWhitePointPreset().label}`,
+        desc: `<b>Gradient Steps.</b> Kanał ${CH_NAMES[c]} jest mierzony jako seria ${scale} pól od czerni do pełnej jasności, adaptowana do punktu bieli ${getWhitePointPreset().label}.`,
         html: `<div class="pv-gradient">${stepValues(scale).map(v => `<span style="background:${previewColorForChannel(c,v)}"></span>`).join('')}</div>`
       }));
     }
@@ -2743,14 +3085,14 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       return values.map((v, idx) => ({
         title: 'Solid Levels',
         a: CH_NAMES[ch],
-        b: `POZIOM ${idx+1}/${scale} · RGB ${previewColorForChannel(ch,v).replace(/[^\d,]/g,'')}`,
-        desc: `<b>Solid Levels.</b> Pełnoekranowe pole jednorodne dla kanału ${CH_NAMES[ch]}; kliknięcie przechodzi do kolejnego poziomu.`,
+        b: `POZIOM ${idx+1}/${scale} · RGB ${previewColorForChannel(ch,v).replace(/[^\d,]/g,'')} · ${getWhitePointPreset().label}`,
+        desc: `<b>Solid Levels.</b> Pełnoekranowe pole jednorodne dla kanału ${CH_NAMES[ch]} z adaptacją do punktu bieli ${getWhitePointPreset().label}; kliknięcie przechodzi do kolejnego poziomu.`,
         html: `<div class="pv-solid ${solidGrid ? 'pv-grid' : ''}" style="background:${previewColorForChannel(ch,v)}"></div>`
       }));
     }
     if (mode === 3) {
       return [
-        { title:'Contrast Check', a:'WHITE', b:'RGB 255 · 255 · 255', desc:'<b>Contrast Check.</b> Najpierw zmierz biel pełnoekranową.', html:'<div class="pv-solid" style="background:#fff"></div>' },
+        { title:'Contrast Check', a:`WHITE · ${getWhitePointPreset().label}`, b:`RGB ${getWhiteFillText().replace(/, /g,' · ')}`, desc:`<b>Contrast Check.</b> Najpierw zmierz biel pełnoekranową adaptowaną do punktu ${getWhitePointPreset().label}.`, html:`<div class="pv-solid" style="background:${getWhiteFillCss()}"></div>` },
         { title:'Contrast Check', a:'BLACK', b:'RGB 0 · 0 · 0', desc:'<b>Contrast Check.</b> Następnie kliknij i zmierz czerń pełnoekranową.', html:'<div class="pv-solid" style="background:#000"></div>' }
       ];
     }
@@ -2758,7 +3100,7 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       const apl = [2,5,10,15,20,25,50,75,100];
       return apl.map((p, idx) => {
         const side = Math.sqrt(p/100)*84;
-        return { title:'APL White Fill', a:`APL ${p}%`, b:`POZIOM ${idx+1}/9`, desc:`<b>APL White Fill.</b> Biały prostokąt zajmuje ${p}% powierzchni ekranu na czarnym tle.`, html:`<div class="pv-solid" style="background:#000"></div><div class="pv-apl-box" style="width:${side}%;height:${side}%;"></div>` };
+        return { title:'APL White Fill', a:`APL ${p}%`, b:`POZIOM ${idx+1}/9 · ${getWhitePointPreset().label}`, desc:`<b>APL White Fill.</b> Prostokąt o bieli ${getWhitePointPreset().label} zajmuje ${p}% powierzchni ekranu na czarnym tle.`, html:`<div class="pv-solid" style="background:#000"></div><div class="pv-apl-box" style="width:${side}%;height:${side}%;background:${getWhiteFillCss()};box-shadow:0 0 20px ${whitePointCssWithAlpha(0.24)};"></div>` };
       });
     }
     if (mode === 5) {
@@ -2778,18 +3120,18 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
       return zones.map((z, idx) => {
         let html = '<div class="pv-solid" style="background:#000"></div>';
         if (z[0] === 'ALL') {
-          [[15,16],[76,16],[15,72],[76,72],[50,50]].forEach(p => html += `<div class="pv-zone ${wzlShape==='circle'?'circle':''}" style="--pv-size:${size}%;left:${p[0]}%;top:${p[1]}%;transform:translate(-50%,-50%);"></div>`);
+          [[15,16],[76,16],[15,72],[76,72],[50,50]].forEach(p => html += `<div class="pv-zone ${wzlShape==='circle'?'circle':''}" style="--pv-size:${size}%;left:${p[0]}%;top:${p[1]}%;transform:translate(-50%,-50%);background:${getWhiteFillCss()};box-shadow:0 0 20px ${whitePointCssWithAlpha(0.24)};"></div>`);
         } else {
-          html += `<div class="pv-zone ${wzlShape==='circle'?'circle':''}" style="--pv-size:${size}%;left:${z[1]}%;top:${z[2]}%;transform:translate(-50%,-50%);"></div>`;
+          html += `<div class="pv-zone ${wzlShape==='circle'?'circle':''}" style="--pv-size:${size}%;left:${z[1]}%;top:${z[2]}%;transform:translate(-50%,-50%);background:${getWhiteFillCss()};box-shadow:0 0 20px ${whitePointCssWithAlpha(0.24)};"></div>`;
         }
-        return { title:'White Zone Luminance', a:z[0], b:`STREFA ${idx+1}/6 · ${wzlFill}%`, desc:`<b>White Zone Luminance.</b> Ustaw miernik luminancji na białym polu ${z[0]} i przejdź do kolejnej strefy kliknięciem.`, html };
+        return { title:'White Zone Luminance', a:z[0], b:`STREFA ${idx+1}/6 · ${wzlFill}% · ${getWhitePointPreset().label}`, desc:`<b>White Zone Luminance.</b> Ustaw miernik luminancji na polu bieli ${getWhitePointPreset().label} (${z[0]}) i przejdź do kolejnej strefy kliknięciem.`, html };
       });
     }
     if (mode === 7) {
       const halo = [1,2,5,10,20,25,50];
       return halo.map((p, idx) => {
         const size = Math.sqrt(p/100)*78;
-        return { title:'Halo Test', a:`HALO ${p}%`, b:`KROK ${idx+1}/7`, desc:`<b>Halo Test.</b> Biała plama ${p}% powierzchni ekranu pozwala ocenić poświatę lokalnego podświetlenia.`, html:`<div class="pv-solid" style="background:#000"></div><div class="pv-halo" style="--pv-size:${size}%;left:50%;top:50%;transform:translate(-50%,-50%);"></div>` };
+        return { title:'Halo Test', a:`HALO ${p}%`, b:`KROK ${idx+1}/7 · ${getWhitePointPreset().label}`, desc:`<b>Halo Test.</b> Plama bieli ${getWhitePointPreset().label} o powierzchni ${p}% pozwala ocenić poświatę lokalnego podświetlenia.`, html:`<div class="pv-solid" style="background:#000"></div><div class="pv-halo" style="${haloPreviewStyle(size)}"></div>` };
       });
     }
     return [];
@@ -2826,6 +3168,8 @@ html.theme-anim, body.theme-anim, body.theme-anim * { transition: background-col
 
 
   // init
+  refreshWhitePointCards();
+  syncAutoAdvanceUi();
   updateBtn();
   restartPreview();
 </script>
